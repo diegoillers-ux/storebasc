@@ -1,0 +1,25 @@
+{
+  "name": "Perlanda",
+  "short_name": "Perlanda",
+  "description": "Reserva servicios y gestiona agenda desde movil.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#d5bda9",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/shop-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/shop-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

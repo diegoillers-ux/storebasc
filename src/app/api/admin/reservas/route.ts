@@ -1,0 +1,44 @@
+import { NextResponse } from 'next/server';
+import { getGoogleCalendarClient } from '@/lib/googleCalendar';
+import { requireAdminSession } from '@/lib/adminAuth';
+
+export async function GET() {
+    const authError = await requireAdminSession();
+    if (authError) return authError;
+
+    try {
+        const calendar = getGoogleCalendarClient();
+        const calendarId = process.env.NEXT_PUBLIC_CALENDAR_ID;
+
+        if (!calendarId) {
+            return NextResponse.json({ error: 'Configuración calendario faltante.' }, { status: 500 });
+        }
+
+        // Listar ventos desde AHORA que contengan "[PENDIENTE]" en el nombre
+        const response = await calendar.events.list({
+            calendarId,
+            timeMin: new Date().toISOString(),
+            maxResults: 50,
+            singleEvents: true,
+            orderBy: 'startTime',
+            q: '[PENDIENTE]',
+        });
+
+        const pendingEvents = response.data.items || [];
+
+        const formattedEvents = pendingEvents.map(event => ({
+            id: event.id,
+            summary: event.summary,
+            description: event.description || '',
+            start: event.start?.dateTime || event.start?.date,
+            end: event.end?.dateTime || event.end?.date,
+            status: event.status,
+        }));
+
+        return NextResponse.json({ events: formattedEvents });
+
+    } catch (error) {
+        console.error('Error fetching pending events:', error);
+        return NextResponse.json({ error: 'Error al consultar citas pendientes.' }, { status: 500 });
+    }
+}

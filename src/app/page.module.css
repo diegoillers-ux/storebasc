@@ -1,0 +1,155 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cosmic Background Elements */
+.main::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(195, 155, 110, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.main::after {
+  content: "";
+  position: absolute;
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(94, 77, 122, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Hero Section */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem 1rem 2rem;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn 1.2s ease-out;
+}
+
+.logoWrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  border: 4px solid var(--secondary);
+  box-shadow: 0 8px 24px rgba(107, 93, 84, 0.15);
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profileLogo {
+  width: 95%;
+  height: 95%;
+  object-fit: contain;
+}
+
+.title {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  color: rgba(244, 240, 236, 0.8);
+  margin-bottom: 3rem;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+@media (prefers-color-scheme: light) {
+  .subtitle {
+    color: rgba(28, 28, 28, 0.7);
+  }
+}
+
+.ctaButton {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #fff;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 8px 20px rgba(195, 155, 110, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ctaButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(195, 155, 110, 0.4);
+}
+
+.socialLinks {
+  margin-top: 2.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  opacity: 0.8;
+}
+
+.socialIcon {
+  font-weight: 500;
+  color: var(--foreground);
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.socialIcon:hover {
+  opacity: 1;
+  color: var(--primary-hover);
+}
+
+.socialSeparator {
+  color: var(--primary);
+  opacity: 0.5;
+}
+
+.toggleSection {
+  width: 100%;
+  scroll-margin-top: 5rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
