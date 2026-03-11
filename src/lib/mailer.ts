@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+import { getSaleTypeLabel, type SaleType } from '@/lib/sales';
+
 function getMailerConfigError() {
     if (!process.env.GMAIL_USER) return 'Falta GMAIL_USER en variables de entorno.';
     if (!process.env.GMAIL_APP_PASSWORD) return 'Falta GMAIL_APP_PASSWORD en variables de entorno.';
@@ -21,34 +23,100 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-export async function sendPendingReservationEmail(
-    toEmail: string,
-    clientName: string,
-    serviceName: string,
-    dateTime: string,
-    reservationCode = ''
-) {
+function getPendingCopy(saleType: SaleType, itemName: string) {
+    if (saleType === 'raffle') {
+        return {
+            subject: `Numero reservado pendiente de pago - ${itemName}`,
+            body: `Hemos separado temporalmente tu numero para ${itemName}.`,
+            followUp: 'Adjunta tu comprobante desde la pagina para que podamos validar la compra manualmente.',
+        };
+    }
+
+    if (saleType === 'product') {
+        return {
+            subject: `Pedido pendiente de pago - ${itemName}`,
+            body: `Recibimos tu solicitud para ${itemName} y el pedido quedo pendiente de validacion manual.`,
+            followUp: 'Sube el comprobante desde la pagina para completar la validacion del pedido.',
+        };
+    }
+
+    return {
+        subject: `Reserva pendiente de pago - ${itemName}`,
+        body: `Gracias por reservar con nuestra tienda tu sesion de ${itemName}.`,
+        followUp: 'Si ya realizaste el pago, usa el boton de confirmacion en pantalla y adjunta el comprobante.',
+    };
+}
+
+function getApprovedCopy(saleType: SaleType, itemName: string, meetingLink = '') {
+    if (saleType === 'raffle') {
+        return {
+            subject: `Compra confirmada - ${itemName}`,
+            body: `Tu numero para ${itemName} ya fue confirmado.`,
+            extra: '<p>Guardaremos tu participacion y te avisaremos por los canales registrados cuando se realice el sorteo.</p>',
+        };
+    }
+
+    if (saleType === 'product') {
+        return {
+            subject: `Pedido confirmado - ${itemName}`,
+            body: `Tu pedido de ${itemName} ya fue aprobado.`,
+            extra: '<p>Nos pondremos en contacto contigo para entrega, envio o coordinacion final.</p>',
+        };
+    }
+
+    return {
+        subject: `Reserva confirmada - ${itemName}`,
+        body: `Hemos verificado tu pago. Tu sesion de ${itemName} ya fue confirmada.`,
+        extra: meetingLink
+            ? `<p>Aqui tienes el enlace para conectarnos ese dia:<br/><br/><a href="${meetingLink}" style="background-color: #D5BDA9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Unirse a la sesion</a></p>`
+            : '<p>Recibiras por correo los detalles finales de la atencion.</p>',
+    };
+}
+
+type PendingSaleEmailPayload = {
+    toEmail: string;
+    clientName: string;
+    itemName: string;
+    dateTime: string;
+    reservationCode?: string;
+    saleType?: SaleType;
+};
+
+type ApprovedSaleEmailPayload = {
+    toEmail: string;
+    clientName: string;
+    itemName: string;
+    dateTime: string;
+    meetingLink?: string;
+    saleType?: SaleType;
+};
+
+export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
     const configError = getMailerConfigError();
     if (configError) {
         console.error(`[Mailer Config Error] ${configError}`);
         return;
     }
 
+    const saleType = payload.saleType || 'service';
+    const copy = getPendingCopy(saleType, payload.itemName);
+
     const mailOptions = {
         from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
-        to: toEmail,
-        subject: `Reserva pendiente de pago - ${serviceName}${reservationCode ? ` (${reservationCode})` : ''}`,
+        to: payload.toEmail,
+        subject: `${copy.subject}${payload.reservationCode ? ` (${payload.reservationCode})` : ''}`,
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #D5BDA9; text-align: center;">Hola ${clientName}</h2>
-        <p>Gracias por reservar con nuestra tienda tu sesion de <strong>${serviceName}</strong>.</p>
-        <p>Hemos separado tu cupo para el <strong>${dateTime}</strong>.</p>
-        ${reservationCode ? `<p><strong>Codigo de reserva:</strong> ${reservationCode}</p>` : ''}
+        <h2 style="color: #D5BDA9; text-align: center;">Hola ${payload.clientName}</h2>
+        <p>${copy.body}</p>
+        <p>Referencia: <strong>${payload.itemName}</strong>.</p>
+        <p>Fecha asociada: <strong>${payload.dateTime}</strong>.</p>
+        ${payload.reservationCode ? `<p><strong>Codigo de transaccion:</strong> ${payload.reservationCode}</p>` : ''}
         <div style="background-color: #fcfbf9; padding: 15px; border-left: 4px solid #D5BDA9; margin: 20px 0;">
           <p style="margin: 0; font-weight: bold;">Importante:</p>
-          <p style="margin: 5px 0 0 0;">Este es un bloqueo temporal. Tienes <strong>30 minutos</strong> para realizar la transferencia y asegurar tu espacio. Si no, el sistema liberara la hora automaticamente.</p>
+          <p style="margin: 5px 0 0 0;">Tienes <strong>30 minutos</strong> para completar la consignacion y reportar el comprobante.</p>
         </div>
-        <p>Si ya realizaste el pago, usa el boton de confirmacion en pantalla y adjunta el comprobante.</p>
+        <p>${copy.followUp}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
         <p style="font-size: 0.8em; color: #888; text-align: center;">Saludos,<br/>Equipo de soporte</p>
       </div>
@@ -57,10 +125,63 @@ export async function sendPendingReservationEmail(
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`[Email Sent] Pending reservation to: ${toEmail}`);
+        console.log(`[Email Sent] Pending ${saleType} to: ${payload.toEmail}`);
     } catch (error) {
         console.error('Error sending pending email:', error);
     }
+}
+
+export async function sendApprovedSaleEmail(payload: ApprovedSaleEmailPayload) {
+    const configError = getMailerConfigError();
+    if (configError) {
+        console.error(`[Mailer Config Error] ${configError}`);
+        return;
+    }
+
+    const saleType = payload.saleType || 'service';
+    const copy = getApprovedCopy(saleType, payload.itemName, payload.meetingLink || '');
+
+    const mailOptions = {
+        from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
+        to: payload.toEmail,
+        subject: copy.subject,
+        html: `
+      <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #a4c9b3; text-align: center;">Pago validado</h2>
+        <p>Hola ${payload.clientName},</p>
+        <p>${copy.body}</p>
+        <p>Referencia: <strong>${payload.itemName}</strong>.</p>
+        <p>Fecha asociada: <strong>${payload.dateTime}</strong>.</p>
+        ${copy.extra}
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 0.8em; color: #888; text-align: center;">Nos vemos pronto.<br/>Equipo de soporte</p>
+      </div>
+    `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[Email Sent] Approved ${saleType} to: ${payload.toEmail}`);
+    } catch (error) {
+        console.error('Error sending confirmation email:', error);
+    }
+}
+
+export async function sendPendingReservationEmail(
+    toEmail: string,
+    clientName: string,
+    serviceName: string,
+    dateTime: string,
+    reservationCode = ''
+) {
+    return sendPendingSaleEmail({
+        toEmail,
+        clientName,
+        itemName: serviceName,
+        dateTime,
+        reservationCode,
+        saleType: 'service',
+    });
 }
 
 export async function sendConfirmationEmail(
@@ -70,38 +191,14 @@ export async function sendConfirmationEmail(
     dateTime: string,
     meetingLink = ''
 ) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
-        return;
-    }
-
-    const extraInfo = meetingLink
-        ? `<p>Aqui tienes el enlace para conectarnos ese dia:<br/><br/><a href="${meetingLink}" style="background-color: #D5BDA9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Unirse a la sesion</a></p>`
-        : '<p>Recibiras por correo los detalles finales de la atencion.</p>';
-
-    const mailOptions = {
-        from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
-        to: toEmail,
-        subject: `Reserva confirmada - ${serviceName}`,
-        html: `
-      <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #a4c9b3; text-align: center;">Pago validado</h2>
-        <p>Hola ${clientName},</p>
-        <p>Hemos verificado tu pago. Tu sesion de <strong>${serviceName}</strong> para el <strong>${dateTime}</strong> ya fue confirmada.</p>
-        ${extraInfo}
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-        <p style="font-size: 0.8em; color: #888; text-align: center;">Nos vemos pronto.<br/>Equipo de soporte</p>
-      </div>
-    `,
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log(`[Email Sent] Confirmation to: ${toEmail}`);
-    } catch (error) {
-        console.error('Error sending confirmation email:', error);
-    }
+    return sendApprovedSaleEmail({
+        toEmail,
+        clientName,
+        itemName: serviceName,
+        dateTime,
+        meetingLink,
+        saleType: 'service',
+    });
 }
 
 type AdminProofPayload = {
@@ -115,6 +212,7 @@ type AdminProofPayload = {
     filename: string;
     contentType: string;
     content: Buffer;
+    saleType?: SaleType;
 };
 
 export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
@@ -137,6 +235,7 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 640px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
         <h2 style="color: #D5BDA9; text-align: center;">Nuevo comprobante recibido</h2>
+                <p><strong>Tipo de venta:</strong> ${getSaleTypeLabel(payload.saleType || 'service')}</p>
         <p><strong>Reserva ID:</strong> ${payload.eventId}</p>
         <p><strong>Codigo de reserva:</strong> ${payload.reservationCode || 'No disponible'}</p>
         <p><strong>Cliente:</strong> ${payload.clientName}</p>

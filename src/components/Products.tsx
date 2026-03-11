@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { products as localProducts } from '@/lib/data';
 import styles from './Products.module.css';
 import { useCollection } from '@/hooks/useCollection';
 
 export default function Products() {
-    const { data: firebaseProducts, loading } = useCollection('products');
+    const { data: firebaseProducts } = useCollection<(typeof localProducts)[number]>('products');
 
     // Usamos los de Firebase si existen, sino los locales por defecto
     const displayProducts = firebaseProducts.length > 0 ? firebaseProducts : localProducts;
@@ -25,7 +26,9 @@ export default function Products() {
                             <h3 className={styles.cardTitle}>{product.title}</h3>
                             <p className={styles.cardDescription}>{product.description}</p>
                             <span className={styles.price}>{product.price}</span>
-                            <button className={styles.buyButton}>Próximamente</button>
+                            <Link href={`/checkout/product?productId=${product.id}`} className={styles.buyButton}>
+                                Comprar ahora
+                            </Link>
                         </div>
                     </div>
                 ))}

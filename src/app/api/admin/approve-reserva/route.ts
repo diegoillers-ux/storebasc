@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
-import { sendConfirmationEmail } from '@/lib/mailer';
+import { sendApprovedSaleEmail } from '@/lib/mailer';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { demoGetEventById, demoUpdateEvent } from '@/lib/demoStore';
+import { extractSaleMetadata, inferSaleType } from '@/lib/sales';
 
 export async function POST(req: NextRequest) {
     const authError = await requireAdminSession();
@@ -59,6 +60,9 @@ export async function POST(req: NextRequest) {
             if (emailMatch?.[1]) extractedEmail = emailMatch[1];
         }
 
+        const metadata = extractSaleMetadata(currentEvent.description || '');
+        const saleType = inferSaleType(currentEvent.summary || '', metadata);
+
         const newSummary = currentEvent.summary.replace('[PENDIENTE] ', '').replace('[PENDIENTE]', '').trim();
         const cleanDescription = currentEvent.description?.split('\n\n---')[0] || '';
 
@@ -74,16 +78,21 @@ export async function POST(req: NextRequest) {
 
         try {
             if (extractedEmail) {
-                const parts = newSummary.split(' - ');
-                const serviceName = parts[0]?.trim() || 'Sesion';
-                const clientName = parts[1]?.trim() || 'Cliente';
+                const serviceName = metadata?.itemTitle || newSummary.split(' - ')[0]?.trim() || 'Venta';
+                const clientName = metadata?.clientName || newSummary.split(' - ')[1]?.trim() || 'Cliente';
                 const dateStr = new Date(currentEvent.start?.dateTime || currentEvent.start?.date || new Date()).toLocaleString('es-CO', {
                     timeZone: 'America/Bogota',
                     dateStyle: 'full',
                     timeStyle: 'short',
                 });
 
-                sendConfirmationEmail(extractedEmail, clientName, serviceName, dateStr).catch(console.error);
+                sendApprovedSaleEmail({
+                    toEmail: extractedEmail,
+                    clientName,
+                    itemName: serviceName,
+                    dateTime: metadata?.scheduledDateLabel || dateStr,
+                    saleType,
+                }).catch(console.error);
             }
         } catch (mailError) {
             console.error('Error sending confirmation email:', mailError);

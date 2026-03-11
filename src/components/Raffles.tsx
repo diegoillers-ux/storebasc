@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 export default function Raffles() {
     const router = useRouter();
     const [selectedRaffle, setSelectedRaffle] = useState<string | null>(null);
-    const { raffles: firebaseRaffles, loading } = useRaffles();
+    const { raffles: firebaseRaffles } = useRaffles();
 
     // Fallback: Si no hay credenciales de Firebase o está cargando, usamos los datos estáticos de prueba.
     const displayRaffles = firebaseRaffles.length > 0 ? firebaseRaffles : localRaffles;

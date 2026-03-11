@@ -1,63 +1,170 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Sparkles, 
-  Calendar, 
-  Ticket, 
-  Tag, 
-  Settings, 
-  LogOut, 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  RefreshCw,
-  TrendingUp,
-  Users,
-  Search,
-  CheckCircle2,
-  AlertCircle
+import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+    AlertCircle,
+    Calendar,
+    CheckCircle2,
+    LayoutDashboard,
+    LogOut,
+    Pencil,
+    Plus,
+    RefreshCw,
+    Search,
+    Settings,
+    ShoppingCart,
+    Sparkles,
+    Tag,
+    Ticket,
+    Trash2,
+    TrendingUp,
+    Users,
 } from 'lucide-react';
 
-// --- ESTILOS PROFESIONALES (TIPO CRM/SAAS) ---
-const styles = {
-    layout: { display: 'flex', minHeight: '100vh', background: '#0a0510', color: '#e0e0e0', fontFamily: 'Inter, sans-serif' },
-    sidebar: { width: '260px', background: '#160d26', borderRight: '1px solid rgba(212, 175, 55, 0.2)', padding: '1.5rem', display: 'flex', flexDirection: 'column' as const, position: 'fixed' as const, height: '100vh', zIndex: 50 },
-    main: { flex: 1, marginLeft: '260px', padding: '2rem' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' },
-    
-    navItem: (active: boolean) => ({
-        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-        background: active ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
-        color: active ? '#d4af37' : '#a0aec0',
-        fontWeight: active ? '600' : '400',
-        marginBottom: '4px'
-    }),
-
-    statCard: { background: 'linear-gradient(145deg, #1f1433, #160d26)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.2)', position: 'relative' as const, overflow: 'hidden' as const },
-    itemCard: { background: '#1f1433', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s', marginBottom: '1rem' },
-    
-    badge: (type: string) => ({
-        padding: '4px 10px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 'bold' as const,
-        background: type === 'service' ? '#7e57c222' : '#d4af3722',
-        color: type === 'service' ? '#b39ddb' : '#d4af37',
-        border: `1px solid ${type === 'service' ? '#7e57c244' : '#d4af3744'}`
-    }),
-
-    input: { width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', transition: 'border 0.2s' },
-    buttonPrimary: { background: '#d4af37', color: '#0a0510', border: 'none', padding: '12px 24px', borderRadius: '12px', fontWeight: 'bold' as const, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' },
-    buttonIcon: { background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' },
-    
-    modalOverlay: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-    modalContent: { background: '#160d26', width: '90%', maxWidth: '600px', padding: '2.5rem', borderRadius: '24px', border: '1px solid rgba(212, 175, 55, 0.3)', maxHeight: '90vh', overflowY: 'auto' as const }
-};
+import { db } from '@/lib/firebase';
+import adminStyles from './page.module.css';
 
 type TabType = 'dashboard' | 'ventas' | 'agenda' | 'disponibilidad' | 'servicios' | 'productos' | 'sorteos' | 'promos' | 'mensajeria' | 'config';
+
+type SettingsState = {
+    workDays: number[];
+    startTime: string;
+    endTime: string;
+    slotDurationMinutes: number;
+    blockedDates: string[];
+};
+
+type CatalogItem = {
+    id: string;
+    title?: string;
+    description?: string;
+    price?: string;
+    priceNumber?: number;
+    icon?: string;
+    imagePlaceholder?: string;
+    code?: string;
+    applicableTo?: string;
+    totalNumbers?: number;
+    soldNumbers?: number[];
+    active?: boolean;
+    createdAt?: unknown;
+};
+
+type CatalogFormItem = Partial<CatalogItem> & {
+    soldNumbersInput?: string;
+};
+
+type SaleRecord = {
+    id: string;
+    summary: string;
+    description: string;
+    previewDescription: string;
+    status: string;
+    createdAt: string;
+    start: string;
+    end: string;
+    location: string;
+    saleType: string;
+    saleTypeLabel: string;
+    itemId: string;
+    itemTitle: string;
+    amountLabel: string;
+    amountNumber: number;
+    clientName: string;
+    clientEmail: string;
+    clientPhone: string;
+    reservationCode: string;
+    selectedNumber: string;
+    requiresScheduling: boolean;
+    scheduledDateLabel: string;
+    paymentReported: boolean;
+    paymentNote: string;
+    paymentProofUrl: string;
+    paymentReportedAt: string;
+};
+
+type MailTemplate = {
+    id: string;
+    subject: string;
+    body: string;
+};
+
+type DashboardState = {
+    services: CatalogItem[];
+    products: CatalogItem[];
+    raffles: CatalogItem[];
+    promos: CatalogItem[];
+    pendingSales: SaleRecord[];
+    confirmedSales: SaleRecord[];
+    mailTemplates: MailTemplate[];
+    settings: SettingsState;
+};
+
+const DEFAULT_SETTINGS: SettingsState = {
+    workDays: [1, 2, 3, 4, 5],
+    startTime: '09:00',
+    endTime: '18:00',
+    slotDurationMinutes: 60,
+    blockedDates: [],
+};
+
+const INITIAL_STATE: DashboardState = {
+    services: [],
+    products: [],
+    raffles: [],
+    promos: [],
+    pendingSales: [],
+    confirmedSales: [],
+    mailTemplates: [],
+    settings: DEFAULT_SETTINGS,
+};
+
+const dayOptions = [
+    { id: 1, label: 'Lunes', short: 'L' },
+    { id: 2, label: 'Martes', short: 'M' },
+    { id: 3, label: 'Miercoles', short: 'X' },
+    { id: 4, label: 'Jueves', short: 'J' },
+    { id: 5, label: 'Viernes', short: 'V' },
+    { id: 6, label: 'Sabado', short: 'S' },
+    { id: 0, label: 'Domingo', short: 'D' },
+];
+
+const navigation = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'General' },
+    { id: 'ventas', label: 'Ventas', icon: ShoppingCart, section: 'General' },
+    { id: 'agenda', label: 'Agenda', icon: Calendar, section: 'General' },
+    { id: 'disponibilidad', label: 'Disponibilidad', icon: Settings, section: 'General' },
+    { id: 'servicios', label: 'Servicios', icon: Sparkles, section: 'Catalogo' },
+    { id: 'productos', label: 'Productos', icon: ShoppingCart, section: 'Catalogo' },
+    { id: 'sorteos', label: 'Rifas', icon: Ticket, section: 'Catalogo' },
+    { id: 'promos', label: 'Promociones', icon: Tag, section: 'Catalogo' },
+    { id: 'mensajeria', label: 'Mensajeria', icon: Sparkles, section: 'Operacion' },
+    { id: 'config', label: 'Sistema', icon: Settings, section: 'Operacion' },
+] as const;
+
+function getCollectionName(tab: TabType) {
+    if (tab === 'servicios') return 'services';
+    if (tab === 'productos') return 'products';
+    if (tab === 'sorteos') return 'raffles';
+    if (tab === 'promos') return 'promotions';
+    return tab;
+}
+
+function currencyFromValue(value: number) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+    }).format(value || 0);
+}
+
+function saleBadgeClass(type: string) {
+    if (type === 'raffle') return adminStyles.badgeRaffle;
+    if (type === 'product') return adminStyles.badgeProduct;
+    return adminStyles.badgeService;
+}
 
 export default function AdminCRM() {
     const { data: session, status } = useSession();
@@ -67,534 +174,976 @@ export default function AdminCRM() {
     const [currentTab, setCurrentTab] = useState<TabType>('dashboard');
     const [loading, setLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
-
-    // --- DATOS REAL-TIME ---
-    const [data, setData] = useState<any>({ 
-        services: [], 
-        products: [], 
-        raffles: [], 
-        promos: [], 
-        pendingSales: [], 
-        confirmedSales: [],
-        mailTemplates: [],
-        settings: { workDays: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '18:00', slotDurationMinutes: 60, blockedDates: [] }
-    });
-    
+    const [searchTerm, setSearchTerm] = useState('');
     const [newBlockedDate, setNewBlockedDate] = useState('');
-    const [editingItem, setEditingItem] = useState<any>(null);
+    const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [formItem, setFormItem] = useState<any>({});
+    const [formItem, setFormItem] = useState<CatalogFormItem>({});
+    const [data, setData] = useState<DashboardState>(INITIAL_STATE);
+
+    const deferredSearch = useDeferredValue(searchTerm.trim().toLowerCase());
 
     useEffect(() => {
         if (!authenticated) return;
 
-        const subs = [
-            onSnapshot(collection(db, 'services'), snap => setData((prev: any) => ({ ...prev, services: snap.docs.map(d => ({ id: d.id, ...d.data() })) }))),
-            onSnapshot(collection(db, 'products'), snap => setData((prev: any) => ({ ...prev, products: snap.docs.map(d => ({ id: d.id, ...d.data() })) }))),
-            onSnapshot(collection(db, 'raffles'), snap => setData((prev: any) => ({ ...prev, raffles: snap.docs.map(d => ({ id: d.id, ...d.data() })) }))),
-            onSnapshot(collection(db, 'promotions'), snap => setData((prev: any) => ({ ...prev, promos: snap.docs.map(d => ({ id: d.id, ...d.data() })) }))),
-            onSnapshot(collection(db, 'mail_templates'), snap => setData((prev: any) => ({ ...prev, mailTemplates: snap.docs.map(d => ({ id: d.id, ...d.data() })) }))),
-            onSnapshot(doc(db, 'settings', 'availability'), (docSnap) => {
-                if (docSnap.exists()) {
-                    setData((prev: any) => ({ ...prev, settings: docSnap.data() }));
+        const subscriptions = [
+            onSnapshot(collection(db, 'services'), (snapshot) => setData((prev) => ({ ...prev, services: snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }))),
+            onSnapshot(collection(db, 'products'), (snapshot) => setData((prev) => ({ ...prev, products: snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }))),
+            onSnapshot(collection(db, 'raffles'), (snapshot) => setData((prev) => ({ ...prev, raffles: snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }))),
+            onSnapshot(collection(db, 'promotions'), (snapshot) => setData((prev) => ({ ...prev, promos: snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }))),
+            onSnapshot(collection(db, 'mail_templates'), (snapshot) => setData((prev) => ({
+                ...prev,
+                mailTemplates: snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<MailTemplate, 'id'>) })),
+            }))),
+            onSnapshot(doc(db, 'settings', 'availability'), (documentSnapshot) => {
+                if (documentSnapshot.exists()) {
+                    setData((prev) => ({ ...prev, settings: documentSnapshot.data() as SettingsState }));
                 }
-            })
+            }),
         ];
 
         void fetchVentasYAgenda();
-        return () => subs.forEach(unsub => unsub());
-    }, [authenticated]);
 
-    // --- LOGICA DE MENSAJERIA ---
-    const updateMailTemplate = async (id: string, body: string, subject: string) => {
-        setProcessing(true);
-        try {
-            await updateDoc(doc(db, 'mail_templates', id), { body, subject });
-            alert('¡Hechizo de correo actualizado!');
-        } catch (err) {
-            alert('Error al actualizar plantilla.');
-        } finally {
-            setProcessing(false);
-        }
-    };
+        return () => subscriptions.forEach((unsubscribe) => unsubscribe());
+    }, [authenticated]);
 
     const fetchVentasYAgenda = async () => {
         setLoading(true);
         try {
-            const [resVentas, resAgenda] = await Promise.all([
-                fetch('/api/admin/reservas'),
-                fetch('/api/admin/calendar')
-            ]);
-            const dataVentas = await resVentas.json();
-            const dataAgenda = await resAgenda.json();
-            
-            setData((prev: any) => ({
+            const [salesResponse, agendaResponse] = await Promise.all([fetch('/api/admin/reservas'), fetch('/api/admin/calendar')]);
+            const salesData = await salesResponse.json();
+            const agendaData = await agendaResponse.json();
+            setData((prev) => ({
                 ...prev,
-                pendingSales: dataVentas.events || [],
-                confirmedSales: dataAgenda.events || []
+                pendingSales: salesData.events || [],
+                confirmedSales: agendaData.events || [],
             }));
         } catch (error) {
-            console.error("Error cargando agenda:", error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleApproveReserva = async (eventId: string) => {
-        if (!confirm('¿Aprobar pago y confirmar cita en el calendario?')) return;
+    const openModal = (item?: CatalogItem) => {
+        const base = item
+            ? {
+                ...item,
+                soldNumbersInput: Array.isArray(item.soldNumbers) ? item.soldNumbers.join(', ') : '',
+            }
+            : {
+                active: true,
+                soldNumbersInput: '',
+                totalNumbers: currentTab === 'sorteos' ? 100 : undefined,
+                applicableTo: currentTab === 'promos' ? 'all' : undefined,
+            };
+
+        setEditingItem(item || null);
+        setFormItem(base);
+        setShowModal(true);
+    };
+
+    const handleSave = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setProcessing(true);
+
+        const collectionName = getCollectionName(currentTab);
+
+        const payload = { ...formItem };
+        delete payload.soldNumbersInput;
+
+        if (currentTab === 'sorteos') {
+            payload.totalNumbers = Number(payload.totalNumbers || 100);
+            payload.soldNumbers = String(formItem.soldNumbersInput || '')
+                .split(',')
+                .map((value) => Number(value.trim()))
+                .filter((value) => !Number.isNaN(value));
+        }
+
+        if (currentTab === 'promos') {
+            payload.priceNumber = Number(payload.priceNumber || 0);
+        }
+
+        if (['servicios', 'productos'].includes(currentTab)) {
+            payload.priceNumber = Number(payload.priceNumber || 0);
+        }
+
+        try {
+            if (editingItem?.id) {
+                await updateDoc(doc(db, collectionName, editingItem.id), payload);
+            } else {
+                await addDoc(collection(db, collectionName), { ...payload, createdAt: serverTimestamp() });
+            }
+
+            setShowModal(false);
+            setEditingItem(null);
+            setFormItem({});
+        } catch (error) {
+            console.error(error);
+            alert('No se pudo guardar el elemento.');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleDelete = async (id: string, collectionName: string) => {
+        if (!confirm('Esta accion eliminara el elemento del catalogo.')) return;
+        await deleteDoc(doc(db, collectionName, id));
+    };
+
+    const handleApproveSale = async (eventId: string) => {
+        if (!confirm('Confirmar esta venta y moverla al estado aprobado?')) return;
         setProcessing(true);
         try {
-            const res = await fetch('/api/admin/approve-reserva', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId })
+            const response = await fetch('/api/admin/approve-reserva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventId }),
             });
-            if (res.ok) {
-                alert('¡Cita consagrada y confirmada!');
-                void fetchVentasYAgenda();
+
+            if (!response.ok) {
+                const result = await response.json();
+                alert(result?.error || 'No se pudo confirmar la venta.');
+                return;
             }
+
+            await fetchVentasYAgenda();
         } catch (error) {
-            alert('Error al aprobar.');
+            console.error(error);
+            alert('Error de conexion al confirmar la venta.');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const saveAvailability = async () => {
+        setProcessing(true);
+        try {
+            await setDoc(doc(db, 'settings', 'availability'), data.settings, { merge: true });
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: data.settings }),
+            });
+        } catch (error) {
+            console.error(error);
+            alert('No se pudo guardar la disponibilidad.');
         } finally {
             setProcessing(false);
         }
     };
 
     const runManualCleanup = async () => {
-        if (!confirm('¿Activar bot de limpieza? Se borrarán reservas pendientes de más de 30 min.')) return;
+        if (!confirm('Ejecutar la limpieza manual de ventas pendientes vencidas?')) return;
         setProcessing(true);
         try {
-            const res = await fetch('/api/cron/cleanup');
-            const result = await res.json();
-            alert(result.message || 'Limpieza completada.');
-            void fetchVentasYAgenda();
+            const response = await fetch('/api/cron/cleanup');
+            const result = await response.json();
+            alert(result.message || 'Limpieza ejecutada.');
+            await fetchVentasYAgenda();
         } catch (error) {
-            alert('Error en el bot.');
+            console.error(error);
+            alert('No se pudo ejecutar la limpieza.');
         } finally {
             setProcessing(false);
         }
     };
 
-    // --- LOGICA DE GESTION ---
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const toggleWorkDay = (dayId: number) => {
+        const nextDays = data.settings.workDays.includes(dayId)
+            ? data.settings.workDays.filter((value) => value !== dayId)
+            : [...data.settings.workDays, dayId].sort();
+
+        setData((prev) => ({ ...prev, settings: { ...prev.settings, workDays: nextDays } }));
+    };
+
+    const addBlockedDate = () => {
+        if (!newBlockedDate) return;
+
+        const blockedDates = [...new Set([...(data.settings.blockedDates || []), newBlockedDate])].sort();
+        setData((prev) => ({ ...prev, settings: { ...prev.settings, blockedDates } }));
+        setNewBlockedDate('');
+    };
+
+    const removeBlockedDate = (date: string) => {
+        setData((prev) => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                blockedDates: prev.settings.blockedDates.filter((value) => value !== date),
+            },
+        }));
+    };
+
+    const updateMailTemplate = async (id: string, body: string, subject: string) => {
         setProcessing(true);
-        const col = currentTab === 'sorteos' ? 'raffles' : currentTab === 'promos' ? 'promotions' : currentTab;
-        
         try {
-            if (editingItem) {
-                await updateDoc(doc(db, col, editingItem.id), formItem);
-            } else {
-                await addDoc(collection(db, col), { ...formItem, createdAt: serverTimestamp() });
-            }
-            setShowModal(false);
-            setEditingItem(null);
-            setFormItem({});
-        } catch (err) {
-            alert('Error al guardar: ' + err);
+            await updateDoc(doc(db, 'mail_templates', id), { body, subject });
+        } catch (error) {
+            console.error(error);
+            alert('No se pudo actualizar la plantilla.');
         } finally {
             setProcessing(false);
-        }
-    };
-
-    const handleDelete = async (id: string, col: string) => {
-        if (confirm('¿Eliminar este elemento del universo?')) {
-            await deleteDoc(doc(db, col, id));
         }
     };
 
     const generatePromoCode = () => {
-        const codes = ['LUNA', 'ASTRO', 'DESTINO', 'MAGIA', 'SUERTE'];
-        const random = Math.floor(Math.random() * 999);
-        setFormItem({ ...formItem, code: `${codes[Math.floor(Math.random() * codes.length)]}${random}` });
+        const seeds = ['LUNA', 'ASTRO', 'DESTINO', 'MAGIA', 'SUERTE'];
+        setFormItem((prev) => ({
+            ...prev,
+            code: `${seeds[Math.floor(Math.random() * seeds.length)]}${Math.floor(Math.random() * 900 + 100)}`,
+        }));
     };
 
-    if (!authenticated) return (
-        <div style={{ ...styles.layout, justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ background: '#160d26', padding: '3rem', borderRadius: '24px', textAlign: 'center', border: '1px solid #d4af37' }}>
-                <Sparkles size={48} color="#d4af37" style={{ marginBottom: '1rem' }} />
-                <h1 className="gradient-text" style={{ fontSize: '2rem' }}>El Nexo Admin</h1>
-                <p style={{ opacity: 0.6, marginBottom: '2rem' }}>Portal de gestión del Oráculo</p>
-                <button onClick={() => signIn('google')} style={{ ...styles.buttonPrimary, width: '100%', justifyContent: 'center' }}>Entrar al Centro de Control</button>
+    const pendingSales = useMemo(() => {
+        if (!deferredSearch) return data.pendingSales;
+        return data.pendingSales.filter((sale) => {
+            const haystack = [sale.summary, sale.clientName, sale.clientEmail, sale.reservationCode, sale.saleTypeLabel]
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(deferredSearch);
+        });
+    }, [data.pendingSales, deferredSearch]);
+
+    const confirmedSales = useMemo(() => {
+        if (!deferredSearch) return data.confirmedSales;
+        return data.confirmedSales.filter((sale) => {
+            const haystack = [sale.summary, sale.clientName, sale.clientEmail, sale.reservationCode]
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(deferredSearch);
+        });
+    }, [data.confirmedSales, deferredSearch]);
+
+    const catalogItems = useMemo(() => {
+        if (currentTab === 'servicios') return data.services;
+        if (currentTab === 'productos') return data.products;
+        if (currentTab === 'sorteos') return data.raffles;
+        return data.promos;
+    }, [currentTab, data.services, data.products, data.raffles, data.promos]);
+
+    const filteredCatalog = useMemo(() => {
+        if (!deferredSearch) return catalogItems;
+        return catalogItems.filter((item) => {
+            const haystack = [item.title, item.description, item.code, item.price]
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(deferredSearch);
+        });
+    }, [catalogItems, deferredSearch]);
+
+    const dashboardStats = useMemo(() => {
+        const pipelineValue = data.pendingSales.reduce((total, sale) => total + (sale.amountNumber || 0), 0);
+        const confirmedValue = data.confirmedSales.reduce((total, sale) => total + (sale.amountNumber || 0), 0);
+
+        return [
+            {
+                label: 'Ventas por validar',
+                value: data.pendingSales.length,
+                hint: `${data.pendingSales.filter((sale) => sale.paymentReported).length} con comprobante cargado`,
+                icon: ShoppingCart,
+            },
+            {
+                label: 'Agenda confirmada',
+                value: data.confirmedSales.length,
+                hint: 'Solo servicios con fecha programada',
+                icon: Calendar,
+            },
+            {
+                label: 'Catalogo activo',
+                value: data.services.length + data.products.length + data.raffles.length,
+                hint: `${data.promos.length} promociones disponibles`,
+                icon: Sparkles,
+            },
+            {
+                label: 'Pipeline manual',
+                value: pipelineValue > 0 ? currencyFromValue(pipelineValue) : 'Manual',
+                hint: confirmedValue > 0 ? `Confirmado: ${currencyFromValue(confirmedValue)}` : 'Se calcula con items nuevos',
+                icon: TrendingUp,
+            },
+        ];
+    }, [data]);
+
+    const tabCopy: Record<TabType, { title: string; description: string }> = {
+        dashboard: {
+            title: 'Panel central del emprendimiento',
+            description: 'Vista operativa para revisar validaciones, agenda, catalogo y capacidad disponible sin depender de datos mockeados.',
+        },
+        ventas: {
+            title: 'Ventas manuales pendientes',
+            description: 'Aqui aterrizan servicios, rifas y productos que ya reportaron o estan por reportar su comprobante de pago.',
+        },
+        agenda: {
+            title: 'Agenda confirmada',
+            description: 'Se listan solamente las ventas confirmadas que requieren fecha y hora, para que el calendario operativo siga limpio.',
+        },
+        disponibilidad: {
+            title: 'Disponibilidad y bloqueos',
+            description: 'Controla dias laborales, franja horaria, duracion de slots y fechas cerradas sin tocar codigo.',
+        },
+        servicios: {
+            title: 'Catalogo de servicios',
+            description: 'Gestiona tus atenciones agendables, sus precios y su narrativa comercial.',
+        },
+        productos: {
+            title: 'Catalogo de productos',
+            description: 'Productos con flujo de consignacion y comprobante, listos para entrar al circuito administrativo.',
+        },
+        sorteos: {
+            title: 'Catalogo de rifas',
+            description: 'Configura rifas, valor por numero y el inventario visible de participaciones.',
+        },
+        promos: {
+            title: 'Promociones activas',
+            description: 'Codigos y descuentos para empujar conversion sin perder control del catalogo.',
+        },
+        mensajeria: {
+            title: 'Plantillas de mensajeria',
+            description: 'Ajusta los mensajes operativos enviados cuando entra una venta o se aprueba manualmente.',
+        },
+        config: {
+            title: 'Sistema y mantenimiento',
+            description: 'Estado del acceso, conexiones y herramientas de soporte para mantener la operacion ordenada.',
+        },
+    };
+
+    if (!demoMode && status === 'loading') {
+        return (
+            <div className={adminStyles.loadingWrap}>
+                <div className={adminStyles.loadingCard}>
+                    <RefreshCw size={34} className="animate-spin" />
+                    <h2 className={adminStyles.loginTitle}>Validando acceso</h2>
+                    <p className={adminStyles.loginText}>Estamos preparando el panel administrativo y comprobando tu sesion.</p>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
+
+    if (!authenticated) {
+        return (
+            <div className={adminStyles.loginWrap}>
+                <div className={adminStyles.loginCard}>
+                    <div className={adminStyles.brandMark} style={{ margin: '0 auto' }}>
+                        <Sparkles size={24} />
+                    </div>
+                    <h1 className={`${adminStyles.loginTitle} gradient-text`}>El Nexo Admin</h1>
+                    <p className={adminStyles.loginText}>
+                        Centro de control para ventas manuales, agenda, rifas, productos y promociones. El acceso vuelve a depender de tu sesion real.
+                    </p>
+                    <button onClick={() => signIn('google')} className={adminStyles.primaryButton}>
+                        <Sparkles size={18} /> Ingresar con Google
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const sectionGroupedNav = navigation.reduce<Record<string, Array<(typeof navigation)[number]>>>((acc, item) => {
+        acc[item.section] = [...(acc[item.section] || []), item];
+        return acc;
+    }, {});
+
+    const shouldShowCatalog = ['servicios', 'productos', 'sorteos', 'promos'].includes(currentTab);
+    const adminLabel = demoMode ? 'Modo demo' : session?.user?.email || 'Sesion activa';
 
     return (
-        <div style={styles.layout}>
-            {/* SIDEBAR CRM */}
-            <aside style={styles.sidebar}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2.5rem', padding: '0 10px' }}>
-                    <div style={{ width: '40px', height: '40px', background: '#d4af37', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Sparkles color="#0a0510" size={24} />
+        <div className={adminStyles.shell}>
+            <aside className={adminStyles.sidebar}>
+                <div className={adminStyles.brand}>
+                    <div className={adminStyles.brandMark}>
+                        <Sparkles size={22} />
                     </div>
-                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '0.5px' }}>EL NEXO</span>
+                    <div>
+                        <div className={adminStyles.brandTitle}>EL NEXO CRM</div>
+                        <div className={adminStyles.brandSubtitle}>Ventas manuales, agenda y catalogo</div>
+                    </div>
                 </div>
 
-                <nav style={{ flex: 1 }}>
-                    <div style={styles.navItem(currentTab === 'dashboard')} onClick={() => setCurrentTab('dashboard')}><LayoutDashboard size={20} /> Dashboard</div>
-                    <div style={styles.navItem(currentTab === 'ventas')} onClick={() => setCurrentTab('ventas')}><ShoppingCart size={20} /> Ventas</div>
-                    <div style={styles.navItem(currentTab === 'agenda')} onClick={() => setCurrentTab('agenda')}><Calendar size={20} /> Agenda</div>
-                    <div style={styles.navItem(currentTab === 'disponibilidad')} onClick={() => setCurrentTab('disponibilidad')}><Settings size={20} /> Disponibilidad</div>
-                    
-                    <div style={{ margin: '1.5rem 0 0.8rem 1rem', fontSize: '0.75rem', color: '#4a5568', fontWeight: 'bold', textTransform: 'uppercase' }}>Catálogo Místico</div>
-                    <div style={styles.navItem(currentTab === 'servicios')} onClick={() => setCurrentTab('servicios')}><Sparkles size={20} /> Servicios</div>
-                    <div style={styles.navItem(currentTab === 'productos')} onClick={() => setCurrentTab('productos')}><ShoppingCart size={20} /> Bazar</div>
-                    <div style={styles.navItem(currentTab === 'sorteos')} onClick={() => setCurrentTab('sorteos')}><Ticket size={20} /> Sorteos</div>
-                    <div style={styles.navItem(currentTab === 'promos')} onClick={() => setCurrentTab('promos')}><Tag size={20} /> Promociones</div>
-                    <div style={styles.navItem(currentTab === 'mensajeria')} onClick={() => setCurrentTab('mensajeria')}><Sparkles size={20} /> Mensajería</div>
-                    
-                    <div style={{ margin: '1.5rem 0 0.8rem 1rem', fontSize: '0.75rem', color: '#4a5568', fontWeight: 'bold', textTransform: 'uppercase' }}>Sistema</div>
-                    <div style={styles.navItem(currentTab === 'config')} onClick={() => setCurrentTab('config')}><Settings size={20} /> Configuración</div>
-                </nav>
+                {Object.entries(sectionGroupedNav).map(([section, items]) => (
+                    <div key={section}>
+                        <div className={adminStyles.navSection}>{section}</div>
+                        <nav className={adminStyles.nav}>
+                            {items.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        className={`${adminStyles.navButton} ${currentTab === item.id ? adminStyles.navButtonActive : ''}`}
+                                        onClick={() => startTransition(() => setCurrentTab(item.id))}
+                                    >
+                                        <Icon size={18} />
+                                        <span>{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+                ))}
 
-                <button onClick={() => signOut()} style={{ ...styles.navItem(false), border: 'none', width: '100%', background: 'transparent', marginTop: 'auto' }}><LogOut size={20} /> Cerrar Sesión</button>
+                <div className={adminStyles.sideFooter}>
+                    <button className={`${adminStyles.ghostButton} ${adminStyles.logoutButton}`} onClick={() => signOut()}>
+                        <LogOut size={18} /> Cerrar sesion
+                    </button>
+                </div>
             </aside>
 
-            {/* MAIN CONTENT AREA */}
-            <main style={styles.main}>
-                <header style={styles.header}>
-                    <div>
-                        <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', textTransform: 'capitalize' }}>{currentTab === 'dashboard' ? 'Oráculo de Control' : currentTab}</h1>
-                        <p style={{ opacity: 0.5, fontSize: '0.9rem' }}>Bienvenido de nuevo, Maestro del Destino.</p>
+            <main className={adminStyles.content}>
+                <header className={adminStyles.topbar}>
+                    <div className={adminStyles.titleBlock}>
+                        <h1>{tabCopy[currentTab].title}</h1>
+                        <p>{tabCopy[currentTab].description}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                            <input placeholder="Buscar en el cosmos..." style={{ ...styles.input, width: '240px', paddingLeft: '40px', fontSize: '0.85rem' }} />
-                        </div>
-                        {['servicios', 'productos', 'sorteos', 'promos'].includes(currentTab) && (
-                            <button onClick={() => { setEditingItem(null); setFormItem({}); setShowModal(true); }} style={styles.buttonPrimary}><Plus size={20} /> Nuevo {currentTab.slice(0,-1)}</button>
+
+                    <div className={adminStyles.topActions}>
+                        <label className={adminStyles.searchBox}>
+                            <Search size={18} />
+                            <input
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                placeholder="Buscar por cliente, item o codigo"
+                            />
+                        </label>
+                        {shouldShowCatalog && (
+                            <button className={adminStyles.primaryButton} onClick={() => openModal()}>
+                                <Plus size={18} /> Crear item
+                            </button>
                         )}
                     </div>
                 </header>
 
-                {/* DASHBOARD WIDGETS */}
+                <section className={adminStyles.hero}>
+                    <div className={adminStyles.heroInfo}>
+                        <h2>Operacion centralizada con consignacion y comprobante</h2>
+                        <p>
+                            El flujo comercial se mantiene manual por decision del negocio: el cliente ve los medios de pago, consigna, sube el comprobante y el sistema genera su codigo de transaccion para validacion interna.
+                        </p>
+                    </div>
+                    <div className={adminStyles.heroMeta}>
+                        <span className={adminStyles.pill}><Users size={16} /> {adminLabel}</span>
+                        <span className={adminStyles.pill}><CheckCircle2 size={16} /> {loading ? 'Sincronizando...' : 'Datos al dia'}</span>
+                        <span className={adminStyles.pill}><Settings size={16} /> {demoMode ? 'Demo activa' : 'Sesion protegida'}</span>
+                    </div>
+                </section>
+
                 {currentTab === 'dashboard' && (
                     <>
-                        <div style={styles.oracleContainer}>
-                            <div style={styles.statCard}>
-                                <TrendingUp size={24} color="#d4af37" style={{ marginBottom: '1rem' }} />
-                                <div style={styles.oracleLabel}>Ventas Totales</div>
-                                <div style={styles.oracleValue}>$2.450.000</div>
-                                <div style={{ fontSize: '0.75rem', color: '#48bb78' }}>+12% vs mes anterior</div>
-                            </div>
-                            <div style={styles.statCard}>
-                                <Users size={24} color="#d4af37" style={{ marginBottom: '1rem' }} />
-                                <div style={styles.oracleLabel}>Almas Atendidas</div>
-                                <div style={styles.oracleValue}>156</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Clientes este mes</div>
-                            </div>
-                            <div style={styles.statCard}>
-                                <Ticket size={24} color="#d4af37" style={{ marginBottom: '1rem' }} />
-                                <div style={styles.oracleLabel}>Tickets Rifa</div>
-                                <div style={styles.oracleValue}>84</div>
-                                <div style={{ fontSize: '0.75rem', color: '#d4af37' }}>3 Sorteos activos</div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginTop: '2.5rem' }}>
-                            <div style={{ background: '#160d26', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><RefreshCw size={20} color="#d4af37" /> Actividad Reciente</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {[1,2,3].map(i => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                            <div>
-                                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>Venta de Producto: Kit Purificación</div>
-                                                <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Hace 15 minutos</div>
-                                            </div>
-                                            <div style={{ color: '#48bb78', fontWeight: 'bold' }}>+$65.000</div>
+                        <section className={adminStyles.metricGrid}>
+                            {dashboardStats.map((stat) => {
+                                const Icon = stat.icon;
+                                return (
+                                    <article key={stat.label} className={adminStyles.metric}>
+                                        <div className={adminStyles.metricHeader}>
+                                            <span className={adminStyles.metricLabel}>{stat.label}</span>
+                                            <Icon size={20} />
                                         </div>
+                                        <div className={adminStyles.metricValue}>{stat.value}</div>
+                                        <div className={adminStyles.metricSubvalue}>{stat.hint}</div>
+                                    </article>
+                                );
+                            })}
+                        </section>
+
+                        <section className={adminStyles.splitGrid}>
+                            <div className={adminStyles.panel}>
+                                <div className={adminStyles.panelHeader}>
+                                    <div>
+                                        <div className={adminStyles.panelTitle}><ShoppingCart size={18} /> Embudo de validacion</div>
+                                        <div className={adminStyles.panelHint}>Resumen inmediato de lo que exige accion humana.</div>
+                                    </div>
+                                </div>
+                                <div className={adminStyles.stack}>
+                                    {data.pendingSales.slice(0, 4).map((sale) => (
+                                        <article key={sale.id} className={adminStyles.card}>
+                                            <div className={adminStyles.saleHeader}>
+                                                <div>
+                                                    <div className={adminStyles.saleMeta}>
+                                                        <span className={`${adminStyles.badge} ${saleBadgeClass(sale.saleType)}`}>{sale.saleTypeLabel}</span>
+                                                        <span className={`${adminStyles.badge} ${sale.paymentReported ? adminStyles.badgeApproved : adminStyles.badgePending}`}>
+                                                            {sale.paymentReported ? 'Con comprobante' : 'Pendiente de reporte'}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className={adminStyles.cardTitle}>{sale.itemTitle || sale.summary}</h3>
+                                                    <p className={adminStyles.muted}>{sale.clientName || 'Cliente sin nombre'} · {sale.clientEmail || 'Sin correo'}</p>
+                                                </div>
+                                                <button className={adminStyles.secondaryButton} onClick={() => startTransition(() => setCurrentTab('ventas'))}>Ver detalle</button>
+                                            </div>
+                                        </article>
                                     ))}
+                                    {data.pendingSales.length === 0 && <div className={adminStyles.emptyState}>No tienes ventas pendientes por validar.</div>}
                                 </div>
                             </div>
-                            <div style={{ background: '#160d26', padding: '1.5rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <h3 style={{ marginBottom: '1.5rem' }}>Estatus Agenda</h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <CheckCircle2 size={24} color="#48bb78" />
-                                        <div><div style={{ fontWeight: 'bold' }}>12</div><div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Confirmadas hoy</div></div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <AlertCircle size={24} color="#f6ad55" />
-                                        <div><div style={{ fontWeight: 'bold' }}>5</div><div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Pendientes pago</div></div>
+
+                            <div className={adminStyles.panel}>
+                                <div className={adminStyles.panelHeader}>
+                                    <div>
+                                        <div className={adminStyles.panelTitle}><Calendar size={18} /> Proximas citas</div>
+                                        <div className={adminStyles.panelHint}>Agenda ya aprobada para operacion diaria.</div>
                                     </div>
                                 </div>
+                                <div className={adminStyles.stack}>
+                                    {data.confirmedSales.slice(0, 4).map((sale) => (
+                                        <article key={sale.id} className={adminStyles.card}>
+                                            <div className={adminStyles.agendaHeader}>
+                                                <div>
+                                                    <h3 className={adminStyles.cardTitle}>{sale.itemTitle || sale.summary}</h3>
+                                                    <p className={adminStyles.muted}>{sale.clientName || sale.clientEmail || 'Cliente confirmado'}</p>
+                                                </div>
+                                                <span className={`${adminStyles.badge} ${adminStyles.badgeApproved}`}>Aprobada</span>
+                                            </div>
+                                            <div className={adminStyles.detailGrid}>
+                                                <div className={adminStyles.detailItem}>
+                                                    <div className={adminStyles.detailLabel}>Fecha</div>
+                                                    <div className={adminStyles.detailValue}>{sale.scheduledDateLabel || new Date(sale.start).toLocaleString()}</div>
+                                                </div>
+                                                <div className={adminStyles.detailItem}>
+                                                    <div className={adminStyles.detailLabel}>Codigo</div>
+                                                    <div className={adminStyles.detailValue}>{sale.reservationCode || 'Sin codigo'}</div>
+                                                </div>
+                                                <div className={adminStyles.detailItem}>
+                                                    <div className={adminStyles.detailLabel}>Canal</div>
+                                                    <div className={adminStyles.detailValue}>Agenda operativa</div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                    {data.confirmedSales.length === 0 && <div className={adminStyles.emptyState}>No hay servicios confirmados en la agenda.</div>}
+                                </div>
                             </div>
-                        </div>
+                        </section>
                     </>
                 )}
 
-                {/* VENTAS PENDIENTES (RESERVAS) */}
                 {currentTab === 'ventas' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {data.pendingSales.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>No hay ventas pendientes de validación.</div>
-                        ) : (
-                            data.pendingSales.map((sale: any) => (
-                                <div key={sale.id} style={styles.itemCard}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                                                <span style={styles.badge('product')}>PENDIENTE PAGO</span>
-                                                <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{new Date(sale.start).toLocaleString()}</span>
-                                            </div>
-                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{sale.summary}</h3>
-                                            <p style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '4px' }}>{sale.description?.split('---')[0]}</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleApproveReserva(sale.id)}
-                                            style={styles.buttonPrimary}
-                                            disabled={processing}
-                                        >
-                                            <CheckCircle2 size={18} /> Confirmar Pago
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* AGENDA CONFIRMADA */}
-                {currentTab === 'agenda' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {data.confirmedSales.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '4rem', opacity: 0.5 }}>No tienes citas programadas para el futuro.</div>
-                        ) : (
-                            data.confirmedSales.map((event: any) => (
-                                <div key={event.id} style={{ ...styles.itemCard, borderLeft: '4px solid #48bb78' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <div>
-                                            <span style={{ fontSize: '0.8rem', color: '#48bb78', fontWeight: 'bold' }}>CONFIRMADA</span>
-                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginTop: '4px' }}>{event.summary}</h3>
-                                            <p style={{ fontSize: '0.85rem', opacity: 0.6 }}>Cliente: {event.clientEmail || 'No disponible'}</p>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontWeight: 'bold', color: '#d4af37' }}>{new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                                            <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>{new Date(event.start).toLocaleDateString()}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* DISPONIBILIDAD Y HORARIOS */}
-                {currentTab === 'disponibilidad' && (
-                    <div style={{ maxWidth: '800px' }}>
-                        <div style={{ ...styles.itemCard, marginBottom: '2rem' }}>
-                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><Calendar size={24} color="#d4af37" /> Reglas de Tiempo</h3>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', color: '#d4af37', marginBottom: '1rem' }}>Días Laborales</h4>
-                                    {[
-                                        {id: 1, n: 'Lunes'}, {id: 2, n: 'Martes'}, {id: 3, n: 'Miércoles'}, 
-                                        {id: 4, n: 'Jueves'}, {id: 5, n: 'Viernes'}, {id: 6, n: 'Sábado'}, {id: 0, n: 'Domingo'}
-                                    ].map(day => (
-                                        <label key={day.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', cursor: 'pointer' }}>
-                                            <input type="checkbox" checked={data.settings.workDays.includes(day.id)} onChange={() => toggleWorkDay(day.id)} />
-                                            <span style={{ fontSize: '0.9rem' }}>{day.n}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                <div>
-                                    <h4 style={{ fontSize: '0.9rem', color: '#d4af37', marginBottom: '1rem' }}>Rango de Energía (Horas)</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Inicio Jornada:
-                                            <input type="time" style={styles.input} value={data.settings.startTime} onChange={e => setData((prev: any) => ({ ...prev, settings: { ...prev.settings, startTime: e.target.value } }))} />
-                                        </label>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Fin Jornada:
-                                            <input type="time" style={styles.input} value={data.settings.endTime} onChange={e => setData((prev: any) => ({ ...prev, settings: { ...prev.settings, endTime: e.target.value } }))} />
-                                        </label>
-                                    </div>
-                                </div>
+                    <section className={adminStyles.panel}>
+                        <div className={adminStyles.panelHeader}>
+                            <div>
+                                <div className={adminStyles.panelTitle}><AlertCircle size={18} /> Ventas pendientes de aprobacion</div>
+                                <div className={adminStyles.panelHint}>Unifica servicios, productos y rifas bajo el mismo circuito manual.</div>
                             </div>
-                        </div>
-
-                        <div style={styles.itemCard}>
-                            <h3 style={{ marginBottom: '1.5rem', color: '#ff6b6b' }}>Bloqueo Astral (Días Off)</h3>
-                            <p style={{ fontSize: '0.85rem', opacity: 0.6, marginBottom: '1rem' }}>Selecciona fechas específicas donde NO quieres recibir ninguna cita (Vacaciones, Festivos, Retiros).</p>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem' }}>
-                                <input type="date" style={{ ...styles.input, flex: 1 }} value={newBlockedDate} onChange={e => setNewBlockedDate(e.target.value)} />
-                                <button onClick={addBlockedDate} style={styles.buttonPrimary}>Bloquear Día</button>
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {data.settings.blockedDates?.map((date: string) => (
-                                    <div key={date} style={{ background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {date}
-                                        <Trash2 size={14} style={{ cursor: 'pointer' }} onClick={() => removeBlockedDate(date)} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <button onClick={saveAvailability} style={{ ...styles.buttonPrimary, width: '100%', marginTop: '2rem', justifyContent: 'center', height: '55px', fontSize: '1.1rem' }} disabled={processing}>
-                            {processing ? 'Sincronizando con el Cosmos...' : 'Consagrar Cambios de Agenda'}
-                        </button>
-                    </div>
-                )}
-
-                {/* MENSAJERÍA Y PLANTILLAS */}
-                {currentTab === 'mensajeria' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {data.mailTemplates.length === 0 ? (
-                            <div style={styles.itemCard}>
-                                <h3 style={{ marginBottom: '1rem' }}>Inicializar Mensajería</h3>
-                                <p style={{ fontSize: '0.9rem', opacity: 0.7, marginBottom: '1rem' }}>No se encontraron plantillas. Debes crear los documentos 'reserva_pendiente', 'pago_confirmado' y 'rifa_reservada' en la colección 'mail_templates' de Firebase.</p>
-                            </div>
-                        ) : (
-                            data.mailTemplates.map((template: any) => (
-                                <div key={template.id} style={styles.itemCard}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                        <h3 style={{ color: '#d4af37', textTransform: 'uppercase', fontSize: '1rem' }}>{template.id.replace('_', ' ')}</h3>
-                                        <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Variables disponibles: {'{cliente}, {servicio}, {fecha}, {monto}'}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Asunto del Correo:
-                                            <input 
-                                                style={styles.input} 
-                                                value={template.subject} 
-                                                onChange={e => {
-                                                    const newData = data.mailTemplates.map((t: any) => t.id === template.id ? {...t, subject: e.target.value} : t);
-                                                    setData((prev: any) => ({...prev, mailTemplates: newData}));
-                                                }}
-                                            />
-                                        </label>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Cuerpo del Mensaje (HTML permitido):
-                                            <textarea 
-                                                style={{ ...styles.input, height: '200px', fontFamily: 'monospace', fontSize: '0.85rem' }} 
-                                                value={template.body} 
-                                                onChange={e => {
-                                                    const newData = data.mailTemplates.map((t: any) => t.id === template.id ? {...t, body: e.target.value} : t);
-                                                    setData((prev: any) => ({...prev, mailTemplates: newData}));
-                                                }}
-                                            />
-                                        </label>
-                                        <button 
-                                            onClick={() => updateMailTemplate(template.id, template.body, template.subject)} 
-                                            style={{ ...styles.buttonPrimary, width: '200px', alignSelf: 'flex-end' }}
-                                            disabled={processing}
-                                        >
-                                            Guardar Cambios
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {/* CONFIGURACIÓN Y BOT DE LIMPIEZA */}
-                {currentTab === 'config' && (
-                    <div style={{ maxWidth: '600px' }}>
-                        <div style={styles.itemCard}>
-                            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}><RefreshCw size={20} color="#d4af37" /> Mantenimiento del Oráculo</h3>
-                            <p style={{ fontSize: '0.9rem', opacity: 0.7, marginBottom: '1.5rem' }}>
-                                El Bot de Limpieza libera automáticamente los espacios de reservas que no reportaron pago en 30 minutos.
-                            </p>
-                            <button onClick={runManualCleanup} style={{ ...styles.buttonPrimary, background: '#2d3748', color: 'white' }} disabled={processing}>
-                                <RefreshCw size={18} className={processing ? 'animate-spin' : ''} /> Ejecutar Limpieza Manual Ahora
+                            <button className={adminStyles.secondaryButton} onClick={() => void fetchVentasYAgenda()}>
+                                <RefreshCw size={16} /> Actualizar
                             </button>
                         </div>
-                        
-                        <div style={{ ...styles.itemCard, marginTop: '2rem', opacity: 0.5 }}>
-                            <h3 style={{ marginBottom: '1rem' }}><Settings size={20} /> Ajustes de Sistema</h3>
-                            <p style={{ fontSize: '0.8rem' }}>Versión del Nexo: 2.0.0 (Estelar)<br/>Base de Datos: Firebase Firestore<br/>Agenda: Google Calendar API</p>
+
+                        <div className={adminStyles.stack}>
+                            {pendingSales.map((sale) => (
+                                <article key={sale.id} className={adminStyles.card}>
+                                    <div className={adminStyles.saleHeader}>
+                                        <div>
+                                            <div className={adminStyles.saleMeta}>
+                                                <span className={`${adminStyles.badge} ${saleBadgeClass(sale.saleType)}`}>{sale.saleTypeLabel}</span>
+                                                <span className={`${adminStyles.badge} ${sale.paymentReported ? adminStyles.badgeApproved : adminStyles.badgePending}`}>
+                                                    {sale.paymentReported ? 'Comprobante cargado' : 'Esperando comprobante'}
+                                                </span>
+                                            </div>
+                                            <h3 className={adminStyles.cardTitle}>{sale.itemTitle || sale.summary}</h3>
+                                            <p className={adminStyles.muted}>{sale.previewDescription || 'Venta generada desde el flujo comercial.'}</p>
+                                        </div>
+                                        <button className={adminStyles.primaryButton} onClick={() => handleApproveSale(sale.id)} disabled={processing}>
+                                            <CheckCircle2 size={16} /> Confirmar venta
+                                        </button>
+                                    </div>
+
+                                    <div className={adminStyles.detailGrid}>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Cliente</div>
+                                            <div className={adminStyles.detailValue}>{sale.clientName || 'Sin nombre'}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Correo</div>
+                                            <div className={adminStyles.detailValue}>{sale.clientEmail || 'Sin correo'}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Codigo</div>
+                                            <div className={adminStyles.detailValue}>{sale.reservationCode || 'Sin codigo'}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Importe</div>
+                                            <div className={adminStyles.detailValue}>{sale.amountLabel || 'Manual'}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Fecha asociada</div>
+                                            <div className={adminStyles.detailValue}>{sale.scheduledDateLabel || (sale.start ? new Date(sale.start).toLocaleString() : 'Sin agenda')}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Referencia extra</div>
+                                            <div className={adminStyles.detailValue}>{sale.selectedNumber ? `Numero ${sale.selectedNumber}` : sale.clientPhone || 'Sin dato extra'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className={adminStyles.actionsRow}>
+                                        {sale.paymentProofUrl && sale.paymentProofUrl !== 'NO_DISPONIBLE' && (
+                                            <a className={adminStyles.linkButton} href={sale.paymentProofUrl} target="_blank" rel="noreferrer">
+                                                Ver comprobante
+                                            </a>
+                                        )}
+                                        {sale.paymentNote && <span className={adminStyles.muted}>Nota: {sale.paymentNote}</span>}
+                                    </div>
+                                </article>
+                            ))}
+                            {pendingSales.length === 0 && <div className={adminStyles.emptyState}>No hay coincidencias en ventas pendientes.</div>}
                         </div>
-                    </div>
+                    </section>
                 )}
 
-                {/* LISTADOS CRM */}
-                {['servicios', 'productos', 'sorteos', 'promos'].includes(currentTab) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                        {(currentTab === 'servicios' ? data.services : currentTab === 'productos' ? data.products : currentTab === 'sorteos' ? data.raffles : data.promos).map((item: any) => (
-                            <div key={item.id} style={styles.itemCard}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                    <div style={styles.badge(currentTab === 'servicios' ? 'service' : 'product')}>{currentTab === 'sorteos' ? 'RIFA' : currentTab.toUpperCase().slice(0,-1)}</div>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={() => { setEditingItem(item); setFormItem(item); setShowModal(true); }} style={styles.buttonIcon} title="Editar"><Pencil size={16} /></button>
-                                        <button onClick={() => handleDelete(item.id, currentTab === 'sorteos' ? 'raffles' : currentTab === 'promos' ? 'promotions' : currentTab)} style={{ ...styles.buttonIcon, color: '#ff6b6b' }} title="Eliminar"><Trash2 size={16} /></button>
+                {currentTab === 'agenda' && (
+                    <section className={adminStyles.panel}>
+                        <div className={adminStyles.panelHeader}>
+                            <div>
+                                <div className={adminStyles.panelTitle}><Calendar size={18} /> Agenda de servicios vendidos</div>
+                                <div className={adminStyles.panelHint}>Solo muestra ventas confirmadas que requieren atencion calendarizada.</div>
+                            </div>
+                        </div>
+                        <div className={adminStyles.stack}>
+                            {confirmedSales.map((sale) => (
+                                <article key={sale.id} className={adminStyles.card}>
+                                    <div className={adminStyles.agendaHeader}>
+                                        <div>
+                                            <div className={adminStyles.saleMeta}>
+                                                <span className={`${adminStyles.badge} ${adminStyles.badgeService}`}>Servicio confirmado</span>
+                                            </div>
+                                            <h3 className={adminStyles.cardTitle}>{sale.itemTitle || sale.summary}</h3>
+                                            <p className={adminStyles.muted}>{sale.clientName || sale.clientEmail || 'Cliente confirmado'}</p>
+                                        </div>
+                                        <span className={`${adminStyles.badge} ${adminStyles.badgeApproved}`}>OK</span>
                                     </div>
-                                </div>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>{item.title || item.code}</h3>
-                                <p style={{ fontSize: '0.85rem', opacity: 0.6, marginBottom: '1rem', lineHeight: 1.5 }}>{item.description}</p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-                                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#d4af37' }}>{item.price || `${item.priceNumber}% OFF`}</span>
-                                    {currentTab === 'sorteos' && <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>Ventas: {item.soldNumbers?.length || 0}/{item.totalNumbers}</span>}
-                                    {currentTab === 'promos' && <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>CÓDIGO: <strong style={{color:'#d4af37'}}>{item.code}</strong></span>}
+                                    <div className={adminStyles.detailGrid}>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Fecha</div>
+                                            <div className={adminStyles.detailValue}>{sale.scheduledDateLabel || new Date(sale.start).toLocaleString()}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Correo</div>
+                                            <div className={adminStyles.detailValue}>{sale.clientEmail || 'Sin correo'}</div>
+                                        </div>
+                                        <div className={adminStyles.detailItem}>
+                                            <div className={adminStyles.detailLabel}>Codigo</div>
+                                            <div className={adminStyles.detailValue}>{sale.reservationCode || 'Sin codigo'}</div>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                            {confirmedSales.length === 0 && <div className={adminStyles.emptyState}>No hay servicios confirmados para mostrar.</div>}
+                        </div>
+                    </section>
+                )}
+
+                {currentTab === 'disponibilidad' && (
+                    <section className={adminStyles.availabilityGrid}>
+                        <article className={adminStyles.panel}>
+                            <div className={adminStyles.panelHeader}>
+                                <div>
+                                    <div className={adminStyles.panelTitle}><Calendar size={18} /> Regla semanal</div>
+                                    <div className={adminStyles.panelHint}>Estos datos controlan el calendario publico de servicios.</div>
                                 </div>
                             </div>
+                            <div className={adminStyles.field}>
+                                <span className={adminStyles.label}>Dias laborables</span>
+                                <div className={adminStyles.dayGrid}>
+                                    {dayOptions.map((day) => (
+                                        <button
+                                            key={day.id}
+                                            className={`${adminStyles.dayButton} ${data.settings.workDays.includes(day.id) ? adminStyles.dayButtonActive : ''}`}
+                                            onClick={() => toggleWorkDay(day.id)}
+                                        >
+                                            {day.short} · {day.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className={adminStyles.formColumns} style={{ marginTop: '1rem' }}>
+                                <label className={adminStyles.field}>
+                                    <span className={adminStyles.label}>Hora inicio</span>
+                                    <input className={adminStyles.input} type="time" value={data.settings.startTime} onChange={(event) => setData((prev) => ({ ...prev, settings: { ...prev.settings, startTime: event.target.value } }))} />
+                                </label>
+                                <label className={adminStyles.field}>
+                                    <span className={adminStyles.label}>Hora fin</span>
+                                    <input className={adminStyles.input} type="time" value={data.settings.endTime} onChange={(event) => setData((prev) => ({ ...prev, settings: { ...prev.settings, endTime: event.target.value } }))} />
+                                </label>
+                            </div>
+                            <label className={adminStyles.field} style={{ marginTop: '1rem' }}>
+                                <span className={adminStyles.label}>Duracion de slot</span>
+                                <input className={adminStyles.input} type="number" min={15} step={15} value={data.settings.slotDurationMinutes} onChange={(event) => setData((prev) => ({ ...prev, settings: { ...prev.settings, slotDurationMinutes: Number(event.target.value || 60) } }))} />
+                            </label>
+                        </article>
+
+                        <article className={adminStyles.panel}>
+                            <div className={adminStyles.panelHeader}>
+                                <div>
+                                    <div className={adminStyles.panelTitle}><AlertCircle size={18} /> Fechas bloqueadas</div>
+                                    <div className={adminStyles.panelHint}>Vacaciones, feriados o dias fuera de operacion.</div>
+                                </div>
+                            </div>
+                            <div className={adminStyles.formColumns}>
+                                <label className={adminStyles.field}>
+                                    <span className={adminStyles.label}>Nueva fecha bloqueada</span>
+                                    <input className={adminStyles.input} type="date" value={newBlockedDate} onChange={(event) => setNewBlockedDate(event.target.value)} />
+                                </label>
+                                <div className={adminStyles.field} style={{ justifyContent: 'flex-end' }}>
+                                    <span className={adminStyles.label}>Accion</span>
+                                    <button className={adminStyles.secondaryButton} onClick={addBlockedDate}>Agregar bloqueo</button>
+                                </div>
+                            </div>
+                            <div className={adminStyles.chipGrid} style={{ marginTop: '1rem' }}>
+                                {data.settings.blockedDates.map((date) => (
+                                    <span key={date} className={adminStyles.chip}>
+                                        {date}
+                                        <button className={adminStyles.iconButton} onClick={() => removeBlockedDate(date)}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </span>
+                                ))}
+                                {data.settings.blockedDates.length === 0 && <div className={adminStyles.emptyState}>No hay fechas bloqueadas.</div>}
+                            </div>
+                            <div className={adminStyles.formActions}>
+                                <button className={adminStyles.primaryButton} onClick={saveAvailability} disabled={processing}>
+                                    <CheckCircle2 size={16} /> Guardar disponibilidad
+                                </button>
+                            </div>
+                        </article>
+                    </section>
+                )}
+
+                {shouldShowCatalog && (
+                    <section className={adminStyles.catalogGrid}>
+                        {filteredCatalog.map((item) => (
+                            <article key={item.id} className={adminStyles.card}>
+                                <div className={adminStyles.catalogHeader}>
+                                    <div>
+                                        <div className={adminStyles.saleMeta}>
+                                            <span className={`${adminStyles.badge} ${currentTab === 'servicios' ? adminStyles.badgeService : currentTab === 'productos' ? adminStyles.badgeProduct : currentTab === 'sorteos' ? adminStyles.badgeRaffle : ''}`}>
+                                                {currentTab === 'servicios' ? 'Servicio' : currentTab === 'productos' ? 'Producto' : currentTab === 'sorteos' ? 'Rifa' : 'Promo'}
+                                            </span>
+                                            {currentTab === 'sorteos' && <span className={adminStyles.badge}>{item.active === false ? 'Inactiva' : 'Activa'}</span>}
+                                        </div>
+                                        <h3 className={adminStyles.cardTitle}>{item.title || item.code}</h3>
+                                        <p className={adminStyles.muted}>{item.description || 'Sin descripcion comercial.'}</p>
+                                    </div>
+                                    <div className={adminStyles.actionsRow}>
+                                        <button className={adminStyles.iconButton} onClick={() => openModal(item)}>
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button
+                                            className={`${adminStyles.iconButton} ${adminStyles.iconDanger}`}
+                                            onClick={() => handleDelete(item.id, getCollectionName(currentTab))}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className={adminStyles.detailGrid}>
+                                    <div className={adminStyles.detailItem}>
+                                        <div className={adminStyles.detailLabel}>Visible</div>
+                                        <div className={adminStyles.detailValue}>{item.price || item.code || 'Sin valor visible'}</div>
+                                    </div>
+                                    <div className={adminStyles.detailItem}>
+                                        <div className={adminStyles.detailLabel}>Valor interno</div>
+                                        <div className={adminStyles.detailValue}>{item.priceNumber || item.totalNumbers || 'Sin dato'}</div>
+                                    </div>
+                                    <div className={adminStyles.detailItem}>
+                                        <div className={adminStyles.detailLabel}>Dato extra</div>
+                                        <div className={adminStyles.detailValue}>
+                                            {currentTab === 'sorteos'
+                                                ? `${item.soldNumbers?.length || 0}/${item.totalNumbers || 0} vendidos`
+                                                : currentTab === 'promos'
+                                                    ? item.applicableTo || 'all'
+                                                    : item.imagePlaceholder || item.icon || 'Catalogo'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
                         ))}
+                        {filteredCatalog.length === 0 && <div className={adminStyles.emptyState}>No hay elementos coincidentes en esta seccion.</div>}
+                    </section>
+                )}
+
+                {currentTab === 'mensajeria' && (
+                    <section className={adminStyles.messageGrid}>
+                        {data.mailTemplates.map((template) => (
+                            <article key={template.id} className={adminStyles.panel}>
+                                <div className={adminStyles.panelHeader}>
+                                    <div>
+                                        <div className={adminStyles.panelTitle}><Sparkles size={18} /> {template.id}</div>
+                                        <div className={adminStyles.panelHint}>Variables sugeridas: cliente, servicio, fecha, codigo.</div>
+                                    </div>
+                                </div>
+                                <label className={adminStyles.field}>
+                                    <span className={adminStyles.label}>Asunto</span>
+                                    <input className={adminStyles.input} value={template.subject} onChange={(event) => {
+                                        const nextTemplates = data.mailTemplates.map((item) => item.id === template.id ? { ...item, subject: event.target.value } : item);
+                                        setData((prev) => ({ ...prev, mailTemplates: nextTemplates }));
+                                    }} />
+                                </label>
+                                <label className={adminStyles.field} style={{ marginTop: '1rem' }}>
+                                    <span className={adminStyles.label}>Cuerpo</span>
+                                    <textarea className={adminStyles.textarea} value={template.body} onChange={(event) => {
+                                        const nextTemplates = data.mailTemplates.map((item) => item.id === template.id ? { ...item, body: event.target.value } : item);
+                                        setData((prev) => ({ ...prev, mailTemplates: nextTemplates }));
+                                    }} />
+                                </label>
+                                <div className={adminStyles.formActions}>
+                                    <button className={adminStyles.primaryButton} onClick={() => updateMailTemplate(template.id, template.body, template.subject)} disabled={processing}>
+                                        Guardar plantilla
+                                    </button>
+                                </div>
+                            </article>
+                        ))}
+                        {data.mailTemplates.length === 0 && <div className={adminStyles.emptyState}>No hay plantillas configuradas en Firebase.</div>}
+                    </section>
+                )}
+
+                {currentTab === 'config' && (
+                    <section className={adminStyles.configGrid}>
+                        <article className={adminStyles.panel}>
+                            <div className={adminStyles.panelHeader}>
+                                <div>
+                                    <div className={adminStyles.panelTitle}><RefreshCw size={18} /> Mantenimiento operativo</div>
+                                    <div className={adminStyles.panelHint}>Libera cupos vencidos cuando una venta no reporta pago a tiempo.</div>
+                                </div>
+                            </div>
+                            <button className={adminStyles.primaryButton} onClick={runManualCleanup} disabled={processing}>
+                                <RefreshCw size={16} /> Ejecutar limpieza manual
+                            </button>
+                        </article>
+
+                        <article className={adminStyles.panel}>
+                            <div className={adminStyles.panelHeader}>
+                                <div>
+                                    <div className={adminStyles.panelTitle}><Settings size={18} /> Estado del sistema</div>
+                                    <div className={adminStyles.panelHint}>Resumen rapido del modo operativo actual.</div>
+                                </div>
+                            </div>
+                            <div className={adminStyles.detailGrid}>
+                                <div className={adminStyles.detailItem}>
+                                    <div className={adminStyles.detailLabel}>Sesion</div>
+                                    <div className={adminStyles.detailValue}>{demoMode ? 'Demo' : 'Protegida con Google'}</div>
+                                </div>
+                                <div className={adminStyles.detailItem}>
+                                    <div className={adminStyles.detailLabel}>Backoffice</div>
+                                    <div className={adminStyles.detailValue}>Firestore + Calendar</div>
+                                </div>
+                                <div className={adminStyles.detailItem}>
+                                    <div className={adminStyles.detailLabel}>Metodo de cobro</div>
+                                    <div className={adminStyles.detailValue}>Consignacion manual</div>
+                                </div>
+                            </div>
+                        </article>
+                    </section>
+                )}
+
+                {showModal && (
+                    <div className={adminStyles.modalOverlay}>
+                        <div className={adminStyles.modal}>
+                            <div className={adminStyles.modalHeader}>
+                                <div>
+                                    <h2>{editingItem ? 'Editar elemento del catalogo' : 'Crear elemento del catalogo'}</h2>
+                                    <p className={adminStyles.muted}>El formulario se adapta a la seccion activa para mantener orden operativo.</p>
+                                </div>
+                                <button className={adminStyles.iconButton} onClick={() => setShowModal(false)}>
+                                    <AlertCircle size={16} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSave} className={adminStyles.modalForm}>
+                                <div className={adminStyles.formColumns}>
+                                    {currentTab !== 'promos' && (
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Titulo</span>
+                                            <input className={adminStyles.input} value={formItem.title || ''} onChange={(event) => setFormItem({ ...formItem, title: event.target.value })} required />
+                                        </label>
+                                    )}
+
+                                    <label className={adminStyles.field}>
+                                        <span className={adminStyles.label}>{currentTab === 'promos' ? 'Codigo' : 'Precio visible'}</span>
+                                        <input
+                                            className={adminStyles.input}
+                                            value={currentTab === 'promos' ? formItem.code || '' : formItem.price || ''}
+                                            onChange={(event) => setFormItem({ ...formItem, [currentTab === 'promos' ? 'code' : 'price']: event.target.value })}
+                                            required
+                                        />
+                                    </label>
+                                </div>
+
+                                <label className={adminStyles.field}>
+                                    <span className={adminStyles.label}>Descripcion</span>
+                                    <textarea className={adminStyles.textarea} value={formItem.description || ''} onChange={(event) => setFormItem({ ...formItem, description: event.target.value })} required />
+                                </label>
+
+                                <div className={adminStyles.formColumns}>
+                                    <label className={adminStyles.field}>
+                                        <span className={adminStyles.label}>{currentTab === 'promos' ? 'Descuento / valor' : 'Valor interno'}</span>
+                                        <input className={adminStyles.input} type="number" value={formItem.priceNumber || ''} onChange={(event) => setFormItem({ ...formItem, priceNumber: Number(event.target.value || 0) })} required />
+                                    </label>
+
+                                    {currentTab === 'servicios' && (
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Icono</span>
+                                            <input className={adminStyles.input} value={formItem.icon || ''} onChange={(event) => setFormItem({ ...formItem, icon: event.target.value })} />
+                                        </label>
+                                    )}
+
+                                    {currentTab === 'productos' && (
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Placeholder visual</span>
+                                            <input className={adminStyles.input} value={formItem.imagePlaceholder || ''} onChange={(event) => setFormItem({ ...formItem, imagePlaceholder: event.target.value })} />
+                                        </label>
+                                    )}
+
+                                    {currentTab === 'sorteos' && (
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Total de numeros</span>
+                                            <input className={adminStyles.input} type="number" value={formItem.totalNumbers || 100} onChange={(event) => setFormItem({ ...formItem, totalNumbers: Number(event.target.value || 100) })} />
+                                        </label>
+                                    )}
+
+                                    {currentTab === 'promos' && (
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Aplica a</span>
+                                            <select className={adminStyles.select} value={formItem.applicableTo || 'all'} onChange={(event) => setFormItem({ ...formItem, applicableTo: event.target.value })}>
+                                                <option value="all">Todo</option>
+                                                <option value="services">Servicios</option>
+                                                <option value="products">Productos</option>
+                                                <option value="raffles">Rifas</option>
+                                            </select>
+                                        </label>
+                                    )}
+                                </div>
+
+                                {currentTab === 'sorteos' && (
+                                    <div className={adminStyles.formColumns}>
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Numeros vendidos</span>
+                                            <textarea className={adminStyles.textarea} value={formItem.soldNumbersInput || ''} onChange={(event) => setFormItem({ ...formItem, soldNumbersInput: event.target.value })} placeholder="Ejemplo: 1, 2, 15, 77" />
+                                        </label>
+                                        <label className={adminStyles.field}>
+                                            <span className={adminStyles.label}>Estado</span>
+                                            <select className={adminStyles.select} value={String(formItem.active !== false)} onChange={(event) => setFormItem({ ...formItem, active: event.target.value === 'true' })}>
+                                                <option value="true">Activa</option>
+                                                <option value="false">Inactiva</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                )}
+
+                                {currentTab === 'promos' && (
+                                    <div className={adminStyles.formActions}>
+                                        <button type="button" className={adminStyles.secondaryButton} onClick={generatePromoCode}>
+                                            <RefreshCw size={16} /> Generar codigo
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className={adminStyles.formActions}>
+                                    <button type="button" className={adminStyles.ghostButton} onClick={() => setShowModal(false)}>Cancelar</button>
+                                    <button type="submit" className={adminStyles.primaryButton} disabled={processing}>
+                                        <CheckCircle2 size={16} /> Guardar cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 )}
             </main>
-
-            {/* MODAL DE EDICIÓN / CREACIÓN PRO */}
-            {showModal && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modalContent}>
-                        <h2 style={{ marginBottom: '2rem', fontSize: '1.5rem' }} className="gradient-text">
-                            {editingItem ? `Editar ${currentTab.slice(0,-1)}` : `Invocar Nuevo ${currentTab.slice(0,-1)}`}
-                        </h2>
-                        
-                        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>Título / Nombre</label>
-                                    <input required style={styles.input} value={formItem.title || ''} onChange={e => setFormItem({...formItem, title: e.target.value})} />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>{currentTab === 'promos' ? 'Código' : 'Precio Visible'}</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input required style={styles.input} placeholder={currentTab === 'promos' ? 'ASTRO10' : '$35.000 COP'} value={formItem.price || formItem.code || ''} onChange={e => setFormItem({...formItem, [currentTab === 'promos' ? 'code' : 'price']: e.target.value})} />
-                                        {currentTab === 'promos' && <button type="button" onClick={generatePromoCode} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#d4af37', cursor: 'pointer' }}><RefreshCw size={18} /></button>}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>Descripción Detallada</label>
-                                <textarea required style={{ ...styles.input, height: '100px', fontFamily: 'inherit' }} value={formItem.description || ''} onChange={e => setFormItem({...formItem, description: e.target.value})} />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>{currentTab === 'promos' ? 'Descuento (%)' : 'Valor Numérico'}</label>
-                                    <input required type="number" style={styles.input} value={formItem.priceNumber || ''} onChange={e => setFormItem({...formItem, priceNumber: parseInt(e.target.value) || 0})} />
-                                </div>
-                                {currentTab === 'sorteos' && (
-                                    <div>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>Total Números</label>
-                                        <select style={styles.input} value={formItem.totalNumbers || 100} onChange={e => setFormItem({...formItem, totalNumbers: parseInt(e.target.value)})}>
-                                            <option value={100}>100 (Dos Cifras)</option>
-                                            <option value={1000}>1000 (Tres Cifras)</option>
-                                        </select>
-                                    </div>
-                                )}
-                                {currentTab === 'promos' && (
-                                    <div>
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '6px', display: 'block' }}>Aplicable a</label>
-                                        <select style={styles.input} value={formItem.applicableTo || 'all'} onChange={e => setFormItem({...formItem, applicableTo: e.target.value})}>
-                                            <option value="all">Todo el Catálogo</option>
-                                            <option value="services">Solo Servicios</option>
-                                            <option value="products">Solo Productos</option>
-                                            <option value="raffles">Solo Rifas</option>
-                                        </select>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ ...styles.buttonIcon, padding: '12px', flex: 1 }}>Cancelar</button>
-                                <button type="submit" style={{ ...styles.buttonPrimary, flex: 2, justifyContent: 'center' }} disabled={processing}>
-                                    {processing ? 'Sincronizando...' : editingItem ? 'Actualizar Cosmos' : 'Inmortalizar Elemento'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

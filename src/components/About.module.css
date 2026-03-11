@@ -1,69 +1,149 @@
 .aboutSection {
-    padding: 6rem 2rem;
+    width: min(1260px, 94%);
+    margin: 0 auto 2rem;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: var(--card-bg);
-    /* Soft integration */
-    border-top: 1px solid var(--card-border);
-    border-bottom: 1px solid var(--card-border);
 }
 
 .container {
-    max-width: 1000px;
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 3rem;
-    align-items: center;
+    padding: 1.5rem;
+    border-radius: 32px;
+    background: linear-gradient(180deg, rgba(22, 13, 34, 0.92), rgba(10, 8, 19, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.26);
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1.6rem;
+    align-items: stretch;
 }
 
-@media (min-width: 768px) {
-    .container {
-        flex-direction: row;
-        align-items: center;
-        gap: 5em;
-    }
+.storyCard {
+    padding: 1.2rem;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.storyEyebrow {
+    display: inline-flex;
+    margin-bottom: 0.8rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 226, 137, 0.15);
+    color: rgba(255, 235, 169, 0.78);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.visualColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .imagePlaceholder {
-    width: 250px;
-    height: 250px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--secondary), var(--accent));
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 8px 32px rgba(213, 189, 169, 0.3);
-    flex-shrink: 0;
+    min-height: 300px;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255, 214, 99, 0.35), transparent 24%),
+        radial-gradient(circle at 70% 20%, rgba(99, 165, 191, 0.24), transparent 18%),
+        linear-gradient(135deg, rgba(68, 40, 97, 0.95), rgba(18, 13, 36, 0.98));
+    display: grid;
+    place-items: center;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .emoji {
-    font-size: 5rem;
-    opacity: 0.8;
+    font-size: 6rem;
+    opacity: 0.9;
+    color: rgba(255, 227, 138, 0.92);
+    text-shadow: 0 0 26px rgba(255, 214, 94, 0.42);
 }
 
-.textContent {
-    flex: 1;
-    text-align: center;
+.noteCard {
+    padding: 1rem 1.1rem;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.76);
+    line-height: 1.6;
 }
 
-@media (min-width: 768px) {
-    .textContent {
-        text-align: left;
-    }
+.noteLabel {
+    display: inline-flex;
+    margin-bottom: 0.55rem;
+    color: rgba(255, 231, 153, 0.82);
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
 }
 
 .title {
-    font-size: 2.5rem;
+    font-size: clamp(1.9rem, 3.6vw, 3rem);
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .description {
-    font-size: 1.1rem;
+    font-size: 1rem;
     line-height: 1.7;
-    color: var(--foreground);
+    color: rgba(255, 255, 255, 0.78);
     margin-bottom: 1rem;
-    opacity: 0.9;
+}
+
+.pointGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 1.1rem;
+}
+
+.pointItem {
+    padding: 0.95rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pointItem strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: rgba(255, 227, 142, 0.92);
+}
+
+.pointItem span {
+    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .pointGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 680px) {
+    .aboutSection {
+        width: 95%;
+    }
+
+    .container {
+        padding: 1rem;
+        border-radius: 24px;
+    }
+
+    .imagePlaceholder {
+        min-height: 240px;
+    }
 }

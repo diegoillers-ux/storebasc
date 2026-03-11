@@ -6,7 +6,7 @@ import { services as localServices } from '@/lib/data';
 import { useCollection } from '@/hooks/useCollection';
 
 export default function Services() {
-    const { data: firebaseServices, loading } = useCollection('services');
+    const { data: firebaseServices } = useCollection<(typeof localServices)[number]>('services');
 
     // Usamos los de Firebase si existen, sino los locales por defecto
     const displayServices = firebaseServices.length > 0 ? firebaseServices : localServices;

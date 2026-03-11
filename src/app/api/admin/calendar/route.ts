@@ -3,6 +3,7 @@ import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { demoListConfirmedEvents } from '@/lib/demoStore';
+import { mapCalendarEventToSale } from '@/lib/sales';
 
 export async function GET() {
     const authError = await requireAdminSession();
@@ -10,21 +11,16 @@ export async function GET() {
 
     try {
         if (isDemoMode()) {
-            const events = demoListConfirmedEvents().map((event) => {
-                let email = '';
-                const match = (event.description || '').match(/Email:\s*([^\s]+)/);
-                if (match?.[1]) email = match[1];
-
-                return {
+            const events = demoListConfirmedEvents()
+                .map((event) => mapCalendarEventToSale({
                     id: event.id,
                     summary: event.summary,
                     start: event.start,
                     end: event.end,
                     location: event.location || '',
                     description: event.description || '',
-                    clientEmail: email,
-                };
-            });
+                }))
+                .filter((event) => event.requiresScheduling);
             return NextResponse.json({ events });
         }
 
@@ -49,23 +45,18 @@ export async function GET() {
         const allEvents = response.data.items || [];
         const confirmedEvents = allEvents.filter((event) => !event.summary?.includes('[PENDIENTE]'));
 
-        const formattedEvents = confirmedEvents.map((event) => {
-            let email = '';
-            if (event.description) {
-                const match = event.description.match(/Email:\s*([^\s]+)/);
-                if (match?.[1]) email = match[1];
-            }
-
-            return {
+        const formattedEvents = confirmedEvents
+            .map((event) => mapCalendarEventToSale({
                 id: event.id,
                 summary: event.summary,
-                start: event.start?.dateTime || event.start?.date,
-                end: event.end?.dateTime || event.end?.date,
+                start: event.start,
+                end: event.end,
                 location: event.location || '',
                 description: event.description || '',
-                clientEmail: email,
-            };
-        });
+                created: event.created,
+                status: event.status,
+            }))
+            .filter((event) => event.requiresScheduling);
 
         return NextResponse.json({ events: formattedEvents });
     } catch (error: unknown) {

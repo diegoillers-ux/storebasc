@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         const dateTime = String(formData.get('dateTime') || '').trim();
         const paymentNote = String(formData.get('paymentNote') || '').trim();
         const reservationCode = String(formData.get('reservationCode') || '').trim();
+        const saleType = String(formData.get('saleType') || 'service').trim() as 'service' | 'product' | 'raffle';
         const proof = formData.get('proof');
 
         if (!eventId || !clientName || !clientEmail || !serviceName || !dateTime) {
@@ -121,6 +122,7 @@ export async function POST(req: NextRequest) {
                 filename: proof.name,
                 contentType: proof.type,
                 content: fileBuffer,
+                saleType,
             });
         }
 

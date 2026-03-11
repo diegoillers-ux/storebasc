@@ -3,6 +3,7 @@ import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { demoListPendingEvents } from '@/lib/demoStore';
+import { mapCalendarEventToSale } from '@/lib/sales';
 
 export async function GET() {
     const authError = await requireAdminSession();
@@ -10,7 +11,7 @@ export async function GET() {
 
     try {
         if (isDemoMode()) {
-            const events = demoListPendingEvents().map((event) => ({
+            const events = demoListPendingEvents().map((event) => mapCalendarEventToSale({
                 id: event.id,
                 summary: event.summary,
                 description: event.description || '',
@@ -38,13 +39,15 @@ export async function GET() {
         });
 
         const pendingEvents = response.data.items || [];
-        const formattedEvents = pendingEvents.map((event) => ({
+        const formattedEvents = pendingEvents.map((event) => mapCalendarEventToSale({
             id: event.id,
             summary: event.summary,
             description: event.description || '',
-            start: event.start?.dateTime || event.start?.date,
-            end: event.end?.dateTime || event.end?.date,
+            start: event.start,
+            end: event.end,
             status: event.status,
+            created: event.created,
+            location: event.location,
         }));
 
         return NextResponse.json({ events: formattedEvents });
