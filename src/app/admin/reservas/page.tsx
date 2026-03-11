@@ -249,7 +249,7 @@ export default function AdminCRM() {
 
         const collectionName = getCollectionName(currentTab);
 
-        const payload = { ...formItem };
+        const payload: CatalogFormItem = { ...formItem };
         delete payload.soldNumbersInput;
 
         if (currentTab === 'sorteos') {
@@ -268,11 +268,33 @@ export default function AdminCRM() {
             payload.priceNumber = Number(payload.priceNumber || 0);
         }
 
+        if (currentTab !== 'sorteos') {
+            delete payload.totalNumbers;
+            delete payload.soldNumbers;
+        }
+
+        if (currentTab !== 'promos') {
+            delete payload.code;
+            delete payload.applicableTo;
+        }
+
+        if (currentTab !== 'servicios') {
+            delete payload.icon;
+        }
+
+        if (currentTab !== 'productos') {
+            delete payload.imagePlaceholder;
+        }
+
+        const sanitizedPayload = Object.fromEntries(
+            Object.entries(payload).filter(([, value]) => value !== undefined)
+        );
+
         try {
             if (editingItem?.id) {
-                await updateDoc(doc(db, collectionName, editingItem.id), payload);
+                await updateDoc(doc(db, collectionName, editingItem.id), sanitizedPayload);
             } else {
-                await addDoc(collection(db, collectionName), { ...payload, createdAt: serverTimestamp() });
+                await addDoc(collection(db, collectionName), { ...sanitizedPayload, createdAt: serverTimestamp() });
             }
 
             setShowModal(false);
