@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import {
@@ -180,6 +180,7 @@ export default function AdminCRM() {
     const [showModal, setShowModal] = useState(false);
     const [formItem, setFormItem] = useState<CatalogFormItem>({});
     const [data, setData] = useState<DashboardState>(INITIAL_STATE);
+    const catalogFormRef = useRef<HTMLFormElement | null>(null);
 
     const deferredSearch = useDeferredValue(searchTerm.trim().toLowerCase());
 
@@ -306,6 +307,10 @@ export default function AdminCRM() {
         } finally {
             setProcessing(false);
         }
+    };
+
+    const requestCatalogSave = () => {
+        catalogFormRef.current?.requestSubmit();
     };
 
     const handleDelete = async (id: string, collectionName: string) => {
@@ -1066,7 +1071,7 @@ export default function AdminCRM() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className={adminStyles.modalForm}>
+                            <form ref={catalogFormRef} onSubmit={handleSave} className={adminStyles.modalForm}>
                                 <div className={adminStyles.formColumns}>
                                     {currentTab !== 'promos' && (
                                         <label className={adminStyles.field}>
@@ -1156,9 +1161,9 @@ export default function AdminCRM() {
                                 )}
 
                                 <div className={adminStyles.formActions}>
-                                    <button type="button" className={adminStyles.ghostButton} onClick={() => setShowModal(false)}>Cancelar</button>
-                                    <button type="submit" className={adminStyles.primaryButton} disabled={processing}>
-                                        <CheckCircle2 size={16} /> Guardar cambios
+                                    <button type="button" className={adminStyles.ghostButton} onClick={() => setShowModal(false)} disabled={processing}>Cancelar</button>
+                                    <button type="button" className={adminStyles.primaryButton} onClick={requestCatalogSave} disabled={processing}>
+                                        <CheckCircle2 size={16} /> {processing ? 'Guardando...' : 'Guardar cambios'}
                                     </button>
                                 </div>
                             </form>
