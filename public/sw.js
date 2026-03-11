@@ -1,4 +1,4 @@
-const CACHE_NAME = 'perlanda-v1';
+const CACHE_NAME = 'codebasicstor-v1';
 const CORE_ASSETS = ['/', '/manifest.webmanifest', '/shop-logo.png', '/favicon.ico'];
 
 self.addEventListener('install', (event) => {

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
+import { isDemoMode } from '@/lib/demoMode';
+import { demoGetSettings } from '@/lib/demoStore';
 
-const SETTINGS_EVENT_TITLE = '[ANANDA_SETTINGS]';
+const SETTINGS_EVENT_TITLE = '[APP_SETTINGS]';
 
 const DEFAULT_SETTINGS = {
     workDays: [1, 2, 3, 4, 5],
@@ -25,6 +27,10 @@ async function getSettingsEvent(calendar: ReturnType<typeof getGoogleCalendarCli
 
 export async function GET() {
     try {
+        if (isDemoMode()) {
+            return NextResponse.json({ settings: demoGetSettings() });
+        }
+
         const calendar = getGoogleCalendarClient();
         const calendarId = process.env.NEXT_PUBLIC_CALENDAR_ID;
 
@@ -47,3 +53,4 @@ export async function GET() {
         return NextResponse.json({ settings: DEFAULT_SETTINGS });
     }
 }
+

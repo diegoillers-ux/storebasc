@@ -10,8 +10,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Astrologia & Canalizacion',
-  description: 'Servicios Holisticos de Astrologia y Canalizacion de Energia',
+  title: 'Tienda Base de Servicios',
+  description: 'Plataforma de reservas para servicios y productos',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: '/favicon.ico',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Perlanda',
+    title: 'Codebasicstor',
   },
 };
 

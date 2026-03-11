@@ -1,11 +1,11 @@
 .productsSection {
-    padding: 5rem 2rem;
-    max-width: 1200px;
+    padding: 1rem 0.5rem 1.6rem;
+    max-width: 1120px;
     margin: 0 auto;
 }
 
 .title {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
     font-weight: 700;
     text-align: center;
     margin-bottom: 0.5rem;
@@ -14,40 +14,30 @@
 
 .subtitle {
     text-align: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--foreground);
     opacity: 0.8;
-    margin-bottom: 3rem;
-    max-width: 600px;
+    margin-bottom: 1.8rem;
+    max-width: 680px;
     margin-left: auto;
     margin-right: auto;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-}
-
-@media (min-width: 768px) {
-    .grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    .grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1.25rem;
 }
 
 .card {
-    padding: 1.5rem;
+    padding: 1.35rem;
     display: flex;
     flex-direction: column;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
     overflow: hidden;
+    min-height: 340px;
+    border-radius: 18px;
 }
 
 .card:hover {
@@ -57,14 +47,14 @@
 
 .imageWrapper {
     width: 100%;
-    height: 200px;
+    height: 128px;
     background: var(--secondary);
     border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
+    font-size: 3rem;
+    margin-bottom: 0.85rem;
 }
 
 .cardContent {
@@ -74,23 +64,23 @@
 }
 
 .cardTitle {
-    font-size: 1.25rem;
+    font-size: 1.08rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
     color: var(--foreground);
 }
 
 .cardDescription {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     opacity: 0.8;
     line-height: 1.5;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     flex-grow: 1;
 }
 
 .price {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--primary-hover);
     margin-bottom: 1rem;
 }
@@ -100,7 +90,7 @@
     color: var(--foreground);
     border: 1px solid var(--primary-hover);
     padding: 0.75rem 1rem;
-    border-radius: var(--radius);
+    border-radius: 12px;
     font-weight: 600;
     cursor: not-allowed;
     opacity: 0.6;

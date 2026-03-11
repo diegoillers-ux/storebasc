@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
+import { isDemoMode } from '@/lib/demoMode';
 
 export async function GET(req: NextRequest) {
     try {
@@ -13,17 +14,20 @@ export async function GET(req: NextRequest) {
         const dateStr = searchParams.get('date');
 
         if (!dateStr) {
-            return NextResponse.json({ error: 'Falta parámetro de fecha.' }, { status: 400 });
+            return NextResponse.json({ error: 'Falta parametro de fecha.' }, { status: 400 });
+        }
+
+        if (isDemoMode()) {
+            return NextResponse.json({ busy: [] });
         }
 
         const calendar = getGoogleCalendarClient();
         const calendarId = process.env.NEXT_PUBLIC_CALENDAR_ID;
 
         if (!calendarId) {
-            return NextResponse.json({ error: 'Configuración de calendario faltante.' }, { status: 500 });
+            return NextResponse.json({ error: 'Configuracion de calendario faltante.' }, { status: 500 });
         }
 
-        // Calcular inicio y fin del día para consultar espacios ocupados
         const timeMin = new Date(`${dateStr}T00:00:00-05:00`).toISOString();
         const timeMax = new Date(`${dateStr}T23:59:59-05:00`).toISOString();
 
@@ -37,10 +41,10 @@ export async function GET(req: NextRequest) {
         });
 
         const busySlots = response.data.calendars?.[calendarId]?.busy || [];
-
         return NextResponse.json({ busy: busySlots });
     } catch (error) {
         console.error('Error fetching free-busy data:', error);
         return NextResponse.json({ error: 'Error al consultar disponibilidad del calendario.' }, { status: 500 });
     }
 }
+

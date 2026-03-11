@@ -3,6 +3,17 @@ import { createHash } from 'crypto';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { sendPendingReservationEmail } from '@/lib/mailer';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
+import { isDemoMode } from '@/lib/demoMode';
+import { demoCreatePendingEvent, demoListPendingEvents } from '@/lib/demoStore';
+
+function generateReservationCode() {
+    const d = new Date();
+    const y = d.getFullYear().toString().slice(-2);
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    const rnd = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+    return `RES-${y}${m}${day}-${rnd}`;
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,9 +24,41 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
         const { title, description, startDateTime, endDateTime } = body;
+        const reservationCode = generateReservationCode();
 
         if (!title || !startDateTime || !endDateTime) {
             return NextResponse.json({ error: 'Faltan parametros de evento.' }, { status: 400 });
+        }
+
+        const normalizedStart = new Date(startDateTime).toISOString();
+        const normalizedEnd = new Date(endDateTime).toISOString();
+
+        if (isDemoMode()) {
+            const overlap = demoListPendingEvents().some((event) => {
+                const evStart = new Date(event.start).getTime();
+                const evEnd = new Date(event.end).getTime();
+                const newStart = new Date(normalizedStart).getTime();
+                const newEnd = new Date(normalizedEnd).getTime();
+                return newStart < evEnd && newEnd > evStart;
+            });
+
+            if (overlap) {
+                return NextResponse.json({ error: 'Ese horario ya fue tomado. Elige otro.' }, { status: 409 });
+            }
+
+            const created = demoCreatePendingEvent({
+                title,
+                description: `${description || ''}\nCodigo de reserva: ${reservationCode}`.trim(),
+                start: normalizedStart,
+                end: normalizedEnd,
+            });
+
+            return NextResponse.json({
+                success: true,
+                eventId: created.id,
+                reservationCode,
+                message: 'Evento demo pendiente creado exitosamente',
+            });
         }
 
         const calendar = getGoogleCalendarClient();
@@ -24,9 +67,6 @@ export async function POST(req: NextRequest) {
         if (!calendarId) {
             return NextResponse.json({ error: 'Configuracion calendario faltante.' }, { status: 500 });
         }
-
-        const normalizedStart = new Date(startDateTime).toISOString();
-        const normalizedEnd = new Date(endDateTime).toISOString();
 
         const overlapCheck = await calendar.events.list({
             calendarId,
@@ -48,7 +88,7 @@ export async function POST(req: NextRequest) {
         const event = {
             id: slotEventId,
             summary: `[PENDIENTE] ${title}`,
-            description: `${description || ''}\n\n---\n*Cita pendiente de pago. Si no se aprueba en el panel admin, se eliminara automaticamente.*`,
+            description: `${description || ''}\nCodigo de reserva: ${reservationCode}\n\n---\n*Cita pendiente de pago. Si no se aprueba en el panel admin, se eliminara automaticamente.*`,
             start: {
                 dateTime: normalizedStart,
                 timeZone: 'America/Bogota',
@@ -58,9 +98,7 @@ export async function POST(req: NextRequest) {
                 timeZone: 'America/Bogota',
             },
             colorId: '5',
-            reminders: {
-                useDefault: false,
-            },
+            reminders: { useDefault: false },
         };
 
         let response;
@@ -81,15 +119,12 @@ export async function POST(req: NextRequest) {
             let extractedEmail = '';
             if (description) {
                 const emailMatch = description.match(/Email:\s*([^\s]+)/);
-                if (emailMatch?.[1]) {
-                    extractedEmail = emailMatch[1].trim();
-                }
+                if (emailMatch?.[1]) extractedEmail = emailMatch[1].trim();
             }
 
             const parts = title.split(' - ');
-            const serviceName = parts[0]?.trim() || 'Sesion holistica';
+            const serviceName = parts[0]?.trim() || 'Sesion';
             const clientName = parts[1]?.trim() || 'Cliente';
-
             const dateStr = new Date(startDateTime).toLocaleString('es-CO', {
                 timeZone: 'America/Bogota',
                 dateStyle: 'full',
@@ -97,7 +132,7 @@ export async function POST(req: NextRequest) {
             });
 
             if (extractedEmail) {
-                sendPendingReservationEmail(extractedEmail, clientName, serviceName, dateStr).catch(console.error);
+                sendPendingReservationEmail(extractedEmail, clientName, serviceName, dateStr, reservationCode).catch(console.error);
             }
         } catch (mailError) {
             console.error('Error in mailer route:', mailError);
@@ -106,6 +141,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             eventId: response.data.id,
+            reservationCode,
             message: 'Evento pendiente creado exitosamente',
         });
     } catch (error: unknown) {

@@ -165,8 +165,15 @@ export default function SchedulePage() {
                 });
 
                 if (response.ok) {
+                    const data = await response.json();
                     sessionStorage.setItem('booking_date', dateStr);
                     sessionStorage.setItem('booking_time', selectedTime);
+                    if (data?.eventId) {
+                        sessionStorage.setItem('booking_event_id', data.eventId);
+                    }
+                    if (data?.reservationCode) {
+                        sessionStorage.setItem('booking_reference', data.reservationCode);
+                    }
                     router.push(`/checkout/${serviceId}/pay`);
                 } else {
                     alert("Ese horario acaba de ser ocupado. Por favor, selecciona otro.");

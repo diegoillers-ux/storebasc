@@ -1,17 +1,12 @@
 :root {
-  --background: #faf7f2;
-  /* Suave crema/arena claro */
-  --foreground: #6b5d54;
-  /* Gris pardo suave */
-  --primary: #d5bda9;
-  /* Durazno/beige apagado */
-  --primary-hover: #c4a993;
-  --secondary: #f4ece6;
-  /* Rosa viejo lavado */
-  --accent: #d2c8d6;
-  /* Lila lavado */
-  --card-bg: rgba(255, 255, 255, 0.65);
-  --card-border: rgba(213, 189, 169, 0.4);
+  --background: #0a0510; /* Púrpura cósmico muy oscuro */
+  --foreground: #e0e0e0; /* Gris luna */
+  --primary: #d4af37; /* Oro astral */
+  --primary-hover: #b5952f;
+  --secondary: #2a1b38; /* Púrpura profundo para elementos */
+  --accent: #7e57c2; /* Púrpura místico vibrante */
+  --card-bg: rgba(42, 27, 56, 0.65); /* Vidrio oscuro */
+  --card-border: rgba(212, 175, 55, 0.3); /* Borde dorado translúcido */
   --radius: 16px;
 }
 
@@ -25,8 +20,8 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  /* Pastel ethereal background gradient, softened down */
-  background: linear-gradient(135deg, #fefbfc 0%, #faf7f2 50%, #f4f6fa 100%);
+  /* Fondo cósmico oscuro con un gradiente radial sutil */
+  background: radial-gradient(circle at 50% 0%, #1a0b2e 0%, #0a0510 60%, #000000 100%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-outfit), sans-serif;
@@ -53,12 +48,13 @@ button {
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(203, 163, 123, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #a37c52, #8b7d9b);
+  background: linear-gradient(135deg, #d4af37, #f3e5ab);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }

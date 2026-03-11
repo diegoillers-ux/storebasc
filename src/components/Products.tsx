@@ -1,19 +1,25 @@
-import { products } from '@/lib/data';
+'use client';
+
+import { products as localProducts } from '@/lib/data';
 import styles from './Products.module.css';
+import { useCollection } from '@/hooks/useCollection';
 
 export default function Products() {
+    const { data: firebaseProducts, loading } = useCollection('products');
+
+    // Usamos los de Firebase si existen, sino los locales por defecto
+    const displayProducts = firebaseProducts.length > 0 ? firebaseProducts : localProducts;
+
     return (
         <section id="productos" className={styles.productsSection}>
-            <h2 className={`${styles.title} gradient-text`}>Productos Complementarios</h2>
-            <p className={styles.subtitle}>
-                Herramientas mágicas para apoyar tu proceso y elevar tu vibración de forma diaria.
-            </p>
+            <h2 className={`${styles.title} gradient-text`}>Bazar Místico</h2>
+            <p className={styles.subtitle}>Herramientas de apoyo para complementar tu camino espiritual.</p>
 
             <div className={styles.grid}>
-                {products.map((product) => (
+                {displayProducts.map((product) => (
                     <div key={product.id} className={`${styles.card} glass-panel`}>
                         <div className={styles.imageWrapper}>
-                            {product.imagePlaceholder}
+                            {product.imagePlaceholder || '✧'}
                         </div>
                         <div className={styles.cardContent}>
                             <h3 className={styles.cardTitle}>{product.title}</h3>

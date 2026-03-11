@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions, isAdminEmail } from '@/lib/auth';
+import { isDemoMode } from '@/lib/demoMode';
 
 export async function requireAdminSession() {
+    if (isDemoMode()) {
+        return null;
+    }
+
     const session = await getServerSession(authOptions);
     const email = session?.user?.email;
 

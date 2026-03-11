@@ -5,16 +5,15 @@ export default function About() {
         <section id="sobre-mi" className={styles.aboutSection}>
             <div className={styles.container}>
                 <div className={styles.imagePlaceholder}>
-                    {/* Replace with actual image later */}
-                    <span className={styles.emoji}>✨</span>
+                    <span className={styles.emoji}>*</span>
                 </div>
                 <div className={styles.textContent}>
-                    <h2 className={`${styles.title} gradient-text`}>Sobre Mí</h2>
+                    <h2 className={`${styles.title} gradient-text`}>Sobre Nosotros</h2>
                     <p className={styles.description}>
-                        ¡Hola! Soy Lina. Acompaño a mujeres y hombres a despertar su magia interna y conectar con su propósito de vida a través de herramientas como la Astrología Evolutiva, el Tarot Terapéutico y la Canalización Angelical.
+                        Este proyecto es una plantilla comercial para vender servicios y productos con reserva de agenda.
                     </p>
                     <p className={styles.description}>
-                        Mi misión es brindarte luz, claridad y contención amorosa en tu proceso de sanación y evolución. En este espacio seguro, te invito a descifrar los mensajes de tu alma y de los ángeles.
+                        Puedes personalizar texto, imagenes, catalogo, precios y estilo para adaptarlo a cualquier marca.
                     </p>
                 </div>
             </div>

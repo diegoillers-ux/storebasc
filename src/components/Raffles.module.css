@@ -1,0 +1,192 @@
+.rafflesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.raffleCard {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.raffleCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+}
+
+.raffleHeader {
+    height: 120px;
+    background: radial-gradient(circle at center, var(--accent) 0%, var(--secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.starIcon {
+    font-size: 3rem;
+    color: var(--primary);
+    text-shadow: 0 0 20px var(--primary);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 30px var(--primary); }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+.raffleContent {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.raffleTitle {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.raffleDesc {
+    font-size: 0.95rem;
+    color: var(--foreground);
+    opacity: 0.8;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.raffleFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.playButton {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 0.5rem 1.2rem;
+    border-radius: 99px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.playButton:hover {
+    background: var(--primary);
+    color: #0a0510;
+}
+
+/* Modal styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 5, 16, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modalContent {
+    background: var(--secondary);
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    border-radius: 20px;
+    padding: 2rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.closeModal {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--foreground);
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.modalTitle {
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.modalDesc {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+}
+
+.numbersGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 0.5rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.numbersGrid::-webkit-scrollbar {
+    width: 6px;
+}
+.numbersGrid::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.numberBtn {
+    aspect-ratio: 1;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--foreground);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.numberBtn:hover:not(.sold) {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--primary);
+}
+
+.numberBtn.sold {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: rgba(255, 0, 0, 0.1);
+    border-color: rgba(255, 0, 0, 0.2);
+    text-decoration: line-through;
+}
+
+.moreNumbers {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    opacity: 0.6;
+}

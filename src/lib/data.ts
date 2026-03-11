@@ -1,125 +1,126 @@
 export const services = [
     {
-        id: 'interpretacion-suenos',
-        title: 'Interpretación de Sueños',
-        description: 'Sesión de 20 minutos combinando saberes ancestrales y canalización para comprender los mensajes de tu inconsciente.',
+        id: 'servicio-inicial',
+        title: 'Servicio Inicial',
+        description: 'Sesion introductoria para conocer el servicio y definir objetivos.',
         price: '$35.000 COP',
         priceNumber: 35000,
-        icon: '☁️',
-        calendlyUrl: 'https://calendly.com/diegoillers/interpretacion-suenos'
+        icon: '*',
     },
     {
-        id: 'lectura-rapida',
-        title: 'Lectura Rápida',
-        description: 'Guía de tus ángeles para una pregunta o situación específica. Ideal si dispones de poco tiempo (20 minutos).',
+        id: 'servicio-express',
+        title: 'Servicio Express',
+        description: 'Atencion corta para consultas puntuales de clientes.',
         price: '$35.000 COP',
         priceNumber: 35000,
-        icon: '✨',
-        calendlyUrl: 'https://calendly.com/diegoillers/lectura-rapida'
+        icon: '+',
     },
     {
-        id: 'lectura-vinculo',
-        title: 'Lectura de Vínculo',
-        description: 'Profundiza espiritualmente en una relación (romántica, familiar o amistad). Descubre propósitos, retos y posibilidades del vínculo.',
+        id: 'servicio-completo',
+        title: 'Servicio Completo',
+        description: 'Sesion extendida con diagnostico y recomendaciones personalizadas.',
         price: '$116.000 COP',
         priceNumber: 116000,
-        icon: '❤️',
-        calendlyUrl: 'https://calendly.com/diegoillers/lectura-vinculo'
+        icon: '#',
     },
     {
-        id: 'lectura-angelical',
-        title: 'Lectura de Tarot Angelical',
-        description: 'Guía de tus ángeles en todos los aspectos de tu vida (1 hora). Incluye preguntas específicas y un mensaje de poder.',
+        id: 'asesoria-especializada',
+        title: 'Asesoria Especializada',
+        description: 'Acompanamiento de una hora para casos con mayor profundidad.',
         price: '$85.000 COP',
         priceNumber: 85000,
-        icon: '🪽',
-        calendlyUrl: 'https://calendly.com/diegoillers/lectura-angelical'
+        icon: '@',
     },
     {
-        id: 'lectura-numerologica',
-        title: 'Tarot Angelical y Misión de Vida',
-        description: 'Incluye la lectura angelical más una interpretación numerológica de tu esencia, regalos divinos, vidas pasadas y misión de vida.',
+        id: 'plan-personalizado',
+        title: 'Plan Personalizado',
+        description: 'Incluye asesoria y propuesta de plan de accion para seguimiento.',
         price: '$105.000 COP',
         priceNumber: 105000,
-        icon: '🔢',
-        calendlyUrl: 'https://calendly.com/diegoillers/mision-vida'
+        icon: '%',
     },
     {
-        id: 'lectura-cumpleanos',
-        title: 'Lectura de Cumpleaños',
-        description: 'Energía de tus próximos 12 meses con Tarot y runas. Conoce los ángeles que te acompañarán en tu nuevo ciclo y recibe un ritual asignado.',
+        id: 'sesion-premium',
+        title: 'Sesion Premium',
+        description: 'Sesion avanzada para clientes que requieren soporte integral.',
         price: '$116.000 COP',
         priceNumber: 116000,
-        icon: '🎂',
-        calendlyUrl: 'https://calendly.com/diegoillers/lectura-cumpleanos'
+        icon: '&',
     },
-    {
-        id: 'limpieza-vinculos',
-        title: 'Ritual: Limpieza y Armonización de Vínculos',
-        description: 'Proceso de sanación enfocado en restablecer la armonía y equilibrar las energías discordantes dentro de tus relaciones más importantes.',
-        price: 'Agendar Valoración',
-        priceNumber: 0,
-        icon: '🔗',
-        calendlyUrl: 'https://calendly.com/diegoillers/limpieza-vinculos'
-    },
-    {
-        id: 'limpieza-chakras',
-        title: 'Ritual: Limpieza Energética y Balance de Chakras',
-        description: 'Renueva tu campo áurico eliminando estancamientos. Este ritual alinea tus centros energéticos, devolviéndote la vitalidad y claridad.',
-        price: 'Agendar Valoración',
-        priceNumber: 0,
-        icon: '🧘‍♀️',
-        calendlyUrl: 'https://calendly.com/diegoillers/limpieza-chakras'
-    }
 ];
 
 export const getServiceById = (id: string) => {
-    return services.find(s => s.id === id);
+    return services.find((s) => s.id === id);
 };
 
 export const products = [
     {
-        id: 'set-cristales-proteccion',
-        title: 'Set de Cristales de Protección',
-        description: 'Kit de 4 cuarzos curados (Turmalina, Amatista, Ojo de Tigre y Selenita) para proteger y equilibrar la energía de tus espacios o llevar contigo.',
+        id: 'producto-1',
+        title: 'Producto Base 1',
+        description: 'Producto de ejemplo editable para catalogo comercial.',
         price: '$65.000 COP',
         priceNumber: 65000,
-        imagePlaceholder: '💎'
+        imagePlaceholder: 'P1',
     },
     {
-        id: 'esencia-aurica-serenidad',
-        title: 'Esencia Áurica "Serenidad"',
-        description: 'Spray alquímico artesanal a base de aceites esenciales de lavanda, salvia y agua florida para limpiar la bruma mental rápidamente.',
+        id: 'producto-2',
+        title: 'Producto Base 2',
+        description: 'Item de muestra para personalizar nombre, precio y descripcion.',
         price: '$45.000 COP',
         priceNumber: 45000,
-        imagePlaceholder: '🌿'
+        imagePlaceholder: 'P2',
     },
     {
-        id: 'vela-intencion-abundancia',
-        title: 'Vela de Intención: Abundancia',
-        description: 'Vela de soja vegana consagrada, con especias y canela, diseñada para encender en luna creciente y enfocar la energía en la manifestación material.',
+        id: 'producto-3',
+        title: 'Producto Base 3',
+        description: 'Referencia de inventario lista para adaptar a tu negocio.',
         price: '$38.000 COP',
         priceNumber: 38000,
-        imagePlaceholder: '🕯️'
+        imagePlaceholder: 'P3',
     },
     {
-        id: 'bitacora-lunar-2024',
-        title: 'Bitácora Lunar y Astrológica',
-        description: 'Diario guiado mes a mes con los tránsitos astrológicos, fases lunares y ejercicios prácticos de journaling para tu crecimiento anual.',
+        id: 'producto-4',
+        title: 'Producto Base 4',
+        description: 'Producto de ejemplo orientado a ventas recurrentes.',
         price: '$75.000 COP',
         priceNumber: 75000,
-        imagePlaceholder: '📔'
+        imagePlaceholder: 'P4',
     },
     {
-        id: 'pulsera-cuarzo-rosa',
-        title: 'Amuleto: Pulsera Cuarzo Rosa',
-        description: 'Pulsera tejida con piedra natural de cuarzo rosa para potenciar el amor propio y atraer vínculos sanos. Ritualizada bajo tu nombre.',
+        id: 'producto-5',
+        title: 'Producto Base 5',
+        description: 'Muestra final para completar un catalogo inicial de cinco items.',
         price: '$55.000 COP',
         priceNumber: 55000,
-        imagePlaceholder: '📿'
-    }
+        imagePlaceholder: 'P5',
+    },
 ];
 
 export const getProductById = (id: string) => {
-    return products.find(p => p.id === id);
+    return products.find((p) => p.id === id);
+};
+
+export const raffles = [
+    {
+        id: 'rifa-luna-llena',
+        title: 'Sorteo Luna Llena',
+        description: 'Participa por una lectura completa de Tarot + Kit de purificación. Juega con los dos últimos dígitos de la Lotería de Bogotá.',
+        price: '$15.000 COP',
+        priceNumber: 15000,
+        totalNumbers: 100, // 00 to 99
+        soldNumbers: [13, 7, 21, 69, 44, 99], // Mock de números vendidos
+    },
+    {
+        id: 'rifa-astral',
+        title: 'Sorteo Astral Anual',
+        description: 'Gana un amuleto consagrado y carta astral personalizada. Juega con los tres últimos dígitos de la Lotería de Medellín.',
+        price: '$25.000 COP',
+        priceNumber: 25000,
+        totalNumbers: 1000,
+        soldNumbers: [111, 222, 333, 777],
+    }
+];
+
+export const getRaffleById = (id: string) => {
+    return raffles.find((r) => r.id === id);
 };
