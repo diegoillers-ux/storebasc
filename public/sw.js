@@ -1,4 +1,4 @@
-const CACHE_NAME = 'codebasicstor-v1';
+const CACHE_NAME = 'codebasicstor-v2';
 const CORE_ASSETS = ['/', '/manifest.webmanifest', '/shop-logo.png', '/favicon.ico'];
 
 self.addEventListener('install', (event) => {
@@ -19,7 +19,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/admin')) return;
+  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/admin') || url.pathname.startsWith('/_next')) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
