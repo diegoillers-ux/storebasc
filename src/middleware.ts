@@ -12,7 +12,7 @@ export default auth((req) => {
   const bypassActive = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true';
 
   if (isOnAdmin && !isLoggedIn && !bypassActive) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
   return NextResponse.next();
 });
