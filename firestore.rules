@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Por defecto denegar todo acceso
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reglas públicas: Permitir lectura a visitantes para servicios y productos activos
+    match /services/{serviceId} {
+      allow read: if resource == null || resource.data.active == true;
+      allow write: if false; // Solo vía Firebase Admin SDK (Servidor)
+    }
+
+    match /products/{productId} {
+      allow read: if resource == null || resource.data.active == true;
+      allow write: if false; // Solo vía Firebase Admin SDK (Servidor)
+    }
+
+    match /availability/{availabilityId} {
+      allow read: if resource == null || resource.data.active == true;
+      allow write: if false; // Solo vía Firebase Admin SDK (Servidor)
+    }
+
+    // Todo lo demás (clientes, reservas, ventas, pagos, pedidos, configuración y assets IA)
+    // está protegido y restringido al lado del servidor mediante el SDK de Administración.
+  }
+}

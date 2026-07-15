@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions, isAdminEmail } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { isDemoMode } from '@/lib/demoMode';
 
 export async function requireAdminSession() {
@@ -8,14 +7,13 @@ export async function requireAdminSession() {
         return null;
     }
 
-    const session = await getServerSession(authOptions);
-    const email = session?.user?.email;
+    const session = await auth();
 
-    if (!email) {
+    if (!session?.user) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    if (!isAdminEmail(email)) {
+    if (!session.user.isAdmin) {
         return NextResponse.json({ error: 'Sin permisos de administrador' }, { status: 403 });
     }
 

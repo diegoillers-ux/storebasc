@@ -387,7 +387,7 @@ export default function AdminCRM() {
     const addBlockedDate = () => {
         if (!newBlockedDate) return;
 
-        const blockedDates = [...new Set([...(data.settings.blockedDates || []), newBlockedDate])].sort();
+        const blockedDates = Array.from(new Set([...(data.settings.blockedDates || []), newBlockedDate])).sort();
         setData((prev) => ({ ...prev, settings: { ...prev.settings, blockedDates } }));
         setNewBlockedDate('');
     };

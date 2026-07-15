@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next'
 
-const nextConfig: NextConfig = {
+const nextConfig: any = {
   // Imágenes externas permitidas
   images: {
     remotePatterns: [
@@ -31,10 +31,7 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // Ignorar errores de ESLint/TypeScript en build de Preview (no en producción)
-  eslint: {
-    ignoreDuringBuilds: process.env.VERCEL_ENV === 'preview',
-  },
+  // Ignorar errores de TypeScript en build de Preview (no en producción)
   typescript: {
     ignoreBuildErrors: process.env.VERCEL_ENV === 'preview',
   },
