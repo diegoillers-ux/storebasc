@@ -14,6 +14,7 @@ import {
   ThumbsDown,
   AlertCircle,
   FileImage,
+  Award,
 } from 'lucide-react';
 import LoadingState from '@/components/ui/LoadingState';
 import FeedbackAlert from '@/components/ui/FeedbackAlert';
@@ -31,6 +32,29 @@ const FORMAT_OPTIONS = [
   { id: '9:16', name: 'Historia / Estado (9:16)', desc: 'Instagram Stories, Facebook, WhatsApp Status (1080x1920)' },
   { id: '1:1', name: 'Post de Instagram (1:1)', desc: 'Instagram Feed, Carrusel (1080x1080)' },
   { id: '1.91:1', name: 'Post de Facebook (1.91:1)', desc: 'Facebook Feed, Link share post (1200x630)' },
+];
+
+const ESTILO_PRESETS = [
+  {
+    title: 'Taller de Cuarzos',
+    prompt: 'Taller de Cuarzos en tonos rosa pastel y beige con cristales limpios en el agua, estrellas doradas, tipografía serif en oro y firma manuscrita "Con amor, Lina". Estética de paz y naturaleza.',
+    tag: 'Pastel / Cuarzos'
+  },
+  {
+    title: 'Camino de Magia Blanca',
+    prompt: 'El Camino de la Magia Blanca, fondo de pergamino pálido texturizado con estatua de ángel clásica en mármol blanco, velas encendidas, cristales de amatistas y flores de lavanda en las esquinas. Títulos en oro y violeta.',
+    tag: 'Magia / Ángeles'
+  },
+  {
+    title: 'Rituales de Luz',
+    prompt: 'Rituales celestiales, fondo de acuarela arcoíris suave con destellos brillantes y alas doradas resplandecientes en el centro. Letras doradas elegantes respetando leyes universales.',
+    tag: 'Acuarela / Alas'
+  },
+  {
+    title: 'Portal Mitad de Año',
+    prompt: 'Lectura Especial Portal Mitad de Año, luna creciente dorada, tonos violeta profundo, tipografías manuscritas elegantes, constelaciones celestiales y destellos de estrellas.',
+    tag: 'Místico / Violeta'
+  }
 ];
 
 export default function ContenidoIAPage() {
@@ -58,7 +82,7 @@ export default function ContenidoIAPage() {
         setAssets(data.assets);
       }
     } catch {
-      showNotice('error', 'Error de conexión', 'No se pudieron recuperar los assets contables.');
+      showNotice('error', 'Error de conexión', 'No se pudieron recuperar los assets.');
     } finally {
       setLoading(false);
     }
@@ -131,10 +155,6 @@ export default function ContenidoIAPage() {
     }
   };
 
-  if (loading) {
-    return <LoadingState message="Cargando galería de assets de marketing..." />;
-  }
-
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -160,7 +180,7 @@ export default function ContenidoIAPage() {
           <span>Configura tu Promoción</span>
         </h2>
 
-        {/* Format Selector Pills */}
+        {/* STEP 1: Format Selector */}
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-gray-500">Paso 1: Selecciona el formato de red social</label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -188,10 +208,34 @@ export default function ContenidoIAPage() {
           </div>
         </div>
 
-        {/* Text prompt form */}
+        {/* STEP 2: Presets from Lina's assets */}
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-gray-500">Paso 2: Inspírate con las plantillas de Espíritu Ananda</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {ESTILO_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setPromptInput(preset.prompt)}
+                className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-violet-200 text-left hover:bg-violet-50/20 transition-all flex flex-col justify-between h-28"
+              >
+                <div>
+                  <h4 className="font-bold text-xs text-gray-950">{preset.title}</h4>
+                  <p className="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-wider">{preset.tag}</p>
+                </div>
+                <span className="text-[9px] text-violet-600 font-semibold flex items-center gap-1 mt-2">
+                  <span>Usar Plantilla</span>
+                  <span>→</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* STEP 3: Prompt Text Input */}
         <form onSubmit={handleGenerate} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Paso 2: Describe la idea del banner</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Paso 3: Ajusta o describe la idea del banner</label>
             <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
@@ -199,8 +243,8 @@ export default function ContenidoIAPage() {
                 disabled={generating}
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
-                placeholder="Ej. Banner para promocionar la lectura de Carta Astral en tonos morados oscuros y estrellas resplandecientes..."
-                className="flex-1 bg-[#FAF8FF] border border-gray-100 rounded-2xl py-3.5 px-4 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 disabled:opacity-60"
+                placeholder="Escribe aquí tu prompt o selecciona una de las plantillas de arriba..."
+                className="flex-1 bg-[#FAF8FF] border border-gray-100 rounded-2xl py-3.5 px-4 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 disabled:opacity-60 font-medium"
               />
               <button
                 type="submit"
