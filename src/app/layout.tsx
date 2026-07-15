@@ -1,40 +1,51 @@
-import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
-import './globals.css';
-import AuthProvider from '@/components/AuthProvider';
-import PwaRegister from '@/components/PwaRegister';
+import type { Metadata, Viewport } from 'next'
+import { Inter, Playfair_Display } from 'next/font/google'
+import './globals.css'
 
-const outfit = Outfit({
-  variable: '--font-outfit',
+const inter = Inter({
   subsets: ['latin'],
-});
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Tienda Base de Servicios',
-  description: 'Plataforma de reservas para servicios y productos',
-  manifest: '/manifest.webmanifest',
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/shop-logo.png',
+  title: {
+    default: 'Espíritu Ananda — Lecturas astrales y productos artesanales',
+    template: '%s | Espíritu Ananda',
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Codebasicstor',
+  description:
+    'Lecturas astrales, tarot y productos artesanales con alma. Sesiones personalizadas por WhatsApp desde Cali, Colombia.',
+  keywords: ['lecturas astrales', 'tarot', 'astrología', 'productos artesanales', 'Cali', 'Colombia'],
+  authors: [{ name: 'Espíritu Ananda' }],
+  openGraph: {
+    type: 'website',
+    locale: 'es_CO',
+    siteName: 'Espíritu Ananda',
   },
-};
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#2D1B69',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="es">
-      <body className={`${outfit.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
-        <PwaRegister />
+    <html lang="es" className={`${inter.variable} ${playfair.variable}`}>
+      <body className="font-sans antialiased bg-white text-gray-900">
+        {children}
       </body>
     </html>
-  );
+  )
 }

@@ -1,139 +1,33 @@
-'use client';
-
-import { Suspense, useEffect, useMemo } from 'react';
-import { signIn, useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Calendar, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
-
-import styles from './page.module.css';
-
-function getErrorCopy(errorCode: string | null) {
-    if (errorCode === 'AccessDenied') {
-        return {
-            title: 'Correo sin permisos',
-            text: 'El acceso al CRM está restringido a los correos incluidos en ADMIN_EMAILS. Inicia sesión con una cuenta autorizada.',
-        };
-    }
-
-    if (errorCode === 'Configuration') {
-        return {
-            title: 'Configuración incompleta',
-            text: 'Faltan variables del proveedor de Google o de NextAuth. Revisa GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL y NEXTAUTH_SECRET.',
-        };
-    }
-
-    if (errorCode) {
-        return {
-            title: 'No se pudo completar el acceso',
-            text: 'Hubo un problema al iniciar sesión. Intenta de nuevo y revisa la configuración del proveedor si el problema persiste.',
-        };
-    }
-
-    return null;
-}
-
-function LoginPageContent() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const { status, data: session } = useSession();
-    const error = searchParams.get('error');
-    const errorCopy = useMemo(() => getErrorCopy(error), [error]);
-
-    useEffect(() => {
-        if (status === 'authenticated') {
-            router.replace('/admin/reservas');
-        }
-    }, [router, status]);
-
-    return (
-        <main className={styles.page}>
-            <section className={styles.panel}>
-                <div className={styles.copyColumn}>
-                    <span className={styles.eyebrow}>Acceso administrativo protegido</span>
-                    <h1 className="gradient-text">Ingreso al CRM</h1>
-                    <p className={styles.lead}>
-                        El panel administrativo se dejó con acceso real por Google y lista blanca de correos. No hay acceso abierto al público ni bypass temporal en la interfaz.
-                    </p>
-
-                    <div className={styles.featureList}>
-                        <div className={styles.featureItem}>
-                            <ShieldCheck size={18} />
-                            <span>Solo ingresan correos autorizados en ADMIN_EMAILS.</span>
-                        </div>
-                        <div className={styles.featureItem}>
-                            <Calendar size={18} />
-                            <span>La sesión también habilita el uso seguro del panel y sus APIs administrativas.</span>
-                        </div>
-                        <div className={styles.featureItem}>
-                            <CheckCircle2 size={18} />
-                            <span>Si la cuenta ya está aprobada, el acceso redirige al CRM automáticamente.</span>
-                        </div>
-                    </div>
-
-                    {errorCopy && (
-                        <div className={styles.errorBox}>
-                            <AlertCircle size={18} />
-                            <div>
-                                <strong>{errorCopy.title}</strong>
-                                <p>{errorCopy.text}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className={`${styles.actionCard} glass-panel`}>
-                    <div className={styles.actionIcon}>
-                        <Sparkles size={26} />
-                    </div>
-                    <h2>Entrar con Google</h2>
-                    <p>
-                        Usa el correo administrador del negocio. Si no está en la lista autorizada, el sistema bloqueará la entrada al panel.
-                    </p>
-
-                    <button
-                        className={styles.loginButton}
-                        onClick={() => signIn('google', { callbackUrl: '/admin/reservas' })}
-                        disabled={status === 'loading'}
-                    >
-                        {status === 'loading' ? 'Validando sesión...' : 'Continuar con Google'}
-                    </button>
-
-                    <div className={styles.statusNote}>
-                        <span>Estado actual:</span>
-                        <strong>{status === 'authenticated' ? session?.user?.email || 'Autenticado' : 'Sin sesión activa'}</strong>
-                    </div>
-                </div>
-            </section>
-        </main>
-    );
-}
-
-function LoginFallback() {
-    return (
-        <main className={styles.page}>
-            <section className={styles.panel}>
-                <div className={styles.copyColumn}>
-                    <span className={styles.eyebrow}>Acceso administrativo protegido</span>
-                    <h1 className="gradient-text">Ingreso al CRM</h1>
-                    <p className={styles.lead}>Preparando la validacion de acceso y cargando el flujo de inicio de sesion.</p>
-                </div>
-
-                <div className={`${styles.actionCard} glass-panel`}>
-                    <div className={styles.actionIcon}>
-                        <Sparkles size={26} />
-                    </div>
-                    <h2>Cargando acceso</h2>
-                    <p>Estamos comprobando el estado de la sesion para mostrarte el formulario correcto.</p>
-                </div>
-            </section>
-        </main>
-    );
-}
+import { signIn } from '@/lib/auth'
 
 export default function LoginPage() {
-    return (
-        <Suspense fallback={<LoginFallback />}>
-            <LoginPageContent />
-        </Suspense>
-    );
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF]">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 w-full max-w-sm text-center">
+        <p className="text-3xl mb-2">✦</p>
+        <h1 className="text-xl font-bold text-[#2D1B69] mb-1">Espíritu Ananda</h1>
+        <p className="text-sm text-gray-400 mb-8">Panel de administración</p>
+
+        <form
+          action={async () => {
+            'use server'
+            await signIn('google', { redirectTo: '/admin' })
+          }}
+        >
+          <button
+            type="submit"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+              <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+            </svg>
+            Continuar con Google
+          </button>
+        </form>
+      </div>
+    </div>
+  )
 }
