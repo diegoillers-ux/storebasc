@@ -16,6 +16,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Award,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { href: '/admin/catalogo', label: 'Catálogo', icon: Package },
   { href: '/admin/contenido', label: 'Contenido IA', icon: Sparkles },
+  { href: '/admin/rifas', label: 'Rifas', icon: Award },
   { href: '/admin/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ];
