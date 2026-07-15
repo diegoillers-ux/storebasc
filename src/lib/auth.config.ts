@@ -16,17 +16,8 @@ export const authConfig: NextAuthConfig = {
     error: '/login',
   },
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnAdmin = nextUrl.pathname.startsWith('/admin');
-      
-      if (isOnAdmin) {
-        if (isLoggedIn) {
-          // Si está autenticado, verificar si es administrador
-          return !!(auth.user as any)?.isAdmin;
-        }
-        return false; // Redirigir a /login si no está autenticado
-      }
+    authorized() {
+      // Dejar que el middleware maneje la redirección de forma segura y manual
       return true;
     },
   },
