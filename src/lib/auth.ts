@@ -1,22 +1,14 @@
 import NextAuth from 'next-auth';
-import Google from 'next-auth/providers/google';
+import { authConfig } from './auth.config';
 import { adminUserRepository } from '@/lib/firebase/repositories/admin-users';
 
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR' | 'READER';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-  },
+  ...authConfig,
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, profile }) {
-      // Si tenemos el perfil de Google con el correo, buscamos el rol en Firestore
       if (profile && profile.email) {
         try {
           const adminUser = await adminUserRepository.getByEmail(profile.email);
@@ -43,10 +35,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login',
   },
 });
 

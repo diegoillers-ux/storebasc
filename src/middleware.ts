@@ -1,22 +1,7 @@
-import { auth } from '@/lib/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/lib/auth.config';
 
-export default auth((req) => {
-  const reqUrl = new URL(req.url);
-  const isAdminPath = reqUrl.pathname.startsWith('/admin');
-  const isLoggedIn = !!req.auth;
-
-  if (isAdminPath) {
-    if (!isLoggedIn) {
-      return Response.redirect(new URL('/login', req.nextUrl));
-    }
-
-    // Validar si el usuario es un administrador activo
-    const isAdmin = req.auth?.user?.isAdmin;
-    if (!isAdmin) {
-      return Response.redirect(new URL('/login?error=AccessDenied', req.nextUrl));
-    }
-  }
-});
+export default NextAuth(authConfig).auth;
 
 export const config = {
   matcher: ['/admin/:path*'],
