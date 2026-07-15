@@ -19,6 +19,10 @@ export async function GET() {
   if (authError) return authError;
 
   try {
+    if (isDemoMode()) {
+      return NextResponse.json({ settings: DEFAULT_WEEKLY_SETTINGS });
+    }
+
     const weeklyData = await availabilityRepository.listWeekly();
     
     // Si la base de datos está vacía, devolver valores por defecto

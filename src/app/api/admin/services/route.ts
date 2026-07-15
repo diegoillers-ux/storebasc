@@ -3,11 +3,21 @@ import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { serviceRepository } from '@/lib/firebase/repositories/services';
 
+const MOCK_SERVICES = [
+  { id: 'serv-1', name: 'Lectura de Carta Natal Completa', slug: 'carta-natal', price: 150000, duration: 60, durationMinutes: 60, category: 'Esoterismo', active: true, description: 'Lectura astrológica detallada cruzando planetas, casas y tránsitos mayores.', featured: true, imageUrl: null },
+  { id: 'serv-2', name: 'Lectura de Tarot Express', slug: 'tarot-express', price: 50000, duration: 30, durationMinutes: 30, category: 'Tarot', active: true, description: 'Sesión rápida enfocada en una pregunta concreta (trabajo, amor o salud).', featured: false, imageUrl: null },
+  { id: 'serv-3', name: 'Sinastría de Pareja', slug: 'sinastria', price: 200000, duration: 90, durationMinutes: 90, category: 'Esoterismo', active: true, description: 'Estudio comparativo de dos cartas astrales para entender dinámicas de relación.', featured: false, imageUrl: null },
+];
+
 export async function GET() {
   const authError = await requireAdminSession();
   if (authError) return authError;
 
   try {
+    if (isDemoMode()) {
+      return NextResponse.json({ services: MOCK_SERVICES });
+    }
+
     const services = await serviceRepository.list(false); // Listar todos, incluyendo inactivos
     return NextResponse.json({ services });
   } catch (error: unknown) {
