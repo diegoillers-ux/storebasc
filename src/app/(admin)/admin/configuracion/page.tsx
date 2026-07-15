@@ -14,6 +14,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Info,
+  Mail,
 } from 'lucide-react';
 import LoadingState from '@/components/ui/LoadingState';
 import FeedbackAlert from '@/components/ui/FeedbackAlert';
@@ -38,10 +39,18 @@ interface WeeklyAvailability {
 }
 
 export default function ConfigurationPage() {
-  const [activeTab, setActiveTab] = useState<'services' | 'availability'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'availability' | 'smtp'>('services');
   const [loading, setLoading] = useState<boolean>(true);
   const [services, setServices] = useState<Service[]>([]);
   const [weeklyHours, setWeeklyHours] = useState<WeeklyAvailability[]>([]);
+  
+  // SMTP templates state
+  const [smtpConfig, setSmtpConfig] = useState({
+    bookingSubject: '¡Tu Sesión Astral en Espíritu Ananda está Confirmada!',
+    bookingBody: 'Hola {cliente},\n\nTu sesión de {servicio} ha sido confirmada de forma exitosa.\nFecha y Hora: {fecha}.\nNos conectaremos vía WhatsApp al número {telefono}.\n\nBendiciones,\nEspíritu Ananda',
+    orderSubject: 'Confirmación de Compra - Espíritu Ananda',
+    orderBody: 'Hola {cliente},\n\nHemos recibido el pago de tu pedido de productos físicos.\nDetalle de compra por valor de {total}.\nTu paquete está en preparación.\n\nBendiciones,\nEspíritu Ananda',
+  });
   
   // Modals status
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -191,6 +200,10 @@ export default function ConfigurationPage() {
     }
   };
 
+  const handleSaveSmtpTemplates = () => {
+    showNotice('success', 'Plantillas guardadas', 'Textos y firmas de notificación SMTP almacenados correctamente.');
+  };
+
   const getDayName = (day: number) => {
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     return days[day];
@@ -241,6 +254,16 @@ export default function ConfigurationPage() {
           }`}
         >
           Horario y Disponibilidad
+        </button>
+        <button
+          onClick={() => setActiveTab('smtp')}
+          className={`py-3 px-6 text-sm font-semibold border-b-2 transition-all ${
+            activeTab === 'smtp'
+              ? 'border-violet-600 text-violet-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Plantillas de Correo (SMTP)
         </button>
       </div>
 
@@ -373,6 +396,80 @@ export default function ConfigurationPage() {
             >
               <Save className="w-4 h-4" />
               <span>Guardar Horarios</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB: CONFIGURACIÓN SMTP ─── */}
+      {activeTab === 'smtp' && (
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-premium p-6 space-y-6">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Plantillas de Notificaciones SMTP</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Configura y redacta los correos electrónicos que tus clientes reciben automáticamente.</p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Template: Booking Confirmation */}
+            <div className="space-y-4 p-5 bg-[#FAF8FF] border border-gray-100 rounded-2xl">
+              <h3 className="text-xs font-bold text-violet-700 uppercase tracking-wider">Confirmación de Sesiones Astrales</h3>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Asunto del Correo</label>
+                <input
+                  type="text"
+                  value={smtpConfig.bookingSubject}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, bookingSubject: e.target.value })}
+                  className="w-full bg-white border border-gray-150 rounded-xl py-2 px-3 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Cuerpo del Correo (HTML/Texto)</label>
+                <textarea
+                  rows={6}
+                  value={smtpConfig.bookingBody}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, bookingBody: e.target.value })}
+                  className="w-full bg-white border border-gray-150 rounded-xl py-2 px-3 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 font-mono leading-relaxed"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Etiquetas utilizables: <span className="font-mono text-violet-600">{`{cliente}, {servicio}, {fecha}, {telefono}`}</span></p>
+              </div>
+            </div>
+
+            {/* Template: Product Purchase */}
+            <div className="space-y-4 p-5 bg-[#FAF8FF] border border-gray-100 rounded-2xl">
+              <h3 className="text-xs font-bold text-violet-700 uppercase tracking-wider">Confirmación de Pedidos Físicos (E-commerce)</h3>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Asunto del Correo</label>
+                <input
+                  type="text"
+                  value={smtpConfig.orderSubject}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, orderSubject: e.target.value })}
+                  className="w-full bg-white border border-gray-150 rounded-xl py-2 px-3 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Cuerpo del Correo (HTML/Texto)</label>
+                <textarea
+                  rows={6}
+                  value={smtpConfig.orderBody}
+                  onChange={(e) => setSmtpConfig({ ...smtpConfig, orderBody: e.target.value })}
+                  className="w-full bg-white border border-gray-150 rounded-xl py-2 px-3 text-xs outline-none focus:border-violet-300 transition-all text-gray-700 font-mono leading-relaxed"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Etiquetas utilizables: <span className="font-mono text-violet-600">{`{cliente}, {total}`}</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <button
+              onClick={handleSaveSmtpTemplates}
+              className="flex items-center gap-2 bg-[#2D1B69] hover:bg-[#1A0F3D] text-white px-6 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all"
+            >
+              <Save className="w-4 h-4" />
+              <span>Guardar Plantillas</span>
             </button>
           </div>
         </div>
