@@ -1,11 +1,41 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --font-inter: 'Inter', system-ui, sans-serif;
-    --font-playfair: 'Playfair Display', Georgia, serif;
-  }
+@theme {
+  /* ─── Paleta de Colores Espíritu Ananda ─── */
+  --color-ananda-950: #1A0F3D; /* Índigo oscuro */
+  --color-ananda-900: #2D1B69; /* Índigo profundo */
+  --color-ananda-800: #3D2882;
+  --color-ananda-700: #4E369B;
+  --color-ananda-500: #7C3AED; /* Violeta acento */
+  --color-ananda-400: #A78BFA;
+  --color-ananda-100: #EDE9FE;
+  --color-ananda-50: #FAF5FF;  /* Lavanda muy clara */
 
+  --color-teal-600: #0D9488;  /* Turquesa ingresos */
+  --color-teal-50: #F0FDFA;
+  
+  --color-coral-600: #E85D4A; /* Coral alertas */
+  --color-coral-50: #FFF1EF;
+  
+  --color-gold-500: #D4A843;  /* Dorado premium */
+  --color-gold-50: #FFFBEB;
+
+  --color-surface: #FAF8FF;   /* Fondo general */
+
+  /* ─── Tipografía ─── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+
+  /* ─── Bordes y Esquinas ─── */
+  --radius-3xl: 24px;         /* Esquinas amplias del mockup */
+  --radius-2xl: 16px;
+
+  /* ─── Sombras Suaves ─── */
+  --shadow-premium: 0 10px 30px -15px rgba(26, 15, 61, 0.05), 0 4px 12px -4px rgba(26, 15, 61, 0.02);
+  --shadow-premium-hover: 0 20px 40px -20px rgba(26, 15, 61, 0.1), 0 8px 20px -6px rgba(26, 15, 61, 0.04);
+}
+
+@layer base {
   * {
     box-sizing: border-box;
     margin: 0;
@@ -14,47 +44,49 @@
 
   html {
     scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    font-family: var(--font-inter);
+    background-color: var(--color-surface);
+    font-family: var(--font-sans);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Tipografía display solo para tienda y headings de marca */
-  .font-display {
-    font-family: var(--font-playfair);
-  }
-
-  /* Scrollbar sutil */
+  /* Scrollbars súper sutiles */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: rgba(124, 58, 237, 0.1);
     border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.25);
   }
 }
 
 @layer utilities {
-  /* Superficie de fondo del CRM */
-  .bg-surface {
-    background-color: #FAF8FF;
+  /* Efecto de cristal esmerilado (Glassmorphism) */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Sidebar color primario */
-  .bg-ananda {
-    background-color: #2D1B69;
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
   }
 
-  /* Truncar texto en una línea */
+  /* Truncados multilinea */
   .truncate-1 {
     overflow: hidden;
     display: -webkit-box;
@@ -62,7 +94,6 @@
     -webkit-line-clamp: 1;
   }
 
-  /* Truncar texto en dos líneas */
   .truncate-2 {
     overflow: hidden;
     display: -webkit-box;
