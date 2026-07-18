@@ -1,69 +1,55 @@
-# Plan de sprints AnandaStore V2
+# Plan de Sprints y Hoja de Ruta — AnandaStore V2
 
-## Sprint 1 — Foundation ✅ En curso
-- [x] Crear rama `redesign/ananda-v2`
-- [x] Estructura de carpetas App Router
-- [x] Sistema de tipos TypeScript
-- [x] Lib utils, db, whatsapp, payments, calendar
-- [x] Tailwind paleta Ananda
-- [x] Componentes UI base: Card, Button, Badge
-- [x] Layout admin con sidebar índigo
-- [x] Layout público con header y footer
-- [x] Middleware de protección de rutas admin
-- [x] Prisma schema completo
-- [x] .env.example documentado
-- [x] Documentación de arquitectura y sprint plan
-- [ ] Instalar dependencias: prisma, clsx, tailwind-merge
-- [ ] Configurar NextAuth v5
-- [ ] Configurar PostgreSQL y correr primera migración
-- [ ] Conectar preview de Vercel a esta rama
+Este plan detalla los hitos completados y los entregables pendientes del rediseño para mantener sincronizado el avance del proyecto.
 
-## Sprint 2 — Agenda y Clientes
-- [ ] CRUD de servicios
-- [ ] CRUD de clientes
-- [ ] Disponibilidad y reglas de agenda
-- [ ] Reservas: crear, confirmar, reprogramar, cancelar
-- [ ] Integración Google Calendar (crear/actualizar/cancelar eventos)
-- [ ] Estados de reserva y bitácora
-- [ ] Vista agenda del día (admin)
-- [ ] Enlace WhatsApp por reserva
-- [ ] Bandeja de pagos manuales por verificar
+---
 
-## Sprint 3 — Pagos
-- [ ] Flujo pago manual completo (instrucciones + comprobante)
-- [ ] Subida de comprobante a almacenamiento
-- [ ] Bandeja de verificación admin
-- [ ] Webhook pasarela (Wompi placeholder listo)
-- [ ] Confirmación automática al aprobar
-- [ ] Pantallas de pago pendiente, aprobado y rechazado
+## Hito 1: Cimiento de Autenticación y Base de Datos (Sprint 1) ✅ Completado
+- [x] Rama base unificada `redesign/ananda-v2`.
+- [x] Estructuración del ruteo Next.js (App Router) y sistema de tipos estático.
+- [x] Conexión e integración con Firebase SDK (Clientes y Administradores).
+- [x] Migración del esquema a colecciones seguras de Firestore (`adminUsers`, `customers`, `bookings`, `payments`, `products`, `orders`).
+- [x] Middleware Edge-Safe de NextAuth v5 para rutas administrativas.
 
-## Sprint 4 — Tienda
-- [ ] Catálogo con categorías y filtros
-- [ ] Detalle de producto
-- [ ] Carrito y checkout
-- [ ] Pedidos y estados operativos
-- [ ] Movimientos de inventario
-- [ ] Notificaciones de pedido por WhatsApp/email
+## Hito 2: Agenda Mística y Google Calendar (Sprint 2) ✅ Completado
+- [x] CRUD completo de catálogo de servicios.
+- [x] Sistema de cálculo de disponibilidad de franjas horarias libres.
+- [x] Integración de sincronización transaccional con Google Calendar API (creación de eventos por cuenta de servicio).
+- [x] Flujos y vistas de la Agenda diaria para el administrador.
+- [x] Conectores de WhatsApp CRM para iniciar chats de seguimiento.
 
-## Sprint 5 — Dashboard
-- [ ] KPIs: sesiones, pagos, ingresos, clientes nuevos
-- [ ] Agenda del día accionable
-- [ ] Pendientes críticos
-- [ ] Distribución de ingresos: servicios vs. tienda
-- [ ] Accesos rápidos
-- [ ] Reportes por periodo
+## Hito 3: Finanzas y Aprobación de Pagos (Sprint 3) ✅ Completado
+- [x] Registro contable de transferencias manuales (Nequi, Daviplata, Bancolombia).
+- [x] Visor interactivo y zoom de comprobantes de pago adjuntos por el cliente.
+- [x] Lógica de **Aprobación en Cascada**: aprobar un pago confirma automáticamente la cita en Google Calendar y cambia el estado de bookings/orders.
+- [x] Panel de reportes de rentabilidad y ticket medio.
 
-## Sprint 6 — IA Comercial
-- [ ] Generador de creatividades Gemini
-- [ ] Formatos: story, post, banner, tarjeta
-- [ ] Flujo de revisión y aprobación
-- [ ] Biblioteca de assets aprobados
-- [ ] Editor de texto sobre imagen
+## Hito 4: Marketing con IA y Sorteos (Sprint 6) ✅ Completado
+- [x] Generador de banners comerciales optimizado para redes sociales.
+- [x] Selector de relación de aspecto de imagen (Historia 9:16, Post 1:1, Post FB 1.91:1).
+- [x] Ajuste instantáneo de prompts a la identidad de Lina (Cuarzos, Magia Blanca, Portales).
+- [x] Sistema de aprobación/rechazo reactivo de assets con badges.
+- [x] Panel de sorteos y rifas astrales con sorteador aleatorio transaccional en caliente.
+- [x] Plantillas dinámicas de correos SMTP en ajustes.
 
-## Sprint 7 — Lanzamiento
-- [ ] Migración de datos V1 → V2
-- [ ] Pruebas end-to-end
-- [ ] Optimización móvil
-- [ ] Revisión de seguridad
-- [ ] Merge a main + tag v2.0.0
-- [ ] Actualizar Vercel a nueva rama
+---
+
+## Hito 5: Tienda Comercial y Embudos Públicos (Sprint 4) 🧭 Pendiente
+Este es el siguiente sprint en la hoja de ruta. Las siguientes piezas no se han conectado a los repositorios reales de Firestore:
+- [ ] **Landing Page Pública (`/`)**:
+  - Rediseñar el inicio con Tailwind v4 y cargar los servicios y productos directamente de la base de datos de Firestore en lugar de los mocks estáticos.
+- [ ] **Embudo de Checkout de Servicios (`/checkout/[serviceId]`)**:
+  - Validar formulario de datos natales.
+  - Conectar el selector de calendario a la API de disponibilidad en vivo.
+  - Habilitar subida de comprobantes en el paso final de pago.
+- [ ] **Carrito de Compras de Productos (`/checkout/product`)**:
+  - Suma de ítems en memoria local.
+  - Formulario de despacho y subida del recibo de pago manual.
+- [ ] **Compra de Números de Rifa (`/checkout/raffle`)**:
+  - Selección de número libre y subida de comprobante.
+
+## Hito 6: Lanzamiento y Estabilización (Sprint 7) 🧭 Pendiente
+- [ ] Pruebas end-to-end (E2E) de flujos clientes-administrador en vivo.
+- [ ] Optimización de rendimiento móvil.
+- [ ] Auditoría de seguridad (Reglas de Firestore y NextAuth).
+- [ ] Merge de `redesign/ananda-v2` a `main`.
