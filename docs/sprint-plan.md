@@ -34,21 +34,27 @@ Este plan detalla los hitos completados y los entregables pendientes del redise�
 
 ---
 
-## Hito 5: Tienda Comercial y Embudos Públicos (Sprint 4) 🧭 Pendiente
-Este es el siguiente sprint en la hoja de ruta. Las siguientes piezas no se han conectado a los repositorios reales de Firestore:
-- [ ] **Landing Page Pública (`/`)**:
-  - Rediseñar el inicio con Tailwind v4 y cargar los servicios y productos directamente de la base de datos de Firestore en lugar de los mocks estáticos.
-- [ ] **Embudo de Checkout de Servicios (`/checkout/[serviceId]`)**:
-  - Validar formulario de datos natales.
-  - Conectar el selector de calendario a la API de disponibilidad en vivo.
-  - Habilitar subida de comprobantes en el paso final de pago.
-- [ ] **Carrito de Compras de Productos (`/checkout/product`)**:
-  - Suma de ítems en memoria local.
-  - Formulario de despacho y subida del recibo de pago manual.
-- [ ] **Compra de Números de Rifa (`/checkout/raffle`)**:
-  - Selección de número libre y subida de comprobante.
+## Hito 5: Tienda Comercial y Embudos Públicos (Sprint 4) ✅ Completado
+- [x] **Landing Page Pública (`/`)**:
+  - Rediseñada con Tailwind v4, hero cósmico, 6 secciones completas y conexión a servicios y productos reales de Firestore.
+- [x] **Catálogo de Servicios (`/servicios`)**:
+  - Rejilla responsive, componentes `ServiceCard.tsx`, `loading.tsx` y filtros interactivos por categoría client-side.
+- [x] **Tienda de Productos (`/tienda`)**:
+  - Rejilla de productos con `ProductCard.tsx`, gestión global de carrito (`CartContext.tsx`), panel lateral `CartDrawer.tsx` y sincronización con `sessionStorage`.
+- [x] **Embudo de Checkout de Servicios (`/checkout/[serviceId]`)**:
+  - Formulario de datos natales y WhatsApp del consultante.
+  - Componente `AvailabilityCalendar.tsx` de agendamiento de fecha y hora.
+  - Paso final de pago manual (subida de comprobante base64) o gateway (Wompi).
+  - API Routes `/api/bookings/create` y `/api/webhooks/wompi`.
+- [x] **Checkout de Productos Físicos (`/checkout/product`)**:
+  - Wizard de 4 pasos (Resumen de carrito, Datos de envío, Pago y Confirmación).
+  - API Route `/api/orders/create` con transacciones de ajuste de stock en Firestore.
+- [x] **Página de Confirmación Unificada (`/checkout/success`)**:
+  - Vista adaptativa para citas o pedidos con animaciones CSS de estrellas y confeti místico.
 
-## Hito 6: Lanzamiento y Estabilización (Sprint 7) 🧭 Pendiente
+---
+
+## Hito 6: Lanzamiento y Estabilización (Sprint 7) 🧭 En Progreso
 - [ ] Pruebas end-to-end (E2E) de flujos clientes-administrador en vivo.
 - [ ] Optimización de rendimiento móvil.
 - [ ] Auditoría de seguridad (Reglas de Firestore y NextAuth).
