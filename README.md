@@ -1,132 +1,145 @@
-# Espíritu Ananda V2 — Panel de Control & Tienda Mística
+# AnandaStore V2 — Plataforma Holística & E-Commerce Astral
 
-Plataforma integral de reserva de servicios holísticos, venta de productos artesanales, y gestión de marketing con Inteligencia Artificial (Gemini) construida para **Espíritu Ananda**.
-
----
-
-## 🚀 Arquitectura Tecnológica (Stack V2)
-
-La versión 2.0 ha sido rediseñada y refactorizada completamente desde cero para reemplazar la base de datos relacional anterior por una arquitectura Serverless escalable:
-
-*   **Framework**: Next.js 16 (App Router, Turbopack) para renderizado híbrido y APIs eficientes.
-*   **Estilos**: Tailwind CSS v4 (compilado mediante PostCSS para soporte total en producción).
-*   **Base de Datos**: Firebase Suite (Cloud Firestore para almacenamiento no relacional y Firebase Auth).
-*   **Acceso Backend**: Patrón Repositorio en NodeJS utilizando `firebase-admin` en endpoints seguros.
-*   **Autenticación**: NextAuth v5 (Edge-compatible) integrado con Google OAuth 2.0.
-*   **Sincronización Externa**: Integración transaccional bidireccional con Google Calendar API.
-*   **IA de Campañas**: Generación de banners comerciales a través del motor de Gemini/Unsplash.
-*   **Correos**: Envío de correos automáticos usando SMTP (Gmail App Password) con plantillas personalizables.
+**Proyecto:** AnandaStore V2  
+**Rama Principal:** `main` (Única rama oficial de producción)  
+**Stack Principal:** Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + Cloud Firestore + NextAuth v5 + Google Calendar API  
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🌟 Visión del Proyecto
 
-```
-├── .next/                    # Compilación de Next.js
-├── .vercel/                  # Configuración de despliegue en Vercel
-├── docs/                     # Documentación técnica adicional
-├── src/
-│   ├── app/                  # Enrutamiento de Next.js (App Router)
-│   │   ├── (admin)/admin/    # Rutas administrativas protegidas (CRM, Agenda, Ventas, Pagos, Rifas)
-│   │   ├── api/admin/        # APIs administrativas seguras (con chequeo de rol admin)
-│   │   ├── api/auth/         # Rutas de autenticación de NextAuth
-│   │   ├── checkout/         # Embudo de pago y reserva para clientes
-│   │   ├── login/            # Pantalla de acceso administrativo
-│   │   └── page.tsx          # Landing page comercial pública (en cola de rediseño)
-│   ├── components/           # Componentes UI reutilizables
-│   │   ├── admin/            # Sidebar, Topbar y componentes administrativos
-│   │   └── ui/               # Componentes de interfaz comunes (loaders, alertas)
-│   ├── lib/                  # Código y librerías compartidas
-│   │   ├── firebase/         # Conexión, esquemas y repositorios de datos
-│   │   │   ├── repositories/ # Bookings, Customers, Payments, Products, Orders, Rifas, AI-Assets
-│   │   │   └── admin.ts      # Inicialización segura de firebase-admin
-│   │   └── calendar/         # Proveedor e integraciones con Google Calendar
-├── deploy-env.mjs            # Script automatizado para cargar variables y desplegar en Vercel
-├── firestore.rules           # Reglas de seguridad de base de datos
-├── firestore.indexes.json    # Índices compuestos requeridos para consultas complejas
-└── tailwind.config.ts        # Tokens y variables de diseño místico (violetas, cuarzos, oro)
-```
+**AnandaStore V2** es una plataforma integral diseñada para la consultante mística Lina (**Espíritu Ananda**). Combina:
+1. **Embudo de Servicios Astrales**: Catálogo de lecturas (Carta Natal, Tarot Express, Revolución Solar, Sinastría), registro natal del consultante, agendamiento de horarios en vivo con cálculo de disponibilidad y subida de comprobantes de pago manual (Nequi, Daviplata, Bancolombia) o pasarela Wompi.
+2. **Tienda Holística E-Commerce**: Catálogo de productos artesanales (sahumerios, cuarzos, velas, elixires) con carrito lateral dinámico (`CartDrawer`), control de inventario y wizard de despacho en 4 pasos.
+3. **Panel Administrativo (CRM & Finanzas)**: Gestión de clientes astrales, agenda de citas, conciliación de pagos en cascada con sincronización automática a Google Calendar y notificaciones SMTP por correo.
+4. **Módulo de Marketing e IA**: Generación de banners comerciales adaptados a formatos sociales (Historias 9:16, IG 1:1, FB 1.91:1) potenciado por Gemini.
 
 ---
 
-## 🔐 Variables de Entorno (.env)
+## 🚀 Arquitectura Tecnológica & Stack V2
 
-Configura estas variables en tu archivo `.env` local o en el panel de Vercel:
-
-| Variable | Descripción | Ejemplo / Valor |
+| Capa | Tecnología / Herramienta | Función |
 | :--- | :--- | :--- |
-| `NEXTAUTH_URL` | URL base de la app para cookies | `http://localhost:3000` o `https://refactor-ananda-store-v2.vercel.app` |
-| `AUTH_URL` | URL base requerida por NextAuth en Vercel | `https://refactor-ananda-store-v2.vercel.app` |
-| `AUTH_SECRET` | Llave secreta de 32 bytes para cifrar sesiones | *(Generado aleatoriamente)* |
-| `NEXT_PUBLIC_BYPASS_AUTH` | Bypassear Login de Google en desarrollo | `true` (local) \| `false` (producción) |
-| `GOOGLE_CLIENT_ID` | ID del Cliente OAuth de Google Cloud | `930363408123-nivqf5itq...apps.googleusercontent.com` |
-| `GOOGLE_CLIENT_SECRET` | Secreto del Cliente OAuth de Google Cloud | `GOCSPX-vB1Cg3MQgI...` |
-| `NEXT_PUBLIC_CALENDAR_ID` | ID del calendario de Google Calendar | `tu-calendario-astral@gmail.com` |
-| `GOOGLE_CLIENT_EMAIL` | Email de la cuenta de servicio de Google Cloud | `servicio-calendario@proyecto.iam.gserviceaccount.com` |
-| `GOOGLE_PRIVATE_KEY` | Clave privada PEM de la cuenta de servicio | `"-----BEGIN PRIVATE KEY-----\n..."` |
-| `SMTP_HOST` | Servidor SMTP para envío de notificaciones | `smtp.gmail.com` |
-| `SMTP_PORT` | Puerto de conexión SMTP | `587` |
-| `SMTP_USER` | Correo emisor del sistema | `correos-ananda@gmail.com` |
-| `SMTP_PASSWORD` | Contraseña de aplicación de Gmail | `abcd efgh ijkl mnop` |
-| `SMTP_FROM` | Firma y remitente de los correos | `Espíritu Ananda <no-reply@espiritananda.com>` |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Llave pública de Firebase Client | `AIzaSyDbWE...` |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | ID de proyecto de Firebase | `nexo-celestial-final` |
-| *(Otras Firebase keys)* | Propiedades del SDK Cliente | Ver configuración en consola de Firebase |
+| **Core Framework** | Next.js 16.1 (App Router + Turbopack) | Enrutamiento híbrido (SSR, ISR, Server Components) |
+| **Lenguaje** | TypeScript 5 | Tipado estricto en repositorios, APIs y componentes UI |
+| **Estilos & UI** | Tailwind CSS v4 + PostCSS | Diseño místico, paleta `--color-ananda-*`, tarjetas glassmorphism |
+| **Base de Datos** | Firebase Cloud Firestore | Base de datos NoSQL serverless ACID atómica |
+| **Acceso Firestore** | Firebase Admin SDK (`firebase-admin`) | Patrón repositorio seguro en endpoints backend |
+| **Autenticación** | NextAuth v5 (Beta 29) | Autenticación Edge con Google OAuth 2.0 y control de roles |
+| **Calendario** | Google Calendar API | Verificación de franjas libres/ocupadas y creación de eventos |
+| **Notificaciones** | Nodemailer (SMTP / Gmail) | Correos automáticos de confirmación y plantilla HTML |
+| **Tareas Programadas** | Vercel Cron (`/api/cron/cleanup`) | Liberación automática de citas reservadas no pagadas (>30 min) |
 
 ---
 
-## 🛠️ Configuración y Ejecución Local
+## 📁 Estructura Completa del Proyecto (`main`)
 
-### 1. Clonar e Instalar Dependencias
+```
+storebasc/
+├── docs/                           # Documentación oficial de arquitectura, QA y despliegue
+│   ├── QA-E2E-CHECKLIST.md         # Matriz de evaluación End-to-End (PASS/FAIL)
+│   ├── BUGS-FOUND.md               # Bitácora de hallazgos y fixes P0/P1
+│   └── VERCEL-VARIABLES-GUIDE.md   # Matriz limpia de variables de entorno de Vercel
+├── public/                         # Assets estáticos (imágenes, favicons)
+├── src/
+│   ├── app/                        # Rutas de Next.js (App Router)
+│   │   ├── (admin)/                # Panel administrativo protegido (/admin/*)
+│   │   │   ├── agenda/             # Calendario y citas
+│   │   │   ├── clientes/           # CRM de consultantes y datos astrales
+│   │   │   ├── pagos/              # Conciliación de recibos Nequi/Daviplata
+│   │   │   ├── pedidos/            # Logística y despachos e-commerce
+│   │   │   └── rifas/              # Sorteos y rifas astrales
+│   │   ├── (public)/               # Portada pública comercial
+│   │   │   ├── servicios/          # Catálogo público de lecturas astrales
+│   │   │   ├── tienda/             # Catálogo público de productos artesanales
+│   │   │   └── page.tsx            # Landing page principal con héroe cósmico
+│   │   ├── api/                    # API Routes backend
+│   │   │   ├── admin/              # Endpoints administrativos con verificación de rol
+│   │   │   ├── availability/       # Cálculo de disponibilidad de fechas y horas
+│   │   │   ├── bookings/create     # Creación de cita y cliente
+│   │   │   ├── cron/cleanup        # Tarea programada de liberación de citas vencidas
+│   │   │   ├── orders/create       # Creación de pedido e-commerce y ajuste de stock
+│   │   │   └── webhooks/wompi      # Webhook de pasarela de pago Wompi
+│   │   ├── checkout/               # Embudos de pago y agendamiento
+│   │   │   ├── [serviceId]/        # Wizard 3 pasos para servicios (Datos -> Fecha -> Pago)
+│   │   │   ├── product/            # Wizard 4 pasos para productos (Resumen -> Envío -> Pago -> Confirmación)
+│   │   │   └── success/            # Confirmación unificada con estrellas y confeti
+│   │   └── login/                  # Pantalla de inicio de sesión con Google OAuth
+│   ├── components/                 # Componentes UI reutilizables
+│   │   ├── admin/                  # Sidebar, Topbar, visores zoom de recibos
+│   │   └── public/                 # AvailabilityCalendar, CartDrawer, ProductCard, ServiceCard, PublicHeader, PublicFooter
+│   ├── context/                    # Contextos globales (CartContext)
+│   ├── lib/                        # Capa de lógica y repositorios
+│   │   ├── firebase/               # Conexión Firestore, converters y repositorios
+│   │   │   └── repositories/       # services, products, bookings, orders, payments, customers, availability
+│   │   ├── auth.ts                 # Configuración de NextAuth v5 y roles admin
+│   │   ├── demoMode.ts             # Helper de cambio dual (Modo Demo vs Producción Real)
+│   │   ├── googleCalendar.ts       # Cliente oficial de Google Calendar SDK
+│   │   └── mailer.ts               # Plantillas de correo SMTP
+├── .env.example                    # Plantilla de variables de entorno
+├── .firebaserc                     # Vinculación de proyecto Firebase CLI
+├── firebase.json                   # Reglas de despliegue Firebase
+├── firestore.rules                 # Reglas de seguridad NoSQL
+├── next.config.ts                  # Configuración de Next.js
+├── tailwind.config.ts              # Tokens de diseño místico y paletas Ananda
+└── vercel.json                     # Configuración de despliegue y Vercel Cron
+```
+
+---
+
+## 🔑 Variables de Entorno Recomendadas
+
+Crea un archivo `.env.local` basado en `.env.example`:
+
+```env
+# Modo de Operación (true para desarrollo/demo local sin Firebase real)
+NEXT_PUBLIC_DEMO_MODE="true"
+NEXT_PUBLIC_PAYMENT_MODE="manual"
+
+# URLs de Aplicación
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="clave_secreta_jwt_de_32_caracteres_minimo"
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID="930363408123-...apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="GOCSPX-..."
+ADMIN_EMAILS="diegoillers@gmail.com,lina@espiritananda.com"
+
+# Firebase Cloud Firestore (Web Client)
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy..."
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="nexo-celestial-final.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="nexo-celestial-final"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="nexo-celestial-final.firebasestorage.app"
+
+# Cuentas para Transferencias Manuales
+NEXT_PUBLIC_NEQUI_NUMBER="300 123 4567"
+NEXT_PUBLIC_DAVIPLATA_NUMBER="300 123 4567"
+NEXT_PUBLIC_BANCOLOMBIA_ACCOUNT="Ahorros 123-456789-00"
+```
+
+---
+
+## 🛠️ Comandos de Desarrollo & Mantenimiento
+
 ```bash
+# 1. Instalar dependencias
 npm install
-```
 
-### 2. Poblar Base de Datos de Prueba (Seeding)
-El proyecto incluye scripts en JavaScript para poblar tu base de datos de Firestore con data inicial ficticia de alta calidad para probar el sistema:
-```bash
-# Cargar catálogo de servicios astrales iniciales
-node seed-catalog.mjs
-
-# Cargar clientes y citas de prueba
-node seed-firebase.mjs
-
-# Cargar configuraciones de correo SMTP por defecto
-node seed-mail.mjs
-```
-
-### 3. Ejecutar Servidor de Desarrollo
-```bash
+# 2. Iniciar servidor de desarrollo
 npm run dev
+
+# 3. Compilar bundle de producción y verificar TypeScript
+npm run build
+
+# 4. Probar seeder de base de datos de prueba
+node --env-file=.env.local seed-catalog.mjs
 ```
-Abre **`http://localhost:3000`** en tu navegador.
 
 ---
 
-## 🌐 Despliegue en Producción (Vercel)
+## 📌 Estado de Git y Despliegue
 
-El proyecto cuenta con un script de automatización (`deploy-env.mjs`) que analiza tu archivo `.env` local, registra de forma limpia todas las variables de entorno en tu panel de Vercel (eliminando duplicados y previniendo errores de Edge runtime) y compila la versión final.
-
-Para desplegar:
-1. Inicia sesión en la terminal con Vercel CLI:
-   ```bash
-   vercel login
-   ```
-2. Ejecuta el script de despliegue automatizado:
-   ```bash
-   node deploy-env.mjs
-   ```
-El script te entregará la URL final de producción activa.
-
----
-
-## 🗄️ Esquema de Colecciones en Firestore
-
-*   **`adminUsers`**: Administradores del panel. Estructura: `{ email, name, role, active, createdAt, updatedAt }`.
-*   **`customers`**: Datos personales de consultantes e historial natal. Estructura: `{ email, name, phone, birthDate, birthTime, birthPlace, notes, createdAt }`.
-*   **`services`**: Catálogo de lecturas y terapias holísticas. Estructura: `{ name, slug, duration, price, active }`.
-*   **`bookings`**: Reservas de citas vinculadas con Google Calendar. Estructura: `{ customerId, serviceId, date, timeSlot, status, calendarEventId }`.
-*   **`payments`**: Recibos y conciliaciones. Estructura: `{ bookingId, orderId, amount, method, status, voucherUrl, verifiedBy, createdAt }`.
-*   **`products`**: Inventario de la tienda artesanal. Estructura: `{ name, price, stock, minStock, description, imageUrl, active }`.
-*   **`orders`**: Pedidos físicos de e-commerce. Estructura: `{ customerId, items: [{ productId, quantity, price }], total, status, shippingAddress, createdAt }`.
-*   **`aiAssets`**: Historial de banners e imágenes promocionales generadas por IA. Estructura: `{ url, prompt, format, status, createdAt }`.
+- **Rama única oficial:** `main`
+- **Integridad:** Todo el historial de rediseño, pruebas E2E y fixes ha sido consolidado en `main`.
+- **Despliegue Vercel:** Vinculado al proyecto `diego-illeras-projects/storebasc`.

@@ -67,11 +67,15 @@ Este archivo registra el progreso del rediseño, las decisiones de arquitectura 
     *   API Routes backend: `/api/bookings/create` (creación de cita y cliente), `/api/orders/create` (creación de orden y ajuste atómico de inventario en Firestore) y `/api/webhooks/wompi`.
     *   Página de Confirmación Unificada (`/checkout/success`): Resumen dinámico para citas o pedidos con animaciones CSS de estrellas y confeti místico.
 
+*   **Fase I — Estabilización, QA E2E & Consolidación en `main`** ✅:
+    *   Ejecución y documentación del checklist End-to-End completo (`docs/QA-E2E-CHECKLIST.md`).
+    *   Resolución y commit de hallazgos P0/P1 en `isDemoMode()`, validaciones de sesión en checkout, cron en `vercel.json` y menú responsivo móvil en `PublicHeader.tsx`.
+    *   Configuración y vinculación de Vercel CLI (`diego-illeras-projects/storebasc`) y Firebase CLI (`.firebaserc`, `firebase.json`).
+    *   Consolidación limpia y unificación de todo el proyecto en la rama principal `main`, eliminando ramas secundarias obsoletas tanto en local como en GitHub.
+
 ---
 
-## 🧭 Próximos Pasos (Fase I — Lanzamiento & Estabilización)
+## 🧭 Estado Actual del Proyecto
 
-1. **Pruebas End-to-End (E2E)** de flujos cliente-administrador en vivo.
-2. **Optimización de Rendimiento Móvil y PWA**.
-3. **Auditoría de Seguridad** (Reglas de Firestore y Edge Middleware).
-4. **Merge de `redesign/ananda-v2` a `main`**.
+El proyecto se encuentra **100% estandarizado y funcional en la rama principal `main`**, listo para despliegues a producción o vista previa en Vercel.
+
