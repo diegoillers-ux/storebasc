@@ -59,7 +59,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.sub || '';
         session.user.role = (token.role as AdminRole) || 'SUPER_ADMIN';
-        session.user.isAdmin = token.isAdmin ?? true;
+        session.user.isAdmin = Boolean(token.isAdmin ?? true);
       }
       return session;
     },
