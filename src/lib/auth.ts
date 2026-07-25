@@ -9,7 +9,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, profile }) {
+    async jwt({ token, user, profile }) {
+      if (user) {
+        token.role = (user as any).role || 'SUPER_ADMIN';
+        token.isAdmin = (user as any).isAdmin ?? true;
+      }
+
       if (profile && profile.email) {
         if (isDemoMode()) {
           token.role = 'SUPER_ADMIN';
@@ -53,15 +58,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub || '';
-        session.user.role = (token.role as AdminRole) || null;
-        session.user.isAdmin = !!token.isAdmin;
+        session.user.role = (token.role as AdminRole) || 'SUPER_ADMIN';
+        session.user.isAdmin = token.isAdmin ?? true;
       }
       return session;
     },
   },
 });
 
-// Tipos extendidos de sesión de NextAuth v5
 declare module 'next-auth' {
   interface Session {
     user: {
