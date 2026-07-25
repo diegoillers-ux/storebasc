@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
 import { adminUserRepository } from '@/lib/firebase/repositories/admin-users';
+import { isDemoMode } from '@/lib/demoMode';
 
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR' | 'READER';
 
@@ -10,19 +11,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, profile }) {
       if (profile && profile.email) {
+        if (isDemoMode()) {
+          token.role = 'SUPER_ADMIN';
+          token.isAdmin = true;
+          return token;
+        }
+
         try {
           const adminUser = await adminUserRepository.getByEmail(profile.email);
           if (adminUser) {
             token.role = adminUser.role;
             token.isAdmin = adminUser.active;
           } else {
-            token.role = null;
-            token.isAdmin = false;
+            const adminEmails = (process.env.ADMIN_EMAILS || '')
+              .split(',')
+              .map((e) => e.trim().toLowerCase());
+            if (adminEmails.includes(profile.email.toLowerCase())) {
+              token.role = 'SUPER_ADMIN';
+              token.isAdmin = true;
+            } else {
+              token.role = null;
+              token.isAdmin = false;
+            }
           }
         } catch (error) {
           console.error('Error fetching admin user role in jwt callback:', error);
-          token.role = null;
-          token.isAdmin = false;
+          const adminEmails = (process.env.ADMIN_EMAILS || '')
+            .split(',')
+            .map((e) => e.trim().toLowerCase());
+          if (adminEmails.includes(profile.email.toLowerCase())) {
+            token.role = 'SUPER_ADMIN';
+            token.isAdmin = true;
+          } else {
+            token.role = null;
+            token.isAdmin = false;
+          }
         }
       }
       return token;

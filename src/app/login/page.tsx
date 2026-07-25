@@ -1,12 +1,34 @@
 import { signIn } from '@/lib/auth'
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>
+}) {
+  const params = await searchParams
+  const error = params?.error
+
+  let errorMessage = ''
+  if (error === 'AccessDenied') {
+    errorMessage = 'Acceso Denegado: Tu correo de Google no está autorizado como administrador.'
+  } else if (error === 'OAuthSignin' || error === 'OAuthCallback') {
+    errorMessage = 'Error de conexión con Google. Verifica la configuración de OAuth 2.0.'
+  } else if (error) {
+    errorMessage = 'Ocurrió un error al intentar iniciar sesión con Google.'
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF]">
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 w-full max-w-sm text-center">
         <p className="text-3xl mb-2">✦</p>
         <h1 className="text-xl font-bold text-[#2D1B69] mb-1">Espíritu Ananda</h1>
-        <p className="text-sm text-gray-400 mb-8">Panel de administración</p>
+        <p className="text-sm text-gray-400 mb-6">Panel de administración</p>
+
+        {errorMessage && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
+            ⚠️ {errorMessage}
+          </div>
+        )}
 
         <form
           action={async () => {
@@ -16,7 +38,7 @@ export default function LoginPage() {
         >
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
