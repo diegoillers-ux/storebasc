@@ -1,6 +1,17 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: any = {
+  // Redirecciones de compatibilidad para enlaces legados
+  async redirects() {
+    return [
+      {
+        source: '/admin/reservas',
+        destination: '/admin/agenda',
+        permanent: true,
+      },
+    ]
+  },
+
   // Imágenes externas permitidas
   images: {
     remotePatterns: [
