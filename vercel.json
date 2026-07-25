@@ -3,7 +3,12 @@
   "buildCommand": "next build",
   "framework": "nextjs",
   "regions": ["gru1"],
-  "crons": [],
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "*/15 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

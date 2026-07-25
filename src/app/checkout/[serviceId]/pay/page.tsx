@@ -55,7 +55,10 @@ export default function CheckoutPayPage() {
 
   const handleSubmitManualPayment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!checkoutData) return
+    if (!checkoutData || !checkoutData.name || !checkoutData.email) {
+      setErrorMsg('No se encontraron tus datos de reserva. Por favor regresa al Paso 1 para ingresar tu información.')
+      return
+    }
 
     setSubmitting(true)
     setErrorMsg('')
