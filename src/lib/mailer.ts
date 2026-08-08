@@ -262,3 +262,74 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
         console.error('Error sending admin payment proof email:', error);
     }
 }
+
+export async function sendVerificationEmail(toEmail: string, clientName: string, verificationCode: string) {
+    const configError = getMailerConfigError();
+    if (configError) {
+        console.error(`[Mailer Config Error] ${configError}`);
+        return false;
+    }
+
+    const mailOptions = {
+        from: `"Espíritu Ananda" <${process.env.GMAIL_USER || process.env.SMTP_USER}>`,
+        to: toEmail,
+        subject: `Confirmación de Cuenta Admin - Código: ${verificationCode}`,
+        html: `
+      <div style="font-family: sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #FAF5FF; padding: 25px; border-radius: 16px; background-color: #ffffff;">
+        <h2 style="color: #2D1B69; text-align: center; margin-top: 0;">✦ Espíritu Ananda</h2>
+        <p style="font-size: 14px; text-align: center; color: #666;">Hola <strong>${clientName}</strong>,</p>
+        <p style="font-size: 14px; text-align: center; color: #444;">Gracias por registrar tu usuario de administración. Utiliza el siguiente código numérico para confirmar tu cuenta e iniciar sesión:</p>
+        <div style="background-color: #FAF5FF; padding: 18px; border-radius: 12px; text-align: center; margin: 25px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #2D1B69;">${verificationCode}</span>
+        </div>
+        <p style="font-size: 12px; color: #888; text-align: center;">Si no solicitaste este registro, puedes ignorar este correo.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #aaa; text-align: center;">Espíritu Ananda — Plataforma de Administración</p>
+      </div>
+    `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[Email Sent] Verification email to: ${toEmail}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        return false;
+    }
+}
+
+export async function sendPasswordResetEmail(toEmail: string, resetCode: string) {
+    const configError = getMailerConfigError();
+    if (configError) {
+        console.error(`[Mailer Config Error] ${configError}`);
+        return false;
+    }
+
+    const mailOptions = {
+        from: `"Espíritu Ananda" <${process.env.GMAIL_USER || process.env.SMTP_USER}>`,
+        to: toEmail,
+        subject: `Recuperación de Contraseña - Código: ${resetCode}`,
+        html: `
+      <div style="font-family: sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #FAF5FF; padding: 25px; border-radius: 16px; background-color: #ffffff;">
+        <h2 style="color: #2D1B69; text-align: center; margin-top: 0;">✦ Espíritu Ananda</h2>
+        <p style="font-size: 14px; text-align: center; color: #666;">Has solicitado restablecer tu contraseña.</p>
+        <p style="font-size: 14px; text-align: center; color: #444;">Utiliza este código de verificación de 6 dígitos:</p>
+        <div style="background-color: #FAF5FF; padding: 18px; border-radius: 12px; text-align: center; margin: 25px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #2D1B69;">${resetCode}</span>
+        </div>
+        <p style="font-size: 12px; color: #888; text-align: center;">Este código caduca en 15 minutos.</p>
+      </div>
+    `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`[Email Sent] Password reset email to: ${toEmail}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending password reset email:', error);
+        return false;
+    }
+}
+

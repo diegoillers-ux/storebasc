@@ -32,6 +32,7 @@ export default async function RegisterPage({
         <form
           action={async (formData: FormData) => {
             'use server';
+            const { redirect } = await import('next/navigation');
             const name = String(formData.get('name') || '').trim();
             const email = String(formData.get('email') || '').trim().toLowerCase();
             const password = String(formData.get('password') || '').trim();
@@ -41,7 +42,23 @@ export default async function RegisterPage({
             }
 
             try {
-              // Intentar registrar el perfil en la base de datos Supabase admin_users
+              // 1. Intentar registro con Supabase Auth Nativo
+              try {
+                const { getAdminSupabase } = await import('@/lib/supabase/server');
+                const supabase = getAdminSupabase();
+                await supabase.auth.signUp({
+                  email,
+                  password,
+                  options: {
+                    data: { name },
+                    emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://storebasc.vercel.app'}/login?confirmed=true`,
+                  },
+                });
+              } catch (supaErr) {
+                console.log('Nota auth Supabase:', supaErr);
+              }
+
+              // 2. Guardar registro en la tabla admin_users de Supabase
               try {
                 const { adminUserRepository } = await import('@/lib/supabase/repositories/admin-users');
                 const existing = await adminUserRepository.getByEmail(email);
@@ -54,21 +71,37 @@ export default async function RegisterPage({
                   });
                 }
               } catch (repoErr) {
-                console.log('Nota: no se pudo guardar en admin_users table (modo demo/fallback):', repoErr);
+                console.log('Nota admin_users:', repoErr);
               }
 
-              // Registrar y autorizar inmediatamente la sesión
-              await signIn('admin-credentials', {
-                email,
-                password,
-                redirectTo: '/admin',
-              });
+              // 3. Generar código de 6 dígitos y enviar correo transaccional real al correo del usuario
+              const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+              try {
+                const { sendVerificationEmail } = await import('@/lib/mailer');
+                await sendVerificationEmail(email, name, verificationCode);
+              } catch (mailErr) {
+                console.log('Nota envio correo:', mailErr);
+              }
+
+              // 4. Iniciar sesión o redirigir a la pantalla de verificación
+              try {
+                await signIn('admin-credentials', {
+                  email,
+                  password,
+                  redirectTo: '/admin',
+                });
+              } catch (authErr: any) {
+                if (authErr?.digest?.startsWith('NEXT_REDIRECT') || authErr?.name === 'RedirectError' || authErr?.message === 'NEXT_REDIRECT') {
+                  throw authErr;
+                }
+              }
+
+              redirect(`/verify-otp?email=${encodeURIComponent(email)}`);
             } catch (err: any) {
               if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
                 throw err;
               }
-              const { redirect } = await import('next/navigation');
-              redirect('/login?error=CredentialsSignin');
+              redirect(`/verify-otp?email=${encodeURIComponent(email)}`);
             }
           }}
           className="space-y-4 text-left mb-6"

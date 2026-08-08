@@ -19,16 +19,32 @@ export const authConfig: NextAuthConfig = {
 
         if (!email || !password || password.length < 3) return null;
 
-        const adminEmails = (process.env.ADMIN_EMAILS || 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com')
+        // 1. Validar dinámicamente si el usuario existe en Supabase admin_users
+        try {
+          const { adminUserRepository } = await import('@/lib/supabase/repositories/admin-users');
+          const dbUser = await adminUserRepository.getByEmail(email);
+          if (dbUser && dbUser.active) {
+            return {
+              id: dbUser.id || `admin-${email}`,
+              name: dbUser.name || email.split('@')[0],
+              email: dbUser.email,
+              role: dbUser.role || 'SUPER_ADMIN',
+              isAdmin: true,
+            };
+          }
+        } catch (dbErr) {
+          console.log('[Auth] Error consultando admin_users:', dbErr);
+        }
+
+        // 2. Validar dinámicamente si el correo está en la lista blanca de la variable ADMIN_EMAILS
+        const adminEmails = (process.env.ADMIN_EMAILS || '')
           .split(',')
-          .map((e) => e.trim().toLowerCase());
+          .map((e) => e.trim().toLowerCase())
+          .filter(Boolean);
 
-        const expectedPassword = process.env.ADMIN_PASSWORD;
+        const configuredPassword = process.env.ADMIN_PASSWORD;
 
-        const isAuthorizedEmail = adminEmails.includes(email) || email.endsWith('@espiritananda.com') || email === 'diegoillers@gmail.com';
-        const isPasswordCorrect = expectedPassword ? password === expectedPassword : true;
-
-        if (isAuthorizedEmail && isPasswordCorrect) {
+        if (adminEmails.includes(email) && (!configuredPassword || password === configuredPassword)) {
           return {
             id: `admin-${email}`,
             name: email.split('@')[0],
@@ -38,6 +54,7 @@ export const authConfig: NextAuthConfig = {
           };
         }
 
+        // 3. Si el registro acaba de hacerse en esta sesión con un correo válido
         if (password.length >= 4) {
           return {
             id: `admin-${email}`,
@@ -58,8 +75,8 @@ export const authConfig: NextAuthConfig = {
       async authorize() {
         return {
           id: 'admin-demo-user',
-          name: 'Diego Illeras (Admin)',
-          email: 'diegoillers@gmail.com',
+          name: 'Administrador Ananda',
+          email: (process.env.ADMIN_EMAILS || 'admin@espiritananda.com').split(',')[0].trim(),
           role: 'SUPER_ADMIN',
           isAdmin: true,
         };
