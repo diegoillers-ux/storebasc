@@ -6,15 +6,14 @@ Este documento define las especificaciones técnicas, decisiones de arquitectura
 
 ## 📌 CONTEXTO DEL PROYECTO
 
-- **Repositorio**: `diegoillers-ux/storebasc`, rama: `redesign/ananda-v2`
-- **Stack**: Next.js (App Router), TypeScript, Tailwind CSS v4 (vía PostCSS), Firebase Firestore (Admin SDK en server, Client SDK en browser)
-- **Design Tokens** (en `src/app/globals.css`): Paleta `--color-ananda-*`, fuentes `--font-display` (Playfair Display) y `--font-sans` (Inter), clases UI `.glass-card`, `.glass-effect`, sombra `--shadow-premium`
+- **Repositorio**: `diegoillers-ux/storebasc`, rama: `main`
+- **Stack**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4 (vía PostCSS), Supabase (PostgreSQL Relacional & Auth), Google Calendar API, Nodemailer
+- **Design Tokens** (en `src/app/globals.css`): Paleta `--color-ananda-*`, fuentes `--font-display` (Playfair Display) y `--font-sans` (Inter), clases UI `.glass-card`, `.glass-effect`
 - **Colores Clave**: `ananda-950` (`#1A0F3D`), `ananda-900` (`#2D1B69`), `ananda-500` (`#7C3AED`), `ananda-400` (`#A78BFA`), `ananda-50` (`#FAF5FF`)
-- **Repositorios Firebase Disponibles** (en `src/lib/firebase/repositories/`): `services.ts`, `products.ts`, `bookings.ts`, `payments.ts`, `customers.ts`, `availability.ts`
-- **Helpers Disponibles**: `src/lib/whatsapp.ts` (`getGeneralContactLink`, `getServiceBookingLink`), `src/lib/payments/index.ts` + `wompi.ts` + `manual.ts`
+- **Repositorios Supabase Disponibles** (en `src/lib/supabase/repositories/`): `services.ts`, `products.ts`, `bookings.ts`, `payments.ts`, `customers.ts`, `availability.ts`, `admin-users.ts`
+- **Helpers Disponibles**: `src/lib/whatsapp.ts`, `src/lib/mailer.ts`
 - **Layout Público**: `src/app/(public)/layout.tsx` con `PublicHeader` y `PublicFooter` en `src/components/public/`
-- **Modo Demo**: `src/lib/demoMode.ts` — si `isDemoMode()` retorna mock data, en producción usa Firestore real
-- **REGLAS**: NO usar Prisma ni PostgreSQL. NO crear rutas protegidas con NextAuth para el flujo público.
+- **Modo Demo**: `src/lib/demoMode.ts` — si `isDemoMode()` retorna mock data para preproducción, en producción usa Supabase PostgreSQL real.
 
 ---
 
@@ -22,12 +21,11 @@ Este documento define las especificaciones técnicas, decisiones de arquitectura
 
 *   **Framework**: Next.js 16 (App Router, Turbopack)
 *   **Compilador de Estilos**: Tailwind CSS v4 (con PostCSS)
-*   **Base de Datos**: Google Cloud Firestore (NoSQL, Serverless)
-*   **Capa de Acceso a Datos**: Patrón Repositorio en NodeJS utilizando `firebase-admin` para consultas del lado del servidor.
-*   **Autenticación**: NextAuth v5 (Edge-compatible) integrado con Google OAuth 2.0.
+*   **Base de Datos**: Supabase PostgreSQL (Relacional, Serverless SQL)
+*   **Capa de Acceso a Datos**: Patrón Repositorio en NodeJS utilizando `@supabase/supabase-js` con `Service Role Key` para consultas del lado del servidor.
+*   **Autenticación**: Supabase Auth Nativo + NextAuth v5 (Edge-compatible), registro de administradores con confirmación por correo electrónico y código OTP numérico de 6 dígitos.
 *   **Integración de Calendario**: Google Calendar API mediante cuenta de servicio (`Google JWT` OAuth2).
-*   **Notificaciones**: SMTP integrado (vía contraseñas de aplicación de Gmail) para confirmaciones automáticas.
-*   **IA de Marketing**: Gemini API / Unsplash API para generación de creatividades promocionales.
+*   **Notificaciones**: Nodemailer (SMTP) para confirmaciones automáticas de recibos, pedidos y envío de códigos de verificación.
 
 ---
 
@@ -55,8 +53,12 @@ src/app/
 │   └── raffle/                # Sorteo: Compra de boletos
 │
 ├── (public)/                  # Páginas públicas generales
-│   ├── page.tsx               # Landing page principal (pendiente de rediseño)
-│   └── login/                 # Formulario de inicio de sesión seguro
+│   ├── page.tsx               # Landing page principal
+│   ├── login/                 # Formulario de inicio de sesión seguro
+│   ├── register/              # Registro de administradores
+│   ├── verify-otp/            # Verificación de código OTP de 6 dígitos
+│   ├── forgot-password/       # Solicitud de recuperación de contraseña
+│   └── reset-password/        # Reestablecimiento de clave
 │
 └── api/                       # Endpoints del backend
     ├── admin/                 # APIs del panel (bookings, products, payments, etc.)
@@ -65,67 +67,59 @@ src/app/
 
 ---
 
-## 🗄️ Esquema de Datos (Colecciones Firestore)
+## 🗄️ Esquema de Datos (Tablas Supabase PostgreSQL)
 
-### 1. `adminUsers` (Administradores)
-*   `id`: Identificador único (document id).
-*   `email`: Correo de acceso administrativo (Google OAuth).
+### 1. `admin_users` (Administradores)
+*   `id`: UUID o identificador primario.
+*   `email`: Correo de acceso administrativo.
 *   `name`: Nombre completo del administrador.
 *   `role`: `'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR' | 'READER'`.
-*   `active`: Booleano (acceso al panel).
-*   `createdAt` / `updatedAt`: Timestamps de auditoría.
+*   `active`: Booleano (acceso habilitado al panel).
+*   `created_at` / `updated_at`: Timestamps de auditoría.
 
 ### 2. `customers` (Fichas del CRM)
+*   `id`: UUID de la ficha de cliente.
 *   `email`: Correo electrónico del cliente.
 *   `name`: Nombre completo.
 *   `phone`: WhatsApp de contacto.
-*   `birthDate` / `birthTime` / `birthPlace`: Datos natales para Carta Astral.
+*   `birth_date` / `birth_time` / `birth_place`: Datos natales para Carta Astral.
 *   `notes`: Bitácora y notas del terapeuta.
 
 ### 3. `services` (Catálogo de Sesiones)
+*   `id`: UUID del servicio.
 *   `name` / `slug`: Título e identificador de URL.
 *   `duration`: Minutos de sesión.
 *   `price`: Monto en COP.
 *   `active`: Booleano de visibilidad.
 
 ### 4. `bookings` (Reservas Astrales)
-*   `customerId`: Relación al cliente.
-*   `serviceId`: Relación al servicio.
-*   `date`: Fecha en formato ISO (`YYYY-MM-DD`).
-*   `timeSlot`: Hora reservada (`HH:MM`).
+*   `id`: UUID de la cita.
+*   `customer_id`: Relación a la tabla `customers`.
+*   `service_id`: Relación a la tabla `services`.
+*   `scheduled_at`: Fecha y hora timestamptz.
 *   `status`: `'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'CANCELLED'`.
-*   `calendarEventId`: ID del evento en Google Calendar para sincronización.
+*   `calendar_event_id`: ID del evento en Google Calendar para sincronización.
 
 ### 5. `payments` (Bandeja Contable)
-*   `bookingId` / `orderId`: Asociación a cita o pedido de e-commerce.
+*   `id`: UUID del pago.
+*   `booking_id` / `order_id`: Asociación a cita o pedido de e-commerce.
 *   `amount`: Valor transferido.
 *   `status`: `'PENDING' | 'APPROVED' | 'REJECTED'`.
-*   `voucherUrl`: URL pública de la captura del recibo.
-*   `verifiedBy`: Admin que autorizó la conciliación.
+*   `voucher_url`: URL pública de la captura del recibo.
+*   `verified_by`: Admin que autorizó la conciliación.
 
 ### 6. `products` (Catálogo de Tienda)
+*   `id`: UUID del producto.
 *   `name` / `description`: Título y texto de venta.
 *   `price`: Precio en COP.
-*   `stock` / `minStock`: Control de inventario y alertas automáticas.
-*   `imageUrl`: URL de la imagen del producto.
+*   `stock` / `min_stock`: Control de inventario.
+*   `image_url`: URL de la imagen del producto.
 *   `active`: Booleano de venta.
 
 ### 7. `orders` (Pedidos E-commerce)
-*   `customerId`: Relación al cliente.
-*   `items`: Lista de `{ productId, quantity, price }`.
+*   `id`: UUID de la orden.
+*   `customer_id`: Relación a la tabla `customers`.
+*   `items`: JSON / Relación de productos y cantidades.
 *   `total`: Valor final cobrado.
 *   `status`: `'PENDING_PAYMENT' | 'PAID' | 'PREPARING' | 'SHIPPED' | 'DELIVERED'`.
-*   `shippingAddress`: Dirección de despacho.
-
----
-
-## 🛠️ Condiciones Especiales de Desarrollo y Arquitectura
-
-1.  **Principio de Aislamiento de Entorno (Bypass Mode)**:
-    *   La función `isDemoMode()` en `src/lib/demoMode.ts` determina si la base de datos de Firestore y el calendario deben responder con datos ficticios o reales.
-    *   **En local (Desarrollo)**: Si falta la firma del certificado Service Account (`GOOGLE_PRIVATE_KEY`), se activa el **Bypass**, cargando mock data para evitar caídas del servidor.
-    *   **En Vercel (Producción)**: El bypass se autodesactiva para asegurar que todos los datos sean reales y que las redirecciones OAuth estén firmadas.
-2.  **Transacciones ACID en Modificaciones de Stock**:
-    *   Cualquier compra o ajuste manual de inventario ejecuta una transacción en Firestore a través de `productRepository.adjustStock()`, registrando un log histórico en la colección `stockMovements` y protegiendo la consistencia física del inventario.
-3.  **Seguridad y Reglas**:
-    *   El acceso a `/api/admin/*` está estrictamente blindado por el middleware `src/middleware.ts` y por validaciones dentro de cada ruta mediante la sesión del administrador (`requireAdminSession`).
+*   `shipping_address`: Dirección de despacho.

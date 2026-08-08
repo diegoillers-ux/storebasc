@@ -9,7 +9,7 @@
 
 ## 🏛️ 1. Arquitectura General del Sistema
 
-**AnandaStore V2** es una aplicación Web Full-Stack desacoplada construida bajo los principios de arquitectura limpia y serverless sobre la infraestructura de Vercel y Google Cloud.
+**AnandaStore V2** es una aplicación Web Full-Stack desacoplada construida bajo los principios de arquitectura limpia sobre la infraestructura de Vercel y Supabase PostgreSQL.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -22,9 +22,9 @@
 │                    NEXT.JS 16 APP ROUTER (SERVIDORES)                   │
 │                                                                         │
 │  ┌───────────────────────┐ ┌──────────────────────┐ ┌─────────────────┐ │
-│  │   NextAuth v5 (Edge)  │ │ API Routes (Server)  │ │ Vercel Cron     │ │
-│  │   Google OAuth 2.0    │ │ /api/bookings/create │ │ /api/cron/clean │ │
-│  │   JWT & Admin Middleware │ /api/orders/create   │ │ (expiraciones)  │ │
+│  │ Supabase Auth +       │ │ API Routes (Server)  │ │ Vercel Cron     │ │
+│  │ NextAuth v5           │ │ /api/bookings/create │ │ /api/cron/clean │ │
+│  │ Registro OTP & JWT    │ │ /api/orders/create   │ │ (expiraciones)  │ │
 │  └───────────┬───────────┘ └──────────┬───────────┘ └────────┬────────┘ │
 └──────────────┼────────────────────────┼──────────────────────┼──────────┘
                │                        │                      │
@@ -33,8 +33,8 @@
 │                             CAPA DE DATOS                               │
 │                                                                         │
 │   ┌───────────────────────────┐         ┌───────────────────────────┐   │
-│   │   Firebase Admin SDK      │         │   Google Calendar SDK     │   │
-│   │   (Cloud Firestore NoSQL) │         │   (Service Account RSA)   │   │
+│   │   Supabase Client / Server│         │   Google Calendar SDK     │   │
+│   │   (PostgreSQL Relacional) │         │   (Service Account RSA)   │   │
 │   └───────────────────────────┘         └───────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -64,14 +64,17 @@
    - **Paso 1**: Resumen de ítems y subtotal.
    - **Paso 2**: Formulario de envío (Dirección, barrio, ciudad Cali default e indicaciones).
    - **Paso 3**: Transferencia manual Nequi/Daviplata/Bancolombia + subida de comprobante.
-   - **Paso 4**: Confirmación de pedido con número de orden `ORD-DEMO-XXXX` u `ORD-XXXX`.
+   - **Paso 4**: Confirmación de pedido con número de orden `ORD-XXXX`.
 3. **Transacción de Inventario (`/api/orders/create`)**:
-   - Crea o actualiza el registro del cliente en Firestore.
+   - Crea o actualiza el registro del cliente en Supabase.
    - Ejecuta descuento atómico de inventario en `products` utilizando `productRepository.adjustStock`.
 
-### C. Panel Administrativo & CRM (`/admin/*`)
-- **Autenticación con Google**: Integrada mediante NextAuth v5.
-- **Acceso Autorizado**: Valida si el email de Google está en la colección `adminUsers` o en la variable `ADMIN_EMAILS`.
+### C. Panel Administrativo & Autenticación (`/admin/*`)
+- **Autenticación Nativa**: Integrada mediante Supabase Auth + NextAuth v5.
+- **Flujo de Registro & Verificación (`/register` y `/verify-otp`)**:
+  - Registro de usuarios administradores con envío automático de correo transaccional Nodemailer conteniendo un **código de verificación OTP de 6 dígitos**.
+  - Permite restablecimiento y cambio de contraseña sin depender de credenciales estáticas de Google OAuth.
+- **Acceso Autorizado**: Valida permisos contra la tabla `admin_users` de Supabase o la lista blanca `ADMIN_EMAILS`.
 - **Aprobaciones en Cascada (`/api/admin/approve-reserva`)**:
   - Actualiza el estado de la reserva o recibo a confirmado/pagado.
   - Remueve el prefijo `[PENDIENTE]` del evento en Google Calendar y cambia el color del evento.
@@ -79,53 +82,44 @@
 
 ---
 
-## 🗄️ 3. Modelo de Datos de Firestore
+## 🗄️ 3. Modelo de Datos Relacional de Supabase (PostgreSQL)
 
-| Colección | Propósito | Campos Clave |
+| Tabla | Propósito | Campos Clave |
 | :--- | :--- | :--- |
-| **`customers`** | CRM de consultantes astrales | `id`, `name`, `email`, `phone`, `birthDate`, `notes`, `source`, `active` |
+| **`customers`** | CRM de consultantes astrales | `id`, `name`, `email`, `phone`, `birth_date`, `notes`, `source`, `active` |
 | **`services`** | Catálogo de lecturas astrales | `id`, `name`, `slug`, `duration`, `price`, `active`, `category` |
-| **`products`** | Inventario e-commerce | `id`, `name`, `slug`, `price`, `stock`, `minStock`, `imageUrl`, `category`, `active` |
-| **`bookings`** | Citas astrales agendadas | `id`, `customerId`, `serviceId`, `scheduledAt`, `durationMinutes`, `status`, `calendarEventId` |
-| **`orders`** | Pedidos de productos físicos | `id`, `customerId`, `subtotal`, `shipping`, `total`, `status`, `delivery`, `address` |
-| **`payments`** | Recibos y vouchers | `id`, `bookingId`, `orderId`, `amount`, `method`, `status`, `voucherUrl`, `verifiedBy` |
-| **`adminUsers`** | Administradores de la app | `id`, `email`, `name`, `role`, `active`, `createdAt` |
+| **`products`** | Inventario e-commerce | `id`, `name`, `slug`, `price`, `stock`, `min_stock`, `image_url`, `category`, `active` |
+| **`bookings`** | Citas astrales agendadas | `id`, `customer_id`, `service_id`, `scheduled_at`, `duration_minutes`, `status`, `calendar_event_id` |
+| **`orders`** | Pedidos de productos físicos | `id`, `customer_id`, `subtotal`, `shipping`, `total`, `status`, `delivery`, `address` |
+| **`payments`** | Recibos y vouchers | `id`, `booking_id`, `order_id`, `amount`, `method`, `status`, `voucher_url`, `verified_by` |
+| **`admin_users`** | Administradores de la app | `id`, `email`, `name`, `role`, `active`, `created_at` |
 
 ---
 
-## 🔧 4. Matriz de Variables de Entorno (.env.local / Vercel)
+## 🔧 4. Matriz Limpia de Variables de Entorno (.env.local / Vercel)
 
 ```env
 # ─── Modo de Operación & App ──────────────────────────────
-NEXT_PUBLIC_DEMO_MODE="false"               # 'true' para vista previa/demo, 'false' para producción
+NEXT_PUBLIC_DEMO_MODE="false"               # 'true' para preproducción, 'false' para producción
 NEXT_PUBLIC_PAYMENT_MODE="manual"           # 'manual' | 'gateway'
-NEXT_PUBLIC_APP_URL="https://tu-dominio.vercel.app"
+NEXT_PUBLIC_APP_URL="https://storebasc.vercel.app"
 NEXT_PUBLIC_APP_NAME="Espíritu Ananda"
 NEXT_PUBLIC_WHATSAPP_NUMBER="573000000000"
 
-# ─── Autenticación (NextAuth v5) ───────────────────────────
-NEXTAUTH_URL="https://tu-dominio.vercel.app"
-NEXTAUTH_SECRET="clave_secreta_jwt_de_32_caracteres_minimo"
-GOOGLE_CLIENT_ID="930363408123-05bme833pree1fb5906pseqna66s1ug6.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="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"
-ADMIN_EMAILS="diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com"
+# ─── Supabase (PostgreSQL & Auth) ─────────────────────────
+NEXT_PUBLIC_SUPABASE_URL="https://abcdefgh.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
 
-# ─── Base de Datos Serverless (Firebase Cloud Firestore) ──
-FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"nexo-celestial-final",...}'
-NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyDbWEP9ghJQuy4Cjnca7rDUd7jG0G38P1w"
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="nexo-celestial-final.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="nexo-celestial-final"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="nexo-celestial-final.firebasestorage.app"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="930363408123"
-NEXT_PUBLIC_FIREBASE_APP_ID="1:930363408123:web:b125bdcfc74a42dd25fa5e"
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="G-2WXE21ECXK"
+# ─── Administradores ──────────────────────────────────────
+ADMIN_EMAILS="lina@espiritananda.com,diegoillers@gmail.com"
 
 # ─── Google Calendar & Agenda ──────────────────────────────
 NEXT_PUBLIC_CALENDAR_ID="diegoillers@gmail.com"
-GOOGLE_SERVICE_ACCOUNT_EMAIL="servicio-calendario@nexo-celestial-final.iam.gserviceaccount.com"
+GOOGLE_SERVICE_ACCOUNT_EMAIL="servicio-calendario@nexo-celestial.iam.gserviceaccount.com"
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 
-# ─── Emailing SMTP ─────────────────────────────────────────
+# ─── Emailing SMTP / Nodemailer ────────────────────────────
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_USER="diegoillers@gmail.com"
@@ -152,8 +146,8 @@ npm run dev
 # Verificación de Tipo y Compilación
 npm run build
 
-# Despliegue de Reglas de Firebase
-npx firebase-tools deploy --only firestore
+# Poblar Base de Datos Supabase de Prueba
+node seed-supabase.mjs
 
 # Sincronización con Vercel
 npx vercel env pull .env.local

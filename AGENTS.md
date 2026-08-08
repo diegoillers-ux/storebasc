@@ -18,9 +18,9 @@ El proyecto ha sido refactorizado y estandarizado al 100% en la versión 2.0. El
 | **Estilos & UI** | Tailwind CSS v4 + PostCSS | Paleta `--color-ananda-*`, tarjetas glassmorphism, responsive móvil |
 | **Base de Datos** | Supabase (PostgreSQL Relacional) | Base de datos SQL serverless (repositorios en `src/lib/supabase/repositories/`) |
 | **Backend Admin** | Supabase Client (`@supabase/supabase-js`) | Patrón repositorio seguro en endpoints backend con Service Role Key |
-| **Autenticación** | NextAuth v5 (Beta 29) + Google OAuth | Doble flujo: Google OAuth 2.0 y Botón `⚡ Ingreso Directo Admin (Preproducción)` |
+| **Autenticación** | Supabase Auth Nativo + NextAuth v5 | Registro de usuarios, confirmación por email, código OTP 6 dígitos y recuperación de clave |
 | **Agendamiento** | Google Calendar API | Verificación de franjas horarias libres/ocupadas |
-| **Correos** | Nodemailer (SMTP / Gmail) | Plantillas HTML automáticas para recibos y confirmaciones |
+| **Correos** | Nodemailer (SMTP / Gmail) | Plantillas HTML automáticas para recibos, confirmaciones y códigos de verificación |
 | **Tareas Cron** | Vercel Cron (`/api/cron/cleanup`) | Liberación de citas reservadas no pagadas (>30 min) |
 
 ---
@@ -30,38 +30,38 @@ El proyecto ha sido refactorizado y estandarizado al 100% en la versión 2.0. El
 ```
 storebasc/
 ├── docs/                           # Documentación oficial y checklists activos
-│   ├── PROJECT-MANUAL-V2.md        # Manual técnico definitivo y esquemas NoSQL
+│   ├── PROJECT-MANUAL-V2.md        # Manual técnico definitivo y esquema PostgreSQL
 │   ├── QA-E2E-CHECKLIST.md         # Matriz de evaluación End-to-End (PASS)
-│   ├── BUGS-FOUND.md               # Bitácora de hallazgos y correcciones P0/P1
+│   ├── BUGS-FOUND.md               # Bitácora de hallazgos y correcciones
 │   └── VERCEL-VARIABLES-GUIDE.md   # Matriz limpia de variables de entorno de Vercel
 ├── public/                         # Assets estáticos (logotipos, favicons)
 ├── src/
 │   ├── app/                        # Rutas de Next.js (App Router)
-│   │   ├── (admin)/admin/          # Panel administrativo único protegidos (/admin/*)
+│   │   ├── (admin)/admin/          # Panel administrativo único protegido (/admin/*)
 │   │   ├── (public)/               # Portada pública comercial y catálogo (/servicios, /tienda)
 │   │   ├── api/                    # API Routes backend (bookings, orders, availability, cron)
 │   │   ├── checkout/               # Embudos de pago (3 pasos para citas, 4 pasos para tienda)
-│   │   └── login/                  # Pantalla de inicio de sesión con doble acceso (Demo/Google)
+│   │   ├── forgot-password/        # Pantalla de solicitud de recuperación de clave
+│   │   ├── login/                  # Pantalla de inicio de sesión
+│   │   ├── register/               # Pantalla de registro de nuevos administradores
+│   │   ├── reset-password/         # Pantalla de restablecimiento de contraseña
+│   │   └── verify-otp/             # Pantalla de verificación de código numérico de 6 dígitos
 │   ├── components/                 # Componentes UI reutilizables
 │   │   ├── admin/                  # Sidebar, Topbar, visores zoom de recibos
 │   │   ├── public/                 # AvailabilityCalendar, CartDrawer, ProductCard, ServiceCard, Header, Footer
 │   │   └── ui/                     # Alertas, modales, loaders
 │   ├── context/                    # CartContext global de e-commerce
 │   └── lib/                        # Lógica de negocio y repositorios de datos
-│       ├── firebase/               # Conexión Firestore y repositorios NoSQL
-│       ├── auth.ts                 # Configuración de NextAuth v5
+│       ├── supabase/               # Conexión Supabase (client, server, schema.sql y repositorios SQL)
+│       ├── auth.ts                 # Configuración de NextAuth v5 & Supabase Auth
 │       ├── demoMode.ts             # Helper de modo dual (Demo vs Producción Real)
+│       ├── mailer.ts               # Envío de correos Nodemailer (Recibos, Notificaciones, OTP)
 │       └── googleCalendar.ts       # Integración con Google Calendar SDK
 ├── .env.example                    # Plantilla oficial de variables de entorno
 ├── .env.local                      # Variables locales de desarrollo/preproducción
-├── .firebaserc                     # Vinculación de proyecto Firebase (`nexo-celestial-final`)
 ├── AGENTS.md                       # Este documento de referencia para agentes AI y desarrolladores
-├── firebase.json                   # Reglas e índices de despliegue Firebase CLI
-├── firestore.rules                 # Reglas de seguridad NoSQL
 ├── next.config.ts                  # Configuración Next.js y redirecciones
-├── seed-catalog.mjs                # Script de siembra inicial de productos y servicios
-├── seed-firebase.mjs               # Script de siembra inicial de clientes y reservas
-├── seed-mail.mjs                   # Script de siembra inicial de configuraciones SMTP
+├── seed-supabase.mjs               # Script de siembra inicial de la base de datos Supabase
 ├── tailwind.config.ts              # Tokens de diseño místico y paletas Ananda
 └── vercel.json                     # Configuración de despliegue Vercel y Cron
 ```
@@ -74,13 +74,13 @@ storebasc/
    - Todo el trabajo debe ser realizado y commiteado directamente sobre la rama `main`.
    - **NO crear ni subir ramas secundarias** a GitHub (`origin`).
 2. **Sin Código ni Documentos Legados u Obsoletos**:
-   - Queda prohibido reintroducir carpetas legadas fuera de las estructuras `(public)` y `(admin)` (como la antigua carpeta `src/app/admin/reservas`).
+   - Queda prohibido reintroducir carpetas legadas fuera de las estructuras `(public)` y `(admin)`.
    - Toda documentación debe ser mantenida exclusivamente en `docs/` y sincronizada con el estado real del código.
 3. **Seguridad y Secretos**:
    - NUNCA commitear archivos `.env`, `.env.local` ni claves privadas PEM.
-   - Las escrituras en Firestore están restringidas al servidor mediante `firebase-admin` (`allow write: if false` en `firestore.rules`).
+   - Las escrituras backend en Supabase se realizan mediante `SUPABASE_SERVICE_ROLE_KEY` exclusivamente desde el servidor (`src/lib/supabase/server.ts`).
 4. **Respetar Modo Dual de Operación**:
-   - `NEXT_PUBLIC_DEMO_MODE="true"` permite probar y evaluar la aplicación sin requerir credenciales reales de Google Cloud o Firebase en preproducción.
+   - `NEXT_PUBLIC_DEMO_MODE="true"` permite probar y evaluar la aplicación en preproducción sin requerir credenciales reales en producción.
 
 ---
 
@@ -94,7 +94,7 @@ flowchart TD
     subgraph FaseJ ["Fase J: Credenciales & Servicios Reales"]
         J1["J1. SMTP Gmail App Password real de Lina"]
         J2["J2. Google Service Account & Calendar ID"]
-        J3["J3. Key real de Cloud Firestore en Vercel"]
+        J3["J3. Key real de Supabase Service Role en Vercel"]
     end
 
     subgraph FaseK ["Fase K: UX, PWA & Automatización"]
@@ -104,7 +104,7 @@ flowchart TD
     end
 
     subgraph FaseL ["Fase L: Pase a Producción"]
-        L1["L1. Auditoría final de reglas Firestore"]
+        L1["L1. Auditoría final de tablas Supabase RLS"]
         L2["L2. Conexión de dominio espiritananda.com"]
         L3["L3. Desactivación de Demo Mode (NEXT_PUBLIC_DEMO_MODE=false)"]
     end
@@ -117,7 +117,7 @@ flowchart TD
 #### **Fase J — Integraciones & Credenciales Reales (Lina)**
 - **J1. Configuración SMTP Real**: Reemplazar las variables `SMTP_USER` y `SMTP_PASSWORD` con las credenciales de aplicación de Gmail de Lina para enviar correos transaccionales reales.
 - **J2. Google Calendar API de Producción**: Vincular el email personal de Lina (`NEXT_PUBLIC_CALENDAR_ID`) con una Service Account de Google Cloud para el agendamiento directo en su agenda personal.
-- **J3. Firebase Service Account Key**: Configurar `FIREBASE_SERVICE_ACCOUNT_KEY` en el panel de Vercel para conectarse al proyecto Firestore de producción real.
+- **J3. Supabase Service Role Key**: Configurar `SUPABASE_SERVICE_ROLE_KEY` en el panel de Vercel para conectarse al proyecto Supabase de producción real.
 
 #### **Fase K — Experiencia de Usuario, PWA & Automatizaciones**
 - **K1. Automatización WhatsApp**: Implementar redirección inteligente con mensaje prediligenciado que contenga el resumen de la cita/pedido directamente al número de WhatsApp de Lina.
@@ -125,6 +125,6 @@ flowchart TD
 - **K3. Rendimiento Móvil**: Optimización de imágenes en formatos WebP/AVIF y lazy loading en dispositivos móviles de gama media/baja.
 
 #### **Fase L — Pase a Producción & Lanzamiento Comercial**
-- **L1. Auditoría de Seguridad**: Verificación final de reglas NoSQL en `firestore.rules` e índices compuestos en `firestore.indexes.json`.
+- **L1. Auditoría de Seguridad**: Verificación final de políticas de seguridad RLS en PostgreSQL Supabase (`src/lib/supabase/schema.sql`).
 - **L2. Dominio Personalizado**: Asignar y certificar SSL para `espiritananda.com` en Vercel.
 - **L3. Conmutación a Producción Real**: Cambiar `NEXT_PUBLIC_DEMO_MODE="false"` y retirar el acceso demo de la pantalla de login.
