@@ -1,5 +1,6 @@
 import { signIn } from '@/lib/auth'
 import { AuthError } from 'next-auth'
+import Link from 'next/link'
 
 export default async function LoginPage({
   searchParams,
@@ -55,13 +56,18 @@ export default async function LoginPage({
               required
               name="email"
               type="email"
-              placeholder="lina@espiritananda.com"
+              placeholder="diegoillers@gmail.com"
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-gray-700">Contraseña</label>
+              <Link href="/forgot-password" className="text-[11px] text-[#2D1B69] hover:underline">
+                ¿Olvidaste tu clave?
+              </Link>
+            </div>
             <input
               required
               name="password"
@@ -78,6 +84,13 @@ export default async function LoginPage({
             Iniciar Sesión
           </button>
         </form>
+
+        <div className="mb-4 text-xs text-gray-500">
+          ¿No tienes cuenta?{' '}
+          <Link href="/register" className="text-[#2D1B69] font-semibold hover:underline">
+            Registrarme como Admin
+          </Link>
+        </div>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
@@ -106,4 +119,5 @@ export default async function LoginPage({
     </div>
   )
 }
+
 
