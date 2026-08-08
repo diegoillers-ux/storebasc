@@ -32,6 +32,10 @@ function getTransporter() {
     });
 }
 
+function getSender() {
+    return process.env.SMTP_FROM || `"Espíritu Ananda" <${process.env.SMTP_USER || process.env.GMAIL_USER || 'no-reply@espiritananda.com'}>`;
+}
+
 function getPendingCopy(saleType: SaleType, itemName: string) {
     if (saleType === 'raffle') {
         return {
@@ -101,17 +105,14 @@ type ApprovedSaleEmailPayload = {
 };
 
 export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
-        return;
-    }
+    const mailer = getTransporter();
+    if (!mailer) return;
 
     const saleType = payload.saleType || 'service';
     const copy = getPendingCopy(saleType, payload.itemName);
 
     const mailOptions = {
-        from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
+        from: getSender(),
         to: payload.toEmail,
         subject: `${copy.subject}${payload.reservationCode ? ` (${payload.reservationCode})` : ''}`,
         html: `
@@ -133,7 +134,7 @@ export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await mailer.sendMail(mailOptions);
         console.log(`[Email Sent] Pending ${saleType} to: ${payload.toEmail}`);
     } catch (error) {
         console.error('Error sending pending email:', error);
@@ -141,17 +142,14 @@ export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
 }
 
 export async function sendApprovedSaleEmail(payload: ApprovedSaleEmailPayload) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
-        return;
-    }
+    const mailer = getTransporter();
+    if (!mailer) return;
 
     const saleType = payload.saleType || 'service';
     const copy = getApprovedCopy(saleType, payload.itemName, payload.meetingLink || '');
 
     const mailOptions = {
-        from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
+        from: getSender(),
         to: payload.toEmail,
         subject: copy.subject,
         html: `
@@ -169,7 +167,7 @@ export async function sendApprovedSaleEmail(payload: ApprovedSaleEmailPayload) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await mailer.sendMail(mailOptions);
         console.log(`[Email Sent] Approved ${saleType} to: ${payload.toEmail}`);
     } catch (error) {
         console.error('Error sending confirmation email:', error);
@@ -225,11 +223,8 @@ type AdminProofPayload = {
 };
 
 export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
-        return;
-    }
+    const mailer = getTransporter();
+    if (!mailer) return;
 
     const adminEmails = getAdminEmails();
     if (adminEmails.length === 0) {
@@ -238,7 +233,7 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
     }
 
     const mailOptions = {
-        from: `"Tu Negocio" <${process.env.GMAIL_USER}>`,
+        from: getSender(),
         to: adminEmails.join(','),
         subject: `Pago reportado por cliente - ${payload.serviceName}`,
         html: `
@@ -265,7 +260,7 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await mailer.sendMail(mailOptions);
         console.log(`[Email Sent] Payment proof to admins: ${adminEmails.join(',')}`);
     } catch (error) {
         console.error('Error sending admin payment proof email:', error);
@@ -273,19 +268,14 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
 }
 
 export async function sendVerificationEmail(toEmail: string, clientName: string, verificationCode: string) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
+    const mailer = getTransporter();
+    if (!mailer) {
+        console.log('[Mailer] No hay configuración SMTP activa. Se omite envío por correo.');
         return false;
     }
 
-    const mailer = getTransporter();
-    if (!mailer) return false;
-
-    const fromSender = process.env.SMTP_FROM || `"Espíritu Ananda" <${process.env.SMTP_USER || process.env.GMAIL_USER}>`;
-
     const mailOptions = {
-        from: fromSender,
+        from: getSender(),
         to: toEmail,
         subject: `Código de Verificación - Espíritu Ananda: ${verificationCode}`,
         html: `
@@ -314,14 +304,11 @@ export async function sendVerificationEmail(toEmail: string, clientName: string,
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetCode: string) {
-    const configError = getMailerConfigError();
-    if (configError) {
-        console.error(`[Mailer Config Error] ${configError}`);
-        return false;
-    }
+    const mailer = getTransporter();
+    if (!mailer) return false;
 
     const mailOptions = {
-        from: `"Espíritu Ananda" <${process.env.GMAIL_USER || process.env.SMTP_USER}>`,
+        from: getSender(),
         to: toEmail,
         subject: `Recuperación de Contraseña - Código: ${resetCode}`,
         html: `
@@ -338,7 +325,7 @@ export async function sendPasswordResetEmail(toEmail: string, resetCode: string)
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await mailer.sendMail(mailOptions);
         console.log(`[Email Sent] Password reset email to: ${toEmail}`);
         return true;
     } catch (error) {
@@ -346,4 +333,3 @@ export async function sendPasswordResetEmail(toEmail: string, resetCode: string)
         return false;
     }
 }
-
