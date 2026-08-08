@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { productRepository } from '@/lib/firebase/repositories/products';
+import { productRepository } from '@/lib/supabase/repositories/products';
 
 export async function PUT(
   req: NextRequest,

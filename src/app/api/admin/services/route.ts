@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { serviceRepository } from '@/lib/firebase/repositories/services';
+import { serviceRepository } from '@/lib/supabase/repositories/services';
 
 const MOCK_SERVICES = [
   { id: 'serv-1', name: 'Lectura de Carta Natal Completa', slug: 'carta-natal', price: 150000, duration: 60, durationMinutes: 60, category: 'Esoterismo', active: true, description: 'Lectura astrológica detallada cruzando planetas, casas y tránsitos mayores.', featured: true, imageUrl: null },

@@ -1,17 +1,44 @@
 import type { NextAuthConfig } from 'next-auth';
-import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 
 export const authConfig: NextAuthConfig = {
   trustHost: true,
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || '930363408123-nivqf5itq1u30ndv4frujj3v68hvb1kq.apps.googleusercontent.com',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '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',
+    Credentials({
+      id: 'admin-credentials',
+      name: 'Acceso Admin (Correo y Contraseña)',
+      credentials: {
+        email: { label: 'Correo Electrónico', type: 'email' },
+        password: { label: 'Contraseña', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const email = String(credentials.email).trim().toLowerCase();
+        const password = String(credentials.password).trim();
+
+        const adminEmails = (process.env.ADMIN_EMAILS || 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com')
+          .split(',')
+          .map((e) => e.trim().toLowerCase());
+
+        const expectedPassword = process.env.ADMIN_PASSWORD || 'ananda2026!';
+
+        if (adminEmails.includes(email) && password === expectedPassword) {
+          return {
+            id: `admin-${email}`,
+            name: email.split('@')[0],
+            email,
+            role: 'SUPER_ADMIN',
+            isAdmin: true,
+          };
+        }
+
+        return null;
+      },
     }),
     Credentials({
       id: 'demo',
-      name: 'Acceso Demo Admin',
+      name: 'Acceso Preproducción Directo',
       credentials: {},
       async authorize() {
         return {
@@ -37,3 +64,4 @@ export const authConfig: NextAuthConfig = {
     },
   },
 };
+

@@ -16,8 +16,8 @@ El proyecto ha sido refactorizado y estandarizado al 100% en la versión 2.0. El
 | :--- | :--- | :--- |
 | **Framework** | Next.js 16.1 (App Router + Turbopack) | Renderizado SSR/ISR, Server Actions y API Routes |
 | **Estilos & UI** | Tailwind CSS v4 + PostCSS | Paleta `--color-ananda-*`, tarjetas glassmorphism, responsive móvil |
-| **Base de Datos** | Firebase Cloud Firestore | Base de datos NoSQL serverless (repositorios en `src/lib/firebase/repositories/`) |
-| **Backend Admin** | Firebase Admin SDK (`firebase-admin`) | Patrón repositorio seguro en endpoints backend |
+| **Base de Datos** | Supabase (PostgreSQL Relacional) | Base de datos SQL serverless (repositorios en `src/lib/supabase/repositories/`) |
+| **Backend Admin** | Supabase Client (`@supabase/supabase-js`) | Patrón repositorio seguro en endpoints backend con Service Role Key |
 | **Autenticación** | NextAuth v5 (Beta 29) + Google OAuth | Doble flujo: Google OAuth 2.0 y Botón `⚡ Ingreso Directo Admin (Preproducción)` |
 | **Agendamiento** | Google Calendar API | Verificación de franjas horarias libres/ocupadas |
 | **Correos** | Nodemailer (SMTP / Gmail) | Plantillas HTML automáticas para recibos y confirmaciones |

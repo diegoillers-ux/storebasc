@@ -1,5 +1,5 @@
 import { isDemoMode } from '@/lib/demoMode'
-import { productRepository } from '@/lib/firebase/repositories/products'
+import { productRepository } from '@/lib/supabase/repositories/products'
 import StoreCatalogClient from './StoreCatalogClient'
 
 export interface StoreProduct {

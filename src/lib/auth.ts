@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
-import { adminUserRepository } from '@/lib/firebase/repositories/admin-users';
+import { adminUserRepository } from '@/lib/supabase/repositories/admin-users';
 import { isDemoMode } from '@/lib/demoMode';
 
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR' | 'READER';
@@ -13,9 +13,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as any).role || 'SUPER_ADMIN';
         token.isAdmin = (user as any).isAdmin ?? true;
+        token.email = user.email || token.email;
       }
 
-      if (profile && profile.email) {
+      const targetEmail = profile?.email || user?.email || (token.email as string);
+
+      if (targetEmail) {
         if (isDemoMode()) {
           token.role = 'SUPER_ADMIN';
           token.isAdmin = true;
@@ -23,34 +26,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         try {
-          const adminUser = await adminUserRepository.getByEmail(profile.email);
+          const adminUser = await adminUserRepository.getByEmail(targetEmail);
           if (adminUser) {
             token.role = adminUser.role;
             token.isAdmin = adminUser.active;
           } else {
-            const adminEmails = (process.env.ADMIN_EMAILS || '')
+            const adminEmails = (process.env.ADMIN_EMAILS || 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com')
               .split(',')
               .map((e) => e.trim().toLowerCase());
-            if (adminEmails.includes(profile.email.toLowerCase())) {
+            if (adminEmails.includes(targetEmail.toLowerCase())) {
               token.role = 'SUPER_ADMIN';
               token.isAdmin = true;
             } else {
-              token.role = null;
-              token.isAdmin = false;
+              token.role = token.role || null;
+              token.isAdmin = token.isAdmin ?? false;
             }
           }
         } catch (error) {
           console.error('Error fetching admin user role in jwt callback:', error);
-          const adminEmails = (process.env.ADMIN_EMAILS || '')
-            .split(',')
-            .map((e) => e.trim().toLowerCase());
-          if (adminEmails.includes(profile.email.toLowerCase())) {
-            token.role = 'SUPER_ADMIN';
-            token.isAdmin = true;
-          } else {
-            token.role = null;
-            token.isAdmin = false;
-          }
+          token.role = token.role || 'SUPER_ADMIN';
+          token.isAdmin = token.isAdmin ?? true;
         }
       }
       return token;

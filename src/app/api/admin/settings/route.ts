@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { availabilityRepository } from '@/lib/firebase/repositories/availability';
+import { availabilityRepository } from '@/lib/supabase/repositories/availability';
 
 // Horarios de inicio por defecto
 const DEFAULT_WEEKLY_SETTINGS = [

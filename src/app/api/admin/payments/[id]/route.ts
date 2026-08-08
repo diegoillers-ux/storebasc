@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { paymentRepository } from '@/lib/firebase/repositories/payments';
-import { bookingRepository } from '@/lib/firebase/repositories/bookings';
-import { orderRepository } from '@/lib/firebase/repositories/orders';
-import { customerRepository } from '@/lib/firebase/repositories/customers';
-import { serviceRepository } from '@/lib/firebase/repositories/services';
+import { paymentRepository } from '@/lib/supabase/repositories/payments';
+import { bookingRepository } from '@/lib/supabase/repositories/bookings';
+import { orderRepository } from '@/lib/supabase/repositories/orders';
+import { customerRepository } from '@/lib/supabase/repositories/customers';
+import { serviceRepository } from '@/lib/supabase/repositories/services';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
 import { sendApprovedSaleEmail } from '@/lib/mailer';
 

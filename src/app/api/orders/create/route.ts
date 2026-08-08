@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDemoMode } from '@/lib/demoMode'
-import { orderRepository } from '@/lib/firebase/repositories/orders'
-import { customerRepository } from '@/lib/firebase/repositories/customers'
-import { productRepository } from '@/lib/firebase/repositories/products'
+import { orderRepository } from '@/lib/supabase/repositories/orders'
+import { customerRepository } from '@/lib/supabase/repositories/customers'
+import { productRepository } from '@/lib/supabase/repositories/products'
 
 export async function POST(req: NextRequest) {
   try {

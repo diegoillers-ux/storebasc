@@ -2,8 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getGeneralContactLink } from '@/lib/whatsapp'
 import { isDemoMode } from '@/lib/demoMode'
-import { serviceRepository, Service } from '@/lib/firebase/repositories/services'
-import { productRepository, Product } from '@/lib/firebase/repositories/products'
+import { serviceRepository, Service } from '@/lib/supabase/repositories/services'
+import { productRepository, Product } from '@/lib/supabase/repositories/products'
 
 // Datos simulados de respaldo para Modo Demo o fallbacks de base de datos
 const MOCK_SERVICES: Service[] = [

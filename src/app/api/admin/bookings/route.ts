@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { bookingRepository } from '@/lib/firebase/repositories/bookings';
+import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 
 const MOCK_BOOKINGS = [
   { id: 'book-1', customerId: 'cust-1', serviceId: 'serv-1', scheduledAt: new Date(Date.now() + 3600000 * 2).toISOString(), durationMinutes: 60, status: 'CONFIRMED', notes: 'Desea enfatizar en el retorno de Saturno y tránsitos personales.', whatsappLink: 'https://wa.me/573123456789?text=Hola' },

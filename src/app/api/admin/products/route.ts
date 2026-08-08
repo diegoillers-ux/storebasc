@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { productRepository } from '@/lib/firebase/repositories/products';
+import { productRepository } from '@/lib/supabase/repositories/products';
 
 const MOCK_PRODUCTS = [
   { id: 'prod-1', name: 'Sahumerio Sagrado de Copal', slug: 'sahumerio-copal', price: 35000, stock: 12, sku: 'SAH-COP-01', category: 'Sahumerios', active: true, featured: true, description: 'Varitas de copal silvestre y resinas aromáticas para purificación energética de espacios.', imageUrl: null },

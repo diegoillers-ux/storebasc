@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { customerRepository } from '@/lib/firebase/repositories/customers';
+import { customerRepository } from '@/lib/supabase/repositories/customers';
 
 const MOCK_CUSTOMERS = [
   { id: 'cust-1', name: 'María Fernanda Rojas', email: 'maria.rojas@gmail.com', phone: '573123456789', notes: 'Fecha nacimiento: 14 de marzo 1992, 08:30 AM, Cali. Sol en Piscis, Luna en Cáncer. Le interesa profundizar sobre tránsitos de Saturno.', createdAt: new Date().toISOString() },

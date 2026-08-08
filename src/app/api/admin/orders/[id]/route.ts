@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { orderRepository } from '@/lib/firebase/repositories/orders';
+import { orderRepository } from '@/lib/supabase/repositories/orders';
 
 export async function GET(
   req: NextRequest,

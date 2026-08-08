@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { paymentRepository } from '@/lib/firebase/repositories/payments';
+import { paymentRepository } from '@/lib/supabase/repositories/payments';
 
 const MOCK_PAYMENTS = [
   { id: 'pay-1', customerId: 'cust-1', bookingId: 'book-1', orderId: null, method: 'NEQUI', amount: 150000, currency: 'COP', status: 'APPROVED', reference: 'MOCK-REF-101', receiptUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=600', verifiedAt: new Date().toISOString(), verifiedBy: 'admin', createdAt: new Date(Date.now() - 3600000).toISOString() },

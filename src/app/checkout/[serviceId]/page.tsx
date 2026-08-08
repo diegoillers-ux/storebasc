@@ -1,5 +1,5 @@
 import { isDemoMode } from '@/lib/demoMode'
-import { serviceRepository } from '@/lib/firebase/repositories/services'
+import { serviceRepository } from '@/lib/supabase/repositories/services'
 import Step1ClientForm from './Step1ClientForm'
 
 async function getServiceDetails(serviceId: string) {

@@ -1,24 +1,35 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabaseClient } from '@/lib/supabase/client';
 
 export function useCollection<T extends Record<string, unknown> = Record<string, unknown>>(collectionName: string) {
-    const [data, setData] = useState<T[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const q = query(collection(db, collectionName));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-                const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as unknown as T));
-            setData(items);
-            setLoading(false);
-        }, (error) => {
-            console.warn(`Error al cargar la colección ${collectionName}:`, error);
-            setLoading(false);
-        });
+  useEffect(() => {
+    let isMounted = true;
 
-        return () => unsubscribe();
-    }, [collectionName]);
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabaseClient
+          .from(collectionName)
+          .select('*');
 
-    return { data, loading };
+        if (!error && result && isMounted) {
+          setData(result as unknown as T[]);
+        }
+      } catch (error) {
+        console.warn(`Error al cargar la colección ${collectionName}:`, error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [collectionName]);
+
+  return { data, loading };
 }

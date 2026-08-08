@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { orderRepository } from '@/lib/firebase/repositories/orders';
+import { orderRepository } from '@/lib/supabase/repositories/orders';
 
 const MOCK_ORDERS = [
   { id: 'ord-1', customerId: 'cust-1', status: 'PAID', subtotal: 35000, shipping: 10000, total: 45000, delivery: 'shipping', address: 'Calle 100 # 15-30, Bogotá D.C.', notes: 'Por favor empacar para regalo con cinta morada.', createdAt: new Date(Date.now() - 86400000).toISOString() },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDemoMode } from '@/lib/demoMode'
 import { WompiProvider } from '@/lib/payments/wompi'
-import { bookingRepository } from '@/lib/firebase/repositories/bookings'
+import { bookingRepository } from '@/lib/supabase/repositories/bookings'
 
 export async function POST(req: NextRequest) {
   try {

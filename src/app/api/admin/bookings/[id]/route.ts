@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { bookingRepository } from '@/lib/firebase/repositories/bookings';
-import { customerRepository } from '@/lib/firebase/repositories/customers';
-import { serviceRepository } from '@/lib/firebase/repositories/services';
+import { bookingRepository } from '@/lib/supabase/repositories/bookings';
+import { customerRepository } from '@/lib/supabase/repositories/customers';
+import { serviceRepository } from '@/lib/supabase/repositories/services';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
 import { sendApprovedSaleEmail } from '@/lib/mailer';
 

@@ -2,8 +2,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { supabaseClient } from '@/lib/supabase/client';
 import { raffles as localRaffles } from '@/lib/data';
 import styles from '../[serviceId]/page.module.css';
 
@@ -23,14 +22,24 @@ function RaffleCheckoutContent() {
         const fetchRaffle = async () => {
             if (!raffleId) return;
             
-            // Intentar traer de Firebase
             try {
-                const docRef = doc(db, 'raffles', raffleId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setRaffle({ id: docSnap.id, ...(docSnap.data() as Omit<RaffleItem, 'id'>) });
+                const { data, error } = await supabaseClient
+                    .from('ai_assets')
+                    .select('*')
+                    .eq('id', raffleId)
+                    .maybeSingle();
+
+                if (!error && data) {
+                    setRaffle({
+                        id: data.id,
+                        title: data.metadata?.title || 'Rifa Especial',
+                        description: data.content || '',
+                        price: data.metadata?.price || '$10.000 COP',
+                        priceNumber: data.metadata?.priceNumber || 10000,
+                        totalNumbers: data.metadata?.totalNumbers || 100,
+                        soldNumbers: data.metadata?.soldNumbers || [],
+                    });
                 } else {
-                    // Fallback local
                     const local = localRaffles.find(r => r.id === raffleId);
                     setRaffle(local || null);
                 }
@@ -71,13 +80,13 @@ function RaffleCheckoutContent() {
                     <div className={styles.progressStep}>2. Pago Manual</div>
                 </div>
 
-                <h1 className={`${styles.title} gradient-text`}>Tu numero de la suerte</h1>
+                <h1 className={`${styles.title} gradient-text`}>Tu número de la suerte</h1>
                 <p className={styles.price}>{raffle.price}</p>
                 <div style={{ marginBottom: '1.5rem', padding: '1rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--card-border)' }}>
                     <p style={{ marginBottom: '0.35rem', fontWeight: 600 }}>{raffle.title}</p>
-                    <p style={{ opacity: 0.78 }}>Numero elegido: <strong>{selectedNumber}</strong></p>
+                    <p style={{ opacity: 0.78 }}>Número elegido: <strong>{selectedNumber}</strong></p>
                     <p style={{ opacity: 0.72, marginTop: '0.45rem', fontSize: '0.92rem' }}>
-                        Cuando envies el comprobante, el sistema generara tu codigo de transaccion y la compra quedara en validacion administrativa.
+                        Cuando envíes el comprobante, el sistema generará tu código de transacción y la compra quedará en validación administrativa.
                     </p>
                 </div>
 

@@ -1,5 +1,5 @@
 import { getGoogleCalendarClient } from '../googleCalendar';
-import { availabilityRepository } from '../firebase/repositories/availability';
+import { availabilityRepository } from '@/lib/supabase/repositories/availability';
 import type { CalendarProvider, AvailabilityInput, TimeSlot, CreateCalendarEventInput, UpdateCalendarEventInput } from './index';
 
 export class GoogleCalendarProvider implements CalendarProvider {
@@ -9,7 +9,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
     try {
       const { from, to, durationMinutes } = input;
       
-      // 1. Obtener configuraciones de horario laboral de Firestore
+      // 1. Obtener configuraciones de horario laboral de Supabase
       const weeklyAvails = await availabilityRepository.listWeekly();
       const blockedSlots = await availabilityRepository.listBlocked(from, to);
 
@@ -51,13 +51,12 @@ export class GoogleCalendarProvider implements CalendarProvider {
           while (slotStart.getTime() + durationMinutes * 60_000 <= slotEndBoundary.getTime()) {
             const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000);
             
-            // Verificar si el slot está bloqueado en Firestore
+            // Verificar si el slot está bloqueado
             const isBlocked = blockedSlots.some((blocked) => {
               const bStart = new Date(blocked.startAt).getTime();
               const bEnd = new Date(blocked.endAt).getTime();
               const sStart = slotStart.getTime();
               const sEnd = slotEnd.getTime();
-              // Hay traslape
               return sStart < bEnd && sEnd > bStart;
             });
 
