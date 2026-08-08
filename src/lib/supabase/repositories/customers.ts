@@ -5,8 +5,9 @@ export interface Customer {
   name: string;
   phone: string;
   email: string | null;
-  notes: string | null;
-  source: string | null;
+  cedula?: string | null;
+  notes?: string | null;
+  source?: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -18,6 +19,7 @@ function mapCustomerFromDb(row: any): Customer {
     name: row.name,
     phone: row.phone || '',
     email: row.email || null,
+    cedula: row.cedula || null,
     notes: row.notes || null,
     source: row.source || null,
     active: Boolean(row.active),
@@ -52,17 +54,29 @@ export const customerRepository = {
     const { data, error } = await getAdminSupabase()
       .from('customers')
       .select('*')
-      .eq('email', email);
+      .eq('email', email.trim().toLowerCase());
 
     if (error || !data) return [];
     return data.map(mapCustomerFromDb);
+  },
+
+  async getByCedula(cedula: string): Promise<Customer | null> {
+    const { data, error } = await getAdminSupabase()
+      .from('customers')
+      .select('*')
+      .eq('cedula', cedula.trim())
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return mapCustomerFromDb(data);
   },
 
   async create(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Customer> {
     const payload = {
       name: customer.name,
       phone: customer.phone,
-      email: customer.email,
+      email: customer.email ? customer.email.trim().toLowerCase() : null,
+      cedula: customer.cedula ? customer.cedula.trim() : null,
       notes: customer.notes,
       source: customer.source,
       active: customer.active ?? true,
@@ -75,7 +89,6 @@ export const customerRepository = {
       .single();
 
     if (error) {
-      // Si falla por email único duplicado, intentamos buscarlo
       if (error.code === '23505' && customer.email) {
         const existing = await this.getByEmail(customer.email);
         if (existing.length > 0) return existing[0];
@@ -90,7 +103,8 @@ export const customerRepository = {
     const payload: any = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.phone !== undefined) payload.phone = data.phone;
-    if (data.email !== undefined) payload.email = data.email;
+    if (data.email !== undefined) payload.email = data.email ? data.email.trim().toLowerCase() : null;
+    if (data.cedula !== undefined) payload.cedula = data.cedula ? data.cedula.trim() : null;
     if (data.notes !== undefined) payload.notes = data.notes;
     if (data.source !== undefined) payload.source = data.source;
     if (data.active !== undefined) payload.active = data.active;
@@ -127,7 +141,7 @@ export const customerRepository = {
     const { data, error } = await getAdminSupabase()
       .from('customers')
       .select('*')
-      .or(`name.ilike.%${lowerQuery}%,email.ilike.%${lowerQuery}%,phone.ilike.%${lowerQuery}%`)
+      .or(`name.ilike.%${lowerQuery}%,email.ilike.%${lowerQuery}%,phone.ilike.%${lowerQuery}%,cedula.ilike.%${lowerQuery}%`)
       .order('created_at', { ascending: false })
       .limit(200);
 

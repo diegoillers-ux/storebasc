@@ -89,7 +89,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
 
 # Administradores Autorizados
-ADMIN_EMAILS="lina@espiritananda.com,diegoillers@gmail.com"
+ADMIN_EMAILS="diegoillers@gmail.com"
 
 # Cuentas para Transferencias Manuales
 NEXT_PUBLIC_NEQUI_NUMBER="300 123 4567"

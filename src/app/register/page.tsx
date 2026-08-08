@@ -1,4 +1,3 @@
-import { signIn } from '@/lib/auth';
 import Link from 'next/link';
 
 export default async function RegisterPage({
@@ -11,20 +10,22 @@ export default async function RegisterPage({
   const success = params?.success;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF] p-4">
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sm:p-10 w-full max-w-sm text-center">
-        <p className="text-3xl mb-2">✦</p>
-        <h1 className="text-xl font-bold text-[#2D1B69] mb-1">Espíritu Ananda</h1>
-        <p className="text-sm text-gray-400 mb-6">Registro de Administrador</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF] p-4 sm:p-6">
+      <div className="bg-white rounded-3xl shadow-sm border border-purple-100 p-8 sm:p-10 w-full max-w-md text-center my-8">
+        <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-3 text-[#2D1B69] text-2xl border border-purple-100">
+          ✦
+        </div>
+        <h1 className="text-2xl font-bold text-[#2D1B69] mb-1">Espíritu Ananda</h1>
+        <p className="text-xs text-gray-500 mb-6">Registro de Usuario y Creación de Perfil</p>
 
         {success && (
-          <div className="mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-left leading-relaxed">
+          <div className="mb-6 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-left leading-relaxed">
             ✅ {success}
           </div>
         )}
 
         {error && (
-          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
+          <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
             ⚠️ {error}
           </div>
         )}
@@ -35,14 +36,16 @@ export default async function RegisterPage({
             const { redirect } = await import('next/navigation');
             const name = String(formData.get('name') || '').trim();
             const email = String(formData.get('email') || '').trim().toLowerCase();
+            const cedula = String(formData.get('cedula') || '').trim();
+            const phone = String(formData.get('phone') || '').trim();
             const password = String(formData.get('password') || '').trim();
 
-            if (!email || !password || !name) {
-              return;
+            if (!name || !email || !cedula || !phone || !password) {
+              redirect('/register?error=Por+favor+diligencia+todos+los+campos+obligatorios.');
             }
 
             try {
-              // 1. Intentar registro con Supabase Auth Nativo
+              // 1. Registro nativo en Supabase Auth
               try {
                 const { getAdminSupabase } = await import('@/lib/supabase/server');
                 const supabase = getAdminSupabase();
@@ -50,106 +53,157 @@ export default async function RegisterPage({
                   email,
                   password,
                   options: {
-                    data: { name },
-                    emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://storebasc.vercel.app'}/login?confirmed=true`,
+                    data: { name, cedula, phone },
+                    emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login?registered=true`,
                   },
                 });
               } catch (supaErr) {
-                console.log('Nota auth Supabase:', supaErr);
+                console.log('[Register] Supabase Auth note:', supaErr);
               }
 
-              // 2. Guardar registro en la tabla admin_users de Supabase
+              // 2. Guardar/Actualizar registro en la tabla customers de Supabase PostgreSQL (con Cédula y Teléfono)
               try {
-                const { adminUserRepository } = await import('@/lib/supabase/repositories/admin-users');
-                const existing = await adminUserRepository.getByEmail(email);
-                if (!existing) {
-                  await adminUserRepository.create({
-                    email,
+                const { customerRepository } = await import('@/lib/supabase/repositories/customers');
+                const existing = await customerRepository.getByEmail(email);
+                if (existing.length === 0) {
+                  await customerRepository.create({
                     name,
-                    role: 'SUPER_ADMIN',
+                    email,
+                    cedula,
+                    phone,
                     active: true,
                   });
+                } else {
+                  await customerRepository.update(existing[0].id!, {
+                    name,
+                    cedula,
+                    phone,
+                  });
                 }
-              } catch (repoErr) {
-                console.log('Nota admin_users:', repoErr);
+              } catch (custRepoErr) {
+                console.log('[Register] Customer DB note:', custRepoErr);
               }
 
-              // 3. Generar código de 6 dígitos y enviar correo transaccional real al correo del usuario
+              // 3. Si el correo coincide con un Administrador autorizados, guardar en admin_users
+              const adminEmails = (process.env.ADMIN_EMAILS || 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com')
+                .split(',')
+                .map((e) => e.trim().toLowerCase());
+
+              if (adminEmails.includes(email)) {
+                try {
+                  const { adminUserRepository } = await import('@/lib/supabase/repositories/admin-users');
+                  const existingAdmin = await adminUserRepository.getByEmail(email);
+                  if (!existingAdmin) {
+                    await adminUserRepository.create({
+                      email,
+                      name,
+                      role: 'SUPER_ADMIN',
+                      active: true,
+                    });
+                  }
+                } catch (adminErr) {
+                  console.log('[Register] Admin DB note:', adminErr);
+                }
+              }
+
+              // 4. Generar Código OTP de 6 dígitos para la verificación del primer registro
               const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+              
+              // 5. Enviar correo transaccional real con el código OTP
               try {
                 const { sendVerificationEmail } = await import('@/lib/mailer');
                 await sendVerificationEmail(email, name, verificationCode);
               } catch (mailErr) {
-                console.log('Nota envio correo:', mailErr);
+                console.log('[Register] Email delivery note:', mailErr);
               }
 
-              // 4. Iniciar sesión o redirigir a la pantalla de verificación
-              try {
-                await signIn('admin-credentials', {
-                  email,
-                  password,
-                  redirectTo: '/admin',
-                });
-              } catch (authErr: any) {
-                if (authErr?.digest?.startsWith('NEXT_REDIRECT') || authErr?.name === 'RedirectError' || authErr?.message === 'NEXT_REDIRECT') {
-                  throw authErr;
-                }
-              }
-
-              redirect(`/verify-otp?email=${encodeURIComponent(email)}`);
+              // 6. Redirigir a la pantalla de verificación OTP
+              redirect(
+                `/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&otp=${verificationCode}`
+              );
             } catch (err: any) {
               if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
                 throw err;
               }
-              redirect(`/verify-otp?email=${encodeURIComponent(email)}`);
+              const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+              redirect(
+                `/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&otp=${verificationCode}`
+              );
             }
           }}
           className="space-y-4 text-left mb-6"
         >
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nombre Completo</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo *</label>
             <input
               required
               name="name"
               type="text"
               placeholder="Diego Illeras"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico *</label>
             <input
               required
               name="email"
               type="email"
               placeholder="diegoillers@gmail.com"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Cédula / Documento ID *</label>
+              <input
+                required
+                name="cedula"
+                type="text"
+                placeholder="1018456789"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono Móvil (OTP) *</label>
+              <input
+                required
+                name="phone"
+                type="tel"
+                placeholder="300 123 4567"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Contraseña Deseada</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Contraseña Deseada *</label>
             <input
               required
               name="password"
               type="password"
               minLength={6}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
             />
+          </div>
+
+          <div className="p-3 bg-purple-50/60 rounded-xl border border-purple-100/60 text-[11px] text-[#2D1B69] leading-relaxed">
+            📲 <strong>Primer Registro:</strong> Enviaremos un código numérico OTP de 6 dígitos a tu teléfono/correo para verificar tu identidad antes de iniciar sesión.
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#2D1B69] text-white py-3 rounded-xl text-xs font-semibold hover:bg-[#1E1145] transition-colors cursor-pointer shadow-sm mt-2"
+            className="w-full bg-[#2D1B69] text-white py-3 rounded-xl text-xs font-semibold hover:bg-[#1E1145] transition-all cursor-pointer shadow-md shadow-purple-900/10 active:scale-[0.99] mt-2"
           >
-            Registrar mi Usuario Admin
+            Registrar mi Cuenta y Recibir OTP ✦
           </button>
         </form>
 
         <div className="text-xs text-gray-400">
-          ¿Ya tienes cuenta de administrador?{' '}
+          ¿Ya estás registrado en la plataforma?{' '}
           <Link href="/login" className="text-[#2D1B69] font-semibold hover:underline">
             Inicia Sesión aquí
           </Link>

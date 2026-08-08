@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
+    cedula TEXT UNIQUE,
     birth_date TEXT,
     notes TEXT,
     source TEXT,
