@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS public.customers (
     birth_date TEXT,
     notes TEXT,
     source TEXT,
+    otp_code TEXT,
+    otp_expires_at TIMESTAMPTZ,
+    is_verified BOOLEAN NOT NULL DEFAULT false,
     active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

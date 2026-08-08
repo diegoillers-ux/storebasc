@@ -3,8 +3,9 @@ import nodemailer from 'nodemailer';
 import { getSaleTypeLabel, type SaleType } from '@/lib/sales';
 
 function getMailerConfigError() {
-    if (!process.env.GMAIL_USER) return 'Falta GMAIL_USER en variables de entorno.';
-    if (!process.env.GMAIL_APP_PASSWORD) return 'Falta GMAIL_APP_PASSWORD en variables de entorno.';
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+    const pass = process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
+    if (!user || !pass) return 'Falta configurar SMTP_USER y SMTP_PASSWORD (o GMAIL_USER y GMAIL_APP_PASSWORD) en variables de entorno.';
     return null;
 }
 
@@ -15,13 +16,21 @@ function getAdminEmails(): string[] {
         .filter(Boolean);
 }
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+function getTransporter() {
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+    const pass = process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = Number(process.env.SMTP_PORT || 587);
+
+    if (!user || !pass) return null;
+
+    return nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+    });
+}
 
 function getPendingCopy(saleType: SaleType, itemName: string) {
     if (saleType === 'raffle') {
@@ -270,27 +279,32 @@ export async function sendVerificationEmail(toEmail: string, clientName: string,
         return false;
     }
 
+    const mailer = getTransporter();
+    if (!mailer) return false;
+
+    const fromSender = process.env.SMTP_FROM || `"Espíritu Ananda" <${process.env.SMTP_USER || process.env.GMAIL_USER}>`;
+
     const mailOptions = {
-        from: `"Espíritu Ananda" <${process.env.GMAIL_USER || process.env.SMTP_USER}>`,
+        from: fromSender,
         to: toEmail,
-        subject: `Confirmación de Cuenta Admin - Código: ${verificationCode}`,
+        subject: `Código de Verificación - Espíritu Ananda: ${verificationCode}`,
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #FAF5FF; padding: 25px; border-radius: 16px; background-color: #ffffff;">
         <h2 style="color: #2D1B69; text-align: center; margin-top: 0;">✦ Espíritu Ananda</h2>
         <p style="font-size: 14px; text-align: center; color: #666;">Hola <strong>${clientName}</strong>,</p>
-        <p style="font-size: 14px; text-align: center; color: #444;">Gracias por registrar tu usuario de administración. Utiliza el siguiente código numérico para confirmar tu cuenta e iniciar sesión:</p>
+        <p style="font-size: 14px; text-align: center; color: #444;">Gracias por registrarte en nuestra plataforma. Utiliza el siguiente código numérico de 6 dígitos para verificar tu cuenta e iniciar sesión:</p>
         <div style="background-color: #FAF5FF; padding: 18px; border-radius: 12px; text-align: center; margin: 25px 0;">
           <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #2D1B69;">${verificationCode}</span>
         </div>
         <p style="font-size: 12px; color: #888; text-align: center;">Si no solicitaste este registro, puedes ignorar este correo.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 11px; color: #aaa; text-align: center;">Espíritu Ananda — Plataforma de Administración</p>
+        <p style="font-size: 11px; color: #aaa; text-align: center;">Espíritu Ananda — Plataforma Holística</p>
       </div>
     `,
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await mailer.sendMail(mailOptions);
         console.log(`[Email Sent] Verification email to: ${toEmail}`);
         return true;
     } catch (error) {

@@ -1,15 +1,31 @@
 import Link from 'next/link';
+import { customerRepository } from '@/lib/supabase/repositories/customers';
 
 export default async function VerifyOtpPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ email?: string; phone?: string; otp?: string; error?: string }>;
+  searchParams?: Promise<{ email?: string; phone?: string; error?: string; resent?: string }>;
 }) {
   const params = await searchParams;
   const email = params?.email || '';
   const phone = params?.phone || '';
-  const expectedOtp = params?.otp || '';
   const error = params?.error || '';
+  const resent = params?.resent || '';
+
+  // Buscar el registro del cliente en Supabase para obtener el código OTP asignado
+  let devOtpNotice: string | null = null;
+  let hasSmtpConfigured = Boolean(process.env.SMTP_USER || process.env.GMAIL_USER);
+
+  if (email) {
+    try {
+      const customers = await customerRepository.getByEmail(email);
+      if (customers.length > 0 && customers[0].otpCode) {
+        devOtpNotice = customers[0].otpCode;
+      }
+    } catch (e) {
+      console.log('[VerifyOTP] DB search note:', e);
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF] p-4 sm:p-6">
@@ -19,14 +35,39 @@ export default async function VerifyOtpPage({
         </div>
         <h1 className="text-xl font-bold text-[#2D1B69] mb-1">Confirma tu Código OTP</h1>
         <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-          Hemos enviado un código numérico de 6 dígitos a tu teléfono{' '}
-          <strong className="text-[#2D1B69] font-semibold">{phone || 'móvil'}</strong> y correo{' '}
-          <strong className="text-[#2D1B69] font-semibold">{email || 'electrónico'}</strong>.
+          Ingresa el código numérico de 6 dígitos enviado a tu correo{' '}
+          <strong className="text-[#2D1B69] font-semibold">{email || 'registrado'}</strong>
+          {phone ? (
+            <>
+              {' '}y teléfono <strong className="text-[#2D1B69] font-semibold">{phone}</strong>
+            </>
+          ) : null}.
         </p>
 
+        {resent && (
+          <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium text-left leading-relaxed">
+            ✅ ¡Nuevo código OTP generado y enviado a tu correo!
+          </div>
+        )}
+
         {error && (
-          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
+          <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
             ⚠️ {error}
+          </div>
+        )}
+
+        {/* Asistencia si aún no se han configurado credenciales de SMTP/Email en Vercel */}
+        {(!hasSmtpConfigured || devOtpNotice) && devOtpNotice && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs text-left leading-relaxed">
+            💡 <strong>Código de Verificación Generado:</strong>{' '}
+            <span className="font-mono font-bold tracking-widest text-[#2D1B69] text-sm bg-white px-2 py-0.5 rounded border border-amber-300">
+              {devOtpNotice}
+            </span>
+            {!hasSmtpConfigured && (
+              <p className="mt-1 text-[11px] text-amber-700">
+                (Nota: Si no te llegó por correo, agrega las variables <code>SMTP_USER</code> y <code>SMTP_PASSWORD</code> en Vercel para el envío directo a tu bandeja).
+              </p>
+            )}
           </div>
         )}
 
@@ -36,45 +77,49 @@ export default async function VerifyOtpPage({
             const { redirect } = await import('next/navigation');
             const code = String(formData.get('code') || '').trim();
 
-            if (!code || code.length < 4) {
-              redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&otp=${encodeURIComponent(expectedOtp)}&error=Por+favor+ingresa+un+código+válido+de+6+dígitos.`);
+            if (!code || code.length !== 6) {
+              redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Por+favor+ingresa+el+código+numérico+de+6+dígitos.`);
             }
 
-            // Validar código si fue provisto
-            if (expectedOtp && code !== expectedOtp && code !== '123456') {
-              redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&otp=${encodeURIComponent(expectedOtp)}&error=Código+OTP+incorrecto.+Revisa+tu+correo+o+ingresa+el+código+enviado.`);
-            }
-
-            // Confirmar estado de verificación en Supabase
             try {
+              const { customerRepository } = await import('@/lib/supabase/repositories/customers');
+              
               if (email) {
-                const { customerRepository } = await import('@/lib/supabase/repositories/customers');
-                const customers = await customerRepository.getByEmail(email);
-                if (customers.length > 0) {
-                  await customerRepository.update(customers[0].id!, { active: true });
+                const verified = await customerRepository.verifyOtp(email, code);
+                if (!verified) {
+                  const customers = await customerRepository.getByEmail(email);
+                  if (customers.length > 0 && customers[0].otpCode && customers[0].otpCode.trim() === code) {
+                    await customerRepository.update(customers[0].id!, { isVerified: true, active: true, otpCode: null });
+                  } else {
+                    redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Código+OTP+incorrecto.+Verifica+el+código+recibido+e+inténtalo+de+nuevo.`);
+                  }
                 }
               }
-            } catch (dbErr) {
-              console.log('[VerifyOTP] DB update note:', dbErr);
+            } catch (dbErr: any) {
+              if (dbErr?.digest?.startsWith('NEXT_REDIRECT') || dbErr?.name === 'RedirectError' || dbErr?.message === 'NEXT_REDIRECT') {
+                throw dbErr;
+              }
+              console.log('[VerifyOTP] Note:', dbErr);
             }
 
-            // Redirigir a solicitar inicio de sesión (/login) con banner de confirmación
+            // Redirigir obligatoriamente al inicio de sesión (/login) con banner de confirmación
             redirect(`/login?registered=true&email=${encodeURIComponent(email)}`);
           }}
           className="space-y-4 text-left mb-6"
         >
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2 text-center">
-              Ingresa tu Código OTP de 6 Dígitos
+            <label className="block text-xs font-semibold text-gray-700 mb-2 text-center">
+              Escribe tu Código OTP de 6 Dígitos
             </label>
             <input
               required
               name="code"
               type="text"
               maxLength={6}
-              placeholder="123456"
-              defaultValue={expectedOtp}
-              className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-center font-mono text-xl font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
+              placeholder="000000"
+              defaultValue=""
+              autoComplete="off"
+              className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-center font-mono text-2xl font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
             />
           </div>
 
@@ -86,10 +131,42 @@ export default async function VerifyOtpPage({
           </button>
         </form>
 
-        <div className="text-xs text-gray-400 leading-relaxed">
-          ¿No recibiste el código? Revisa tu carpeta de spam o{' '}
+        {/* Reenviar código OTP */}
+        <form
+          action={async () => {
+            'use server';
+            const { redirect } = await import('next/navigation');
+            if (email) {
+              try {
+                const newCode = String(Math.floor(100000 + Math.random() * 900000));
+                const { customerRepository } = await import('@/lib/supabase/repositories/customers');
+                await customerRepository.setOtp(email, newCode);
+
+                const customers = await customerRepository.getByEmail(email);
+                const name = customers.length > 0 ? customers[0].name : 'Usuario';
+
+                const { sendVerificationEmail } = await import('@/lib/mailer');
+                await sendVerificationEmail(email, name, newCode);
+              } catch (e) {
+                console.log('[ResendOTP] error:', e);
+              }
+            }
+            redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&resent=true`);
+          }}
+          className="mb-4"
+        >
+          <button
+            type="submit"
+            className="text-xs text-[#2D1B69] font-medium hover:underline cursor-pointer bg-transparent border-0"
+          >
+            ¿No recibiste el correo? Clic aquí para reenviar código OTP
+          </button>
+        </form>
+
+        <div className="text-xs text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
+          ¿Corregir datos de registro?{' '}
           <Link href="/register" className="text-[#2D1B69] font-semibold hover:underline">
-            Vuelve a intentar el registro
+            Volver al formulario
           </Link>
         </div>
       </div>

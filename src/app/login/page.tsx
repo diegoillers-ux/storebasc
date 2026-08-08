@@ -31,7 +31,7 @@ export default async function LoginPage({
 
         {registered && (
           <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium text-left leading-relaxed shadow-xs">
-            🎉 <strong>¡Registro verificado exitosamente!</strong>
+            🎉 <strong>¡Registro y verificación completados!</strong>
             <br />
             Por favor ingresa tus datos (Correo o Cédula) y tu contraseña para iniciar sesión.
           </div>
@@ -71,7 +71,7 @@ export default async function LoginPage({
               name="email"
               type="text"
               defaultValue={defaultEmail}
-              placeholder="diegoillers@gmail.com o 1018456789"
+              placeholder="correo@ejemplo.com o número de cédula"
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2D1B69]/20 focus:border-[#2D1B69] transition-all bg-gray-50/50 focus:bg-white"
             />
           </div>

@@ -8,6 +8,9 @@ export interface Customer {
   cedula?: string | null;
   notes?: string | null;
   source?: string | null;
+  otpCode?: string | null;
+  otpExpiresAt?: Date | null;
+  isVerified?: boolean;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +25,9 @@ function mapCustomerFromDb(row: any): Customer {
     cedula: row.cedula || null,
     notes: row.notes || null,
     source: row.source || null,
+    otpCode: row.otp_code || null,
+    otpExpiresAt: row.otp_expires_at ? new Date(row.otp_expires_at) : null,
+    isVerified: Boolean(row.is_verified),
     active: Boolean(row.active),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -44,7 +50,7 @@ export const customerRepository = {
     const { data, error } = await getAdminSupabase()
       .from('customers')
       .select('*')
-      .eq('phone', phone);
+      .eq('phone', phone.trim());
 
     if (error || !data) return [];
     return data.map(mapCustomerFromDb);
@@ -79,6 +85,9 @@ export const customerRepository = {
       cedula: customer.cedula ? customer.cedula.trim() : null,
       notes: customer.notes,
       source: customer.source,
+      otp_code: customer.otpCode || null,
+      otp_expires_at: customer.otpExpiresAt ? customer.otpExpiresAt.toISOString() : null,
+      is_verified: customer.isVerified ?? false,
       active: customer.active ?? true,
     };
 
@@ -107,6 +116,9 @@ export const customerRepository = {
     if (data.cedula !== undefined) payload.cedula = data.cedula ? data.cedula.trim() : null;
     if (data.notes !== undefined) payload.notes = data.notes;
     if (data.source !== undefined) payload.source = data.source;
+    if (data.otpCode !== undefined) payload.otp_code = data.otpCode;
+    if (data.otpExpiresAt !== undefined) payload.otp_expires_at = data.otpExpiresAt ? data.otpExpiresAt.toISOString() : null;
+    if (data.isVerified !== undefined) payload.is_verified = data.isVerified;
     if (data.active !== undefined) payload.active = data.active;
 
     const { error } = await getAdminSupabase()
@@ -115,6 +127,37 @@ export const customerRepository = {
       .eq('id', id);
 
     if (error) throw new Error(`Failed to update customer ${id}: ${error.message}`);
+  },
+
+  async setOtp(email: string, otpCode: string): Promise<void> {
+    const existing = await this.getByEmail(email);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos de validez
+
+    if (existing.length > 0) {
+      await this.update(existing[0].id!, {
+        otpCode,
+        otpExpiresAt: expiresAt,
+      });
+    }
+  },
+
+  async verifyOtp(email: string, code: string): Promise<boolean> {
+    const existing = await this.getByEmail(email);
+    if (existing.length === 0) return false;
+
+    const customer = existing[0];
+    if (!customer.otpCode) return false;
+
+    if (customer.otpCode.trim() === code.trim()) {
+      await this.update(customer.id!, {
+        isVerified: true,
+        active: true,
+        otpCode: null,
+      });
+      return true;
+    }
+
+    return false;
   },
 
   async delete(id: string): Promise<void> {
