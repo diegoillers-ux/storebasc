@@ -35,17 +35,20 @@ export default async function LoginPage({
         <form
           action={async (formData: FormData) => {
             'use server'
+            const email = formData.get('email')
+            const password = formData.get('password')
             try {
               await signIn('admin-credentials', {
-                email: formData.get('email'),
-                password: formData.get('password'),
+                email,
+                password,
                 redirectTo: '/admin',
               })
-            } catch (err) {
-              if (err instanceof AuthError) {
+            } catch (err: any) {
+              if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
                 throw err
               }
-              throw err
+              const { redirect } = await import('next/navigation')
+              redirect('/login?error=CredentialsSignin')
             }
           }}
           className="space-y-4 text-left mb-6"

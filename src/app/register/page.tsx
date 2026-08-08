@@ -40,12 +40,36 @@ export default async function RegisterPage({
               return;
             }
 
-            // Registrar y autorizar inmediatamente
-            await signIn('admin-credentials', {
-              email,
-              password,
-              redirectTo: '/admin',
-            });
+            try {
+              // Intentar registrar el perfil en la base de datos Supabase admin_users
+              try {
+                const { adminUserRepository } = await import('@/lib/supabase/repositories/admin-users');
+                const existing = await adminUserRepository.getByEmail(email);
+                if (!existing) {
+                  await adminUserRepository.create({
+                    email,
+                    name,
+                    role: 'SUPER_ADMIN',
+                    active: true,
+                  });
+                }
+              } catch (repoErr) {
+                console.log('Nota: no se pudo guardar en admin_users table (modo demo/fallback):', repoErr);
+              }
+
+              // Registrar y autorizar inmediatamente la sesión
+              await signIn('admin-credentials', {
+                email,
+                password,
+                redirectTo: '/admin',
+              });
+            } catch (err: any) {
+              if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
+                throw err;
+              }
+              const { redirect } = await import('next/navigation');
+              redirect('/login?error=CredentialsSignin');
+            }
           }}
           className="space-y-4 text-left mb-6"
         >
