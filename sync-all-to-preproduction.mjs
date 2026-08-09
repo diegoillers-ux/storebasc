@@ -36,7 +36,7 @@ console.log('1. Limpiando variables obsoletas en Vercel...');
 for (const key of obsoleteVars) {
   for (const env of environments) {
     try {
-      execSync(`echo no | npx vercel env rm ${key} ${env} --yes`, { stdio: 'pipe' });
+      execSync(`npx vercel env rm ${key} ${env} --yes`, { stdio: 'pipe' });
       console.log(`✓ Eliminada variable obsoleta ${key} de ${env}`);
     } catch {
       // Variable didn't exist or was already removed
@@ -48,10 +48,10 @@ console.log('\n2. Sincronizando variables oficiales V2 en Vercel...');
 for (const [key, value] of Object.entries(envVars)) {
   for (const env of environments) {
     try {
-      execSync(`echo no | npx vercel env rm ${key} ${env} --yes`, { stdio: 'pipe' });
+      execSync(`npx vercel env rm ${key} ${env} --yes`, { stdio: 'pipe' });
     } catch {}
     try {
-      execSync(`echo no | npx vercel env add ${key} ${env} --value "${value}" --yes`, { stdio: 'pipe' });
+      execSync(`npx vercel env add ${key} ${env} --value "${value}"`, { stdio: 'pipe' });
       console.log(`✓ Variable ${key} configurada en ${env}`);
     } catch (e) {
       console.error(`✕ Error en ${key} (${env}):`, e.message);
