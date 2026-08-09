@@ -9,9 +9,9 @@
 ## 🌟 Visión del Proyecto
 
 **AnandaStore V2** es una plataforma integral diseñada para la consultante mística Lina (**Espíritu Ananda**). Combina:
-1. **Embudo de Servicios Astrales**: Catálogo de lecturas (Carta Natal, Tarot Express, Revolución Solar, Sinastría), registro natal del consultante, agendamiento de horarios en vivo con cálculo de disponibilidad y subida de comprobantes de pago manual (Nequi, Daviplata, Bancolombia) o pasarela Wompi.
+1. **Embudo de Servicios Astrales**: Catálogo de lecturas (Carta Natal, Tarot Express, Revolución Solar, Sinastría), registro natal del consultante, agendamiento de horarios en vivo con cálculo de disponibilidad y subida de comprobantes de pago manual (Nequi, Daviplata, Bancolombia) o pasarela Mercado Pago.
 2. **Tienda Holística E-Commerce**: Catálogo de productos artesanales (sahumerios, cuarzos, velas, elixires) con carrito lateral dinámico (`CartDrawer`), control de inventario y wizard de despacho en 4 pasos.
-3. **Panel Administrativo (CRM & Finanzas)**: Gestión de clientes astrales, agenda de citas, conciliación de pagos en cascada con sincronización automática a Google Calendar y notificaciones SMTP por correo.
+3. **Panel Administrativo (CRM & Finanzas)**: Gestión de clientes astrales, agenda de citas, conciliación de pagos en cascada con sincronización automática a Google Calendar, notificaciones SMTP por correo y webhooks de Mercado Pago.
 4. **Módulo de Autenticación & Permisos**: Registro de usuarios administradores con confirmación por correo electrónico, envío de código numérico OTP de 6 dígitos, recuperación de clave y control de roles (`SUPER_ADMIN`, `ADMIN`, `OPERATOR`, `READER`).
 
 ---
@@ -24,6 +24,7 @@
 | **Lenguaje** | TypeScript 5 | Tipado estricto en repositorios, APIs y componentes UI |
 | **Estilos & UI** | Tailwind CSS v4 + PostCSS | Diseño místico, paleta `--color-ananda-*`, tarjetas glassmorphism |
 | **Base de Datos** | Supabase (PostgreSQL Relacional) | Base de datos SQL serverless (repositorios en `src/lib/supabase/repositories/`) |
+| **Pasarela de Pagos** | Mercado Pago SDK v2 (Checkout Pro) | Pago en línea (Nequi, PSE, Tarjetas), Webhooks IPN idempotentes y MCP Server |
 | **Autenticación** | Supabase Auth Nativo + NextAuth v5 | Registro de usuarios, confirmación por email, código OTP 6 dígitos y recuperación de clave |
 | **Calendario** | Google Calendar API | Verificación de franjas libres/ocupadas y creación de eventos |
 | **Notificaciones** | Nodemailer (SMTP / Gmail) | Correos automáticos de confirmación, recibos y códigos de verificación OTP |
@@ -45,7 +46,7 @@ storebasc/
 │   ├── app/                        # Rutas de Next.js (App Router)
 │   │   ├── (admin)/admin/          # Panel administrativo protegido (/admin/*)
 │   │   ├── (public)/               # Portada pública comercial (/servicios, /tienda)
-│   │   ├── api/                    # API Routes backend (bookings, orders, availability, cron)
+│   │   ├── api/                    # API Routes backend (bookings, orders, availability, checkout, webhooks/mercadopago, cron)
 │   │   ├── checkout/               # Embudos de pago (3 pasos para citas, 4 pasos para tienda)
 │   │   ├── forgot-password/        # Pantalla de solicitud de recuperación de clave
 │   │   ├── login/                  # Pantalla de inicio de sesión
@@ -57,6 +58,7 @@ storebasc/
 │   │   └── ui/                     # Alertas, modales, loaders
 │   ├── context/                    # Contextos globales (CartContext)
 │   └── lib/                        # Capa de lógica y repositorios
+│       ├── payments/               # Capa adaptadora de pagos (MercadoPagoProvider & ManualProvider)
 │       ├── supabase/               # Conexión Supabase (client, server, schema.sql y repositorios SQL)
 │       ├── auth.ts                 # Configuración de NextAuth v5 & Supabase Auth
 │       ├── demoMode.ts             # Helper de cambio dual (Modo Demo vs Producción Real)
@@ -78,7 +80,12 @@ Crea un archivo `.env.local` basado en `.env.example`:
 ```env
 # Modo de Operación (true para desarrollo/demo local)
 NEXT_PUBLIC_DEMO_MODE="true"
-NEXT_PUBLIC_PAYMENT_MODE="manual"
+NEXT_PUBLIC_PAYMENT_PROVIDER="mercadopago"  # 'manual' | 'mercadopago'
+
+# Mercado Pago Pasarela
+MERCADOPAGO_ACCESS_TOKEN="TEST-..."
+MERCADOPAGO_PUBLIC_KEY="TEST-..."
+MERCADOPAGO_WEBHOOK_SECRET=""
 
 # URLs de Aplicación
 NEXT_PUBLIC_APP_URL="http://localhost:3000"

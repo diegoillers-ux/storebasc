@@ -55,7 +55,7 @@ Plazo estimado: 4 a 8+ semanas.
 ### Tareas
 1. Multi-tenant por cuenta/organizacion con aislamiento de datos.
 2. Roles y permisos (`owner`, `admin`, `operador`, `lectura`).
-3. Integracion de pasarela de pagos opcional (toggle por tenant).
+3. Integracion de pasarela de pagos Mercado Pago (completada y activa).
 4. Sistema de plantillas de correo y branding por cliente.
 5. Cola de tareas para correos/cron/eventos (retry y backoff).
 6. Observabilidad completa (alertas, dashboard, SLI/SLO basicos).

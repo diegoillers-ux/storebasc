@@ -23,6 +23,7 @@ Este documento define las especificaciones técnicas, decisiones de arquitectura
 *   **Compilador de Estilos**: Tailwind CSS v4 (con PostCSS)
 *   **Base de Datos**: Supabase PostgreSQL (Relacional, Serverless SQL)
 *   **Capa de Acceso a Datos**: Patrón Repositorio en NodeJS utilizando `@supabase/supabase-js` con `Service Role Key` para consultas del lado del servidor.
+*   **Pasarela de Pagos**: Mercado Pago SDK v2 (Checkout Pro), Webhooks IPN idempotentes y MCP Server oficial.
 *   **Autenticación**: Supabase Auth Nativo + NextAuth v5 (Edge-compatible), registro de administradores con confirmación por correo electrónico y código OTP numérico de 6 dígitos.
 *   **Integración de Calendario**: Google Calendar API mediante cuenta de servicio (`Google JWT` OAuth2).
 *   **Notificaciones**: Nodemailer (SMTP) para confirmaciones automáticas de recibos, pedidos y envío de códigos de verificación.
@@ -47,10 +48,9 @@ src/app/
 ├── checkout/                  # Embudo comercial público para clientes
 │   ├── [serviceId]/           # Reserva: Formulario de datos natales
 │   │   ├── schedule/          # Reserva: Calendario (disponibilidad real)
-│   │   └── pay/               # Reserva: Subida de comprobante de pago
+│   │   └── pay/               # Reserva: Pago manual o Mercado Pago
 │   ├── product/               # Tienda: Carrito y datos de envío
-│   │   └── pay/               # Tienda: Subida de comprobante
-│   └── raffle/                # Sorteo: Compra de boletos
+│   └── success/               # Confirmación unificada de reservas y pedidos
 │
 ├── (public)/                  # Páginas públicas generales
 │   ├── page.tsx               # Landing page principal
@@ -62,6 +62,9 @@ src/app/
 │
 └── api/                       # Endpoints del backend
     ├── admin/                 # APIs del panel (bookings, products, payments, etc.)
+    ├── checkout/              # Generación de preferencias de pago (preference/route.ts)
+    ├── webhooks/              # Receptores de notificaciones IPN (mercadopago/route.ts)
+    ├── cron/                  # Tareas programadas (cleanup, orders-cleanup)
     └── calendar/              # APIs de consulta de franjas horarias libres
 ```
 
@@ -100,13 +103,19 @@ src/app/
 *   `status`: `'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'CANCELLED'`.
 *   `calendar_event_id`: ID del evento en Google Calendar para sincronización.
 
-### 5. `payments` (Bandeja Contable)
+### 5. `payments` (Bandeja Contable y Pasarelas)
 *   `id`: UUID del pago.
+*   `customer_id`: Relación opcional a `customers`.
 *   `booking_id` / `order_id`: Asociación a cita o pedido de e-commerce.
 *   `amount`: Valor transferido.
-*   `status`: `'PENDING' | 'APPROVED' | 'REJECTED'`.
+*   `method`: `'TRANSFER' | 'NEQUI' | 'DAVIPLATA' | 'CASH' | 'GATEWAY'`.
+*   `provider`: `'mercadopago' | 'manual'`.
+*   `reference`: ID único de transacción en pasarela (index único para idempotencia).
+*   `provider_data`: JSONB con el payload completo del proveedor.
+*   `status`: `'PENDING' | 'VERIFIED' | 'REJECTED' | 'APPROVED' | 'SUBMITTED' | 'REFUNDED' | 'CANCELLED'`.
 *   `voucher_url`: URL pública de la captura del recibo.
-*   `verified_by`: Admin que autorizó la conciliación.
+*   `verified_at`: Timestamp de verificación/conciliación.
+*   `verified_by`: Admin o sistema que autorizó la conciliación (`system-admin` o `mercadopago-webhook`).
 
 ### 6. `products` (Catálogo de Tienda)
 *   `id`: UUID del producto.

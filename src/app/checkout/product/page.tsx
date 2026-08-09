@@ -50,15 +50,87 @@ export default function ProductCheckoutWizard() {
   const [orderResult, setOrderResult] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
 
-  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_MODE === 'gateway'
+  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
+
+  const handleMercadoPagoProductPayment = async () => {
+    if (!shippingData.name || !shippingData.email || !shippingData.phone) {
+      setErrorMsg('Por favor completa todos los datos de contacto en el Paso 2.')
+      return
+    }
+    if (items.length === 0) {
+      setErrorMsg('Tu carrito está vacío.')
+      return
+    }
+
+    setSubmitting(true)
+    setErrorMsg('')
+
+    try {
+      const resOrder = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          shippingData,
+          subtotal,
+          shippingCost,
+          total: grandTotal,
+          paymentProof: null,
+          deferStockAdjustment: true,
+        }),
+      })
+
+      const dataOrder = await resOrder.json()
+      if (!resOrder.ok || !dataOrder.success) {
+        throw new Error(dataOrder.error || 'Error al registrar la orden.')
+      }
+
+      const orderId = dataOrder.orderId
+
+      const resPref = await fetch('/api/checkout/preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'order',
+          referenceId: orderId,
+          amount: grandTotal,
+          description: `Pedido de productos en Espíritu Ananda (${items.length} ítems)`,
+          customerEmail: shippingData.email,
+          customerName: shippingData.name,
+          redirectUrl: `${window.location.origin}/checkout/product`,
+        }),
+      })
+
+      const dataPref = await resPref.json()
+      if (!resPref.ok || !dataPref.initPoint) {
+        throw new Error(dataPref.error || 'Error al generar la pasarela de pago.')
+      }
+
+      sessionStorage.removeItem('ananda_cart')
+      window.location.href = dataPref.initPoint
+    } catch (err: any) {
+      console.error('Error procesando pago de productos con Mercado Pago:', err)
+      setErrorMsg(err.message || 'Error al conectar con la pasarela de pago.')
+      setSubmitting(false)
+    }
+  }
 
   const nequiNumber = process.env.NEXT_PUBLIC_NEQUI_NUMBER || '300 123 4567'
   const daviplataNumber = process.env.NEXT_PUBLIC_DAVIPLATA_NUMBER || '300 123 4567'
   const bancolombiaAccount = process.env.NEXT_PUBLIC_BANCOLOMBIA_ACCOUNT || 'Ahorros 123-456789-00'
 
-  // 1. Cargar carrito desde sessionStorage al iniciar
   useEffect(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const statusParam = urlParams.get('status')
+      const refParam = urlParams.get('ref')
+
+      if (statusParam && refParam) {
+        sessionStorage.removeItem('ananda_cart')
+        window.location.href = `/checkout/success?type=order&id=${refParam}&status=${statusParam}`
+        return
+      }
+
       const stored = sessionStorage.getItem('ananda_cart')
       if (stored) {
         setItems(JSON.parse(stored))
@@ -506,13 +578,15 @@ export default function ProductCheckoutWizard() {
             {isGatewayMode ? (
               <div className="text-center space-y-4">
                 <p className="text-xs text-gray-600">
-                  Serás redirigido a la pasarela Wompi para efectuar tu pago en línea.
+                  Serás redirigido a la pasarela segura de Mercado Pago para efectuar tu pago en línea (Tarjetas, Nequi, PSE, Efecty).
                 </p>
                 <button
-                  onClick={() => alert('Pasarela Wompi: Redirigiendo a checkout de e-commerce...')}
-                  className="w-full py-4 rounded-full bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all duration-300 shadow-md"
+                  type="button"
+                  onClick={handleMercadoPagoProductPayment}
+                  disabled={submitting}
+                  className="w-full py-4 rounded-full bg-sky-600 text-white font-semibold text-sm hover:bg-sky-700 transition-all duration-300 shadow-md disabled:opacity-50"
                 >
-                  Pagar con Wompi 💳
+                  {submitting ? 'Procesando en pasarela...' : 'Pagar con Mercado Pago 💳'}
                 </button>
               </div>
             ) : (

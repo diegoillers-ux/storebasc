@@ -1,22 +1,22 @@
 import { execSync } from 'child_process';
 
 const envVars = {
-  NEXT_PUBLIC_DEMO_MODE: 'true',
-  NEXT_PUBLIC_PAYMENT_MODE: 'manual',
-  NEXT_PUBLIC_APP_NAME: 'Espíritu Ananda (Preproducción)',
-  NEXT_PUBLIC_WHATSAPP_NUMBER: '573000000000',
-  NEXTAUTH_SECRET: 'qa_secret_key_anandastore_v2_32_chars_long!',
+  NEXT_PUBLIC_DEMO_MODE: 'false',
+  NEXT_PUBLIC_PAYMENT_PROVIDER: 'mercadopago',
+  NEXT_PUBLIC_APP_NAME: 'Espíritu Ananda',
+  NEXT_PUBLIC_APP_URL: 'https://storebasc.vercel.app',
+  NEXT_PUBLIC_SUPABASE_URL: 'https://xsfadqsmsizdmlzvylny.supabase.co',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_Rt9L62cEGpmFrLbUmuD7bw_H7j--Vat',
+  SUPABASE_SERVICE_ROLE_KEY: 'sb_publishable_Rt9L62cEGpmFrLbUmuD7bw_H7j--Vat',
+  MERCADOPAGO_ACCESS_TOKEN: 'TEST-861063953111930-080818-3d1f40d61894daff63269c9ff2a4a65e-203682586',
+  MERCADOPAGO_PUBLIC_KEY: 'TEST-d7029439-0334-4bca-a497-357a1c655524',
+  NEXT_PUBLIC_WHATSAPP_NUMBER: '573159471170',
+  NEXTAUTH_URL: 'https://storebasc.vercel.app',
+  NEXTAUTH_SECRET: 'ananda_store_v2_super_secret_jwt_key_2026_production',
   AUTH_TRUST_HOST: 'true',
   GOOGLE_CLIENT_ID: '930363408123-nivqf5itq1u30ndv4frujj3v68hvb1kq.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: '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',
   ADMIN_EMAILS: 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com',
-  NEXT_PUBLIC_FIREBASE_API_KEY: 'AIzaSyDbWEP9ghJQuy4Cjnca7rDUd7jG0G38P1w',
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'nexo-celestial-final.firebaseapp.com',
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'nexo-celestial-final',
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'nexo-celestial-final.firebasestorage.app',
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '930363408123',
-  NEXT_PUBLIC_FIREBASE_APP_ID: '1:930363408123:web:b125bdcfc74a42dd25fa5e',
-  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: 'G-2WXE21ECXK',
   NEXT_PUBLIC_CALENDAR_ID: 'diegoillers@gmail.com',
   CRON_SECRET: 'secreto_seguro_para_invocar_cron_cleanup',
   NEXT_PUBLIC_NEQUI_NUMBER: '300 123 4567',
@@ -26,20 +26,18 @@ const envVars = {
 
 const environments = ['production', 'preview', 'development'];
 
-console.log('1. Sincronizando entorno de PREPRODUCCIÓN único en Vercel para Production, Preview y Development...');
-
-for (const [key, value] of Object.entries(envVars)) {
-  for (const env of environments) {
-    try {
-      execSync(`echo no | npx vercel env add ${key} ${env} --value "${value}" --yes --force`, { stdio: 'pipe' });
-      console.log(`✓ ${key} configurado en ${env}`);
-    } catch (e) {
-      console.log(`✕ Error en ${key} (${env}):`, e.message);
-    }
+console.log('1. Limpiando y actualizando CRON_SECRET en Vercel...');
+for (const env of environments) {
+  try {
+    execSync(`echo no | npx vercel env rm CRON_SECRET ${env} --yes`, { stdio: 'pipe' });
+    execSync(`echo no | npx vercel env add CRON_SECRET ${env} --value "secreto_seguro_para_invocar_cron_cleanup" --yes`, { stdio: 'pipe' });
+    console.log(`✓ CRON_SECRET reacondicionado en ${env}`);
+  } catch (e) {
+    console.log(`✕ CRON_SECRET retry (${env}):`, e.message);
   }
 }
 
-console.log('\n2. Desplegando el proyecto único de Preproducción a Vercel (https://storebasc.vercel.app)...');
+console.log('\n2. Desplegando el proyecto a Vercel (https://storebasc.vercel.app)...');
 try {
   const output = execSync('npx vercel --prod --yes', { encoding: 'utf-8' });
   console.log('Output de despliegue:');
@@ -48,4 +46,4 @@ try {
   console.error('Error durante el despliegue:', e.message);
 }
 
-console.log('\n¡Proyecto unificado en Vercel completado!');
+console.log('\n¡Despliegue final a Vercel completado!');

@@ -20,9 +20,17 @@ Este documento detalla todas las variables de entorno utilizadas en **AnandaStor
 - **¿Qué hace?:** Controla el modo de operación dual (`true` / `false`). Cuando es `true`, activa el botón `⚡ Ingreso Directo Admin (Preproducción)` en `/login` para evaluar la app sin credenciales reales y simula confirmaciones de citas/pagos.
 - **¿De dónde se saca?:** Definido manualmente: `"true"` para preproducción/QA, `"false"` para lanzamiento final comercial.
 
-### `NEXT_PUBLIC_PAYMENT_MODE`
-- **¿Qué hace?:** Especifica la modalidad de pago predeterminada en la tienda y agendamiento (`manual` para Nequi/Daviplata/Bancolombia o `gateway` para pasarela automática).
-- **¿De dónde se saca?:** Definido manualmente (`"manual"` o `"gateway"`).
+### `NEXT_PUBLIC_PAYMENT_PROVIDER`
+- **¿Qué hace?:** Especifica el proveedor de pagos activo en la tienda y agendamiento (`manual` para transferencias Nequi/Daviplata/Bancolombia o `mercadopago` para pasarela automática Checkout Pro).
+- **¿De dónde se saca?:** Definido manualmente (`"manual"` o `"mercadopago"`).
+
+### Mercado Pago Pasarela (`MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`)
+- **¿Qué hace?:** Credenciales y llaves secretas para conectar con la API de Mercado Pago Colombia (`MCO`). Permiten crear preferencias de pago, redireccionar al Checkout Pro y validar notificaciones webhooks IPN.
+- **¿De dónde se saca?:**
+  1. Entrar al [Dashboard de Mercado Pago Developers](https://www.mercadopago.com.co/developers/panel).
+  2. Seleccionar o crear la aplicación de e-commerce / servicios.
+  3. Ir a **Credenciales de prueba** (Sandbox `TEST-...`) o **Credenciales de producción** (`APP_USR-...`).
+  4. Copiar el `Access Token` y la `Public Key`. Se puede generar opcionalmente el secret para firma de webhooks en la pestaña *Notificaciones Webhooks*.
 
 ### `NEXT_PUBLIC_WHATSAPP_NUMBER`
 - **¿Qué hace?:** Número telefónico con código de país (sin espacios ni signo `+`) que recibe las confirmaciones de pedidos y recibos de los clientes vía WhatsApp.

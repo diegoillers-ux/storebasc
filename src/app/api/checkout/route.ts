@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { POST as preferencePOST } from './preference/route';
 
-export async function POST() {
-    return NextResponse.json(
-        { error: 'Pasarela de pago deshabilitada en esta version.' },
-        { status: 410 }
-    );
+export async function POST(req: NextRequest) {
+  return preferencePOST(req);
 }

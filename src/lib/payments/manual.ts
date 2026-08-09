@@ -1,4 +1,4 @@
-import type { PaymentProvider, CreatePaymentInput, PaymentSession, PaymentEvent } from './index'
+import type { PaymentProvider, CreatePaymentInput, PaymentSession, PaymentEvent, WebhookOptions } from './index'
 
 export class ManualProvider implements PaymentProvider {
   async createPayment(input: CreatePaymentInput): Promise<PaymentSession> {
@@ -10,7 +10,7 @@ export class ManualProvider implements PaymentProvider {
     }
   }
 
-  async verifyWebhook(payload: string): Promise<PaymentEvent> {
+  async verifyWebhook(payload: string, signature?: string, options?: WebhookOptions): Promise<PaymentEvent> {
     // El pago manual se verifica desde el CRM, no por webhook.
     throw new Error('ManualProvider no recibe webhooks. La verificación es manual desde el panel.')
   }

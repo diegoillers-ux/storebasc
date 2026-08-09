@@ -51,10 +51,10 @@
    - `AvailabilityCalendar.tsx` consulta las franjas horarias ocupadas mediante `/api/calendar/free-busy`.
    - Muestra días laborales (excluyendo domingos) y horarios disponibles (`09:00`, `10:30`, `14:00`, `15:30`, `17:00`).
 3. **Paso 3 — Transferencia Manual / Pasarela (`/checkout/[serviceId]/pay`)**:
-   - Muestra los datos de transferencia para Nequi, Daviplata y Bancolombia (o pasarela Wompi en modo `gateway`).
-   - Requiere adjuntar el voucher en formato imagen o PDF (`FileReader` a Base64).
+   - Muestra los datos de transferencia para Nequi, Daviplata y Bancolombia (o pasarela Mercado Pago en modo `mercadopago`).
+   - Permite pago directo con tarjeta, Nequi, PSE o Efecty mediante Checkout Pro de Mercado Pago.
    - Consume `POST /api/bookings/create`: registra o actualiza el cliente en `customers` y crea la reserva en `bookings` con estado `PENDING_PAYMENT`.
-   - Limpia `sessionStorage` y renderiza la pantalla de confirmación.
+   - Genera la preferencia mediante `/api/checkout/preference` y redirige al checkout seguro de Mercado Pago.
 
 ### B. Embudo de Tienda E-Commerce Holística (4 Pasos)
 1. **Catálogo & Carrito (`/tienda` + `CartDrawer`)**:
@@ -91,7 +91,7 @@
 | **`products`** | Inventario e-commerce | `id`, `name`, `slug`, `price`, `stock`, `min_stock`, `image_url`, `category`, `active` |
 | **`bookings`** | Citas astrales agendadas | `id`, `customer_id`, `service_id`, `scheduled_at`, `duration_minutes`, `status`, `calendar_event_id` |
 | **`orders`** | Pedidos de productos físicos | `id`, `customer_id`, `subtotal`, `shipping`, `total`, `status`, `delivery`, `address` |
-| **`payments`** | Recibos y vouchers | `id`, `booking_id`, `order_id`, `amount`, `method`, `status`, `voucher_url`, `verified_by` |
+| **`payments`** | Recibos, vouchers y transacciones de pasarela | `id`, `customer_id`, `booking_id`, `order_id`, `amount`, `method`, `provider`, `reference`, `provider_data`, `status`, `voucher_url`, `verified_at`, `verified_by`, `created_at`, `updated_at` |
 | **`admin_users`** | Administradores de la app | `id`, `email`, `name`, `role`, `active`, `created_at` |
 
 ---
@@ -99,9 +99,9 @@
 ## 🔧 4. Matriz Limpia de Variables de Entorno (.env.local / Vercel)
 
 ```env
-# ─── Modo de Operación & App ──────────────────────────────
+# ─── Modo de Operación & Pasarela de Pagos ──────────────
 NEXT_PUBLIC_DEMO_MODE="false"               # 'true' para preproducción, 'false' para producción
-NEXT_PUBLIC_PAYMENT_MODE="manual"           # 'manual' | 'gateway'
+NEXT_PUBLIC_PAYMENT_PROVIDER="mercadopago"  # 'manual' | 'mercadopago'
 NEXT_PUBLIC_APP_URL="https://storebasc.vercel.app"
 NEXT_PUBLIC_APP_NAME="Espíritu Ananda"
 NEXT_PUBLIC_WHATSAPP_NUMBER="573000000000"

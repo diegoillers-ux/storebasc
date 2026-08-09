@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mercadopago": {
+      "serverUrl": "https://mcp.mercadopago.com/mcp"
+    },
+    "mercadolibre": {
+      "serverUrl": "https://mcp.mercadolibre.com/mcp"
+    }
+  }
+}

@@ -14,8 +14,12 @@ function SuccessContent() {
   const date = searchParams.get('date') || ''
   const time = searchParams.get('time') || ''
   const total = searchParams.get('total') || ''
+  const status = searchParams.get('status') || 'approved'
 
   const isBooking = type === 'booking'
+  const isApproved = status === 'approved'
+  const isPending = status === 'pending'
+  const failed = !isApproved && !isPending
   const waLink = isBooking && serviceName ? getServiceInquiryLink(serviceName) : getGeneralContactLink()
 
   return (
@@ -66,11 +70,32 @@ function SuccessContent() {
 
         {/* Título Principal */}
         <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mb-2 leading-tight">
-          {isBooking ? 'Tu sesión ha sido agendada' : 'Tu pedido está en camino'}
+          {isApproved
+            ? isBooking
+              ? 'Tu sesión ha sido agendada'
+              : 'Tu pedido está en camino'
+            : isPending
+              ? 'Tu pago está en revisión'
+              : 'El pago no se completó'}
         </h1>
 
         <p className="text-gray-300 text-sm mb-6">
-          ¡Gracias por tu confianza, <span className="font-semibold text-amber-300">{name}</span>! Hemos registrado tu solicitud exitosamente.
+          {isApproved ? (
+            <>
+              ¡Gracias por tu confianza, <span className="font-semibold text-amber-300">{name}</span>! Hemos
+              registrado tu solicitud exitosamente.
+            </>
+          ) : isPending ? (
+            <>
+              Hemos recibido tu intención de pago. Te notificaremos por correo y WhatsApp en cuanto se confirme la
+              transacción.
+            </>
+          ) : (
+            <>
+              El pago fue cancelado o no pudo procesarse. No se realizó ningún cargo; puedes intentarlo nuevamente o
+              contactarnos.
+            </>
+          )}
         </p>
 
         {/* Card de Resumen */}
@@ -117,6 +142,15 @@ function SuccessContent() {
 
         {/* Botones de Acción */}
         <div className="space-y-3">
+          {failed && (
+            <Link
+              href={isBooking ? '/servicios' : '/tienda'}
+              className="w-full py-4 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold text-sm hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow-xl flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
+            >
+              Reintentar pago
+            </Link>
+          )}
+
           <a
             href={waLink}
             target="_blank"

@@ -24,17 +24,94 @@ export default function CheckoutPayPage() {
   const [successBooking, setSuccessBooking] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
 
-  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_MODE === 'gateway'
+  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
 
   const nequiNumber = process.env.NEXT_PUBLIC_NEQUI_NUMBER || '300 123 4567'
   const daviplataNumber = process.env.NEXT_PUBLIC_DAVIPLATA_NUMBER || '300 123 4567'
   const bancolombiaAccount = process.env.NEXT_PUBLIC_BANCOLOMBIA_ACCOUNT || 'Ahorros 123-456789-00'
 
+  const handleMercadoPagoPayment = async () => {
+    if (!checkoutData || !checkoutData.name || !checkoutData.email) {
+      setErrorMsg('No se encontraron tus datos de reserva. Por favor regresa al Paso 1 para ingresar tu información.')
+      return
+    }
+    setSubmitting(true)
+    setErrorMsg('')
+
+    try {
+      const resBooking = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: serviceId || checkoutData.serviceId,
+          customerData: {
+            name: checkoutData.name,
+            email: checkoutData.email,
+            whatsapp: checkoutData.whatsapp || checkoutData.phone || '',
+            birthdate: checkoutData.birthdate || checkoutData.birthDate || '',
+            context: checkoutData.context || checkoutData.notes || '',
+          },
+          date: checkoutData.date,
+          time: checkoutData.time,
+          paymentProof: null,
+        }),
+      })
+
+      const dataBooking = await resBooking.json()
+      if (!resBooking.ok || !dataBooking.success) {
+        throw new Error(dataBooking.error || 'Error creando la reserva.')
+      }
+
+      const bookingId = dataBooking.bookingId
+
+      const resPref = await fetch('/api/checkout/preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'booking',
+          referenceId: bookingId,
+          amount: checkoutData.servicePrice || 150000,
+          description: `Sesión Astral: ${checkoutData.serviceName || 'Lectura Astral'}`,
+          customerEmail: checkoutData.email,
+          customerName: checkoutData.name,
+          redirectUrl: `${window.location.origin}/checkout/${serviceId}/pay`,
+        }),
+      })
+
+      const dataPref = await resPref.json()
+      if (!resPref.ok || !dataPref.initPoint) {
+        throw new Error(dataPref.error || 'Error al generar la pasarela de pago.')
+      }
+
+      window.location.href = dataPref.initPoint
+    } catch (err: any) {
+      console.error('Error procesando pago con Mercado Pago:', err)
+      setErrorMsg(err.message || 'Error al conectar con la pasarela de pago.')
+      setSubmitting(false)
+    }
+  }
+
   useEffect(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const statusParam = urlParams.get('status')
+      const refParam = urlParams.get('ref')
+
       const stored = sessionStorage.getItem('ananda_checkout_data')
-      if (stored) {
-        setCheckoutData(JSON.parse(stored))
+      const parsedData = stored ? JSON.parse(stored) : null
+
+      if (statusParam && refParam) {
+        sessionStorage.removeItem('ananda_checkout_data')
+        const nameQuery = parsedData?.name ? `&name=${encodeURIComponent(parsedData.name)}` : ''
+        const serviceQuery = parsedData?.serviceName ? `&service=${encodeURIComponent(parsedData.serviceName)}` : ''
+        const dateQuery = parsedData?.date ? `&date=${encodeURIComponent(parsedData.date)}` : ''
+        const timeQuery = parsedData?.time ? `&time=${encodeURIComponent(parsedData.time)}` : ''
+        window.location.href = `/checkout/success?type=booking&id=${refParam}&status=${statusParam}${nameQuery}${serviceQuery}${dateQuery}${timeQuery}`
+        return
+      }
+
+      if (parsedData) {
+        setCheckoutData(parsedData)
       }
     } catch (e) {
       console.error('Error reading checkout data:', e)
@@ -212,13 +289,15 @@ export default function CheckoutPayPage() {
           {isGatewayMode ? (
             <div className="text-center space-y-4">
               <p className="text-xs text-gray-600">
-                Serás redirigido a la pasarela segura de Wompi para realizar tu pago en línea.
+                Serás redirigido a la pasarela segura de Mercado Pago para realizar tu pago en línea (Tarjetas, Nequi, PSE, Efecty).
               </p>
               <button
-                onClick={() => alert('Pasarela Wompi: Redirigiendo a checkout de pago...')}
-                className="w-full py-4 rounded-full bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all duration-300 shadow-md"
+                type="button"
+                onClick={handleMercadoPagoPayment}
+                disabled={submitting}
+                className="w-full py-4 rounded-full bg-sky-600 text-white font-semibold text-sm hover:bg-sky-700 transition-all duration-300 shadow-md disabled:opacity-50"
               >
-                Pagar con Wompi 💳
+                {submitting ? 'Procesando en pasarela...' : 'Pagar con Mercado Pago 💳'}
               </button>
             </div>
           ) : (

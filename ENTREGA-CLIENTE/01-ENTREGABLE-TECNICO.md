@@ -25,7 +25,7 @@ Objetivo operativo:
 - Flujo de reserva:
 1. Datos del cliente.
 2. Seleccion de fecha/hora segun disponibilidad.
-3. Confirmacion de pago manual y solicitud.
+3. Confirmacion de pago manual o pasarela automatica Mercado Pago.
 
 ### 3.2 Panel admin
 - Acceso por Google Sign-In.
@@ -98,7 +98,7 @@ Pasos:
 - Numeros/cuentas de pago manual en pantalla.
 
 ## 9) Estado de esta version entregable
-- Sin integracion activa de pasarela de pagos.
+- Integracion activa de pasarela de pagos oficial Mercado Pago (Checkout Pro) + webhooks.
 - Sin dependencias de Calendly.
 - Flujo principal centrado en:
 1. Reserva.

@@ -16,7 +16,7 @@ skill-canvas-design: ~\.agents\skills\canvas-design
 - **Hosting**: Vercel (serverless) con soporte PWA
 - **Marca**: Espiritual / mística — lecturas astrales, tarot, productos holísticos, rifas
 - **Ubicación**: Cali, Colombia
-- **Pagos**: Manual (transferencia + subida de comprobante) con opción a Wompi
+- **Pagos**: Manual (transferencia + subida de comprobante) y pasarela oficial de Mercado Pago (Checkout Pro)
 
 ---
 
@@ -521,7 +521,7 @@ src/
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
 | Cambios en Firebase API | Baja | Alto | Mantener SDK actualizado |
-| Wompi requiere homologación | Media | Alto | Tener manual provider como fallback |
+| Mercado Pago credenciales de producción | Media | Alto | Tener manual provider como fallback |
 | Google Calendar rate limits | Baja | Medio | Cachear availability slots |
 | sessionStorage se pierde | Alta | Medio | Migrar a localStorage con advertencia |
 | Diseño visual muy diferente al actual | Media | Alto | Iterar con feedback del cliente real |

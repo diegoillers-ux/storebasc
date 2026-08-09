@@ -17,7 +17,7 @@
 | **I1.B** | PASO 1 RESERVA: DATOS DEL CONSULTANTE (`/checkout/[serviceId]`) | Llenado de formulario natal y persistencia en `sessionStorage` | **PASS** | Clave `ananda_checkout_data` guardada adecuadamente |
 | **I1.C** | PASO 2 RESERVA: AGENDAMIENTO Y SLOTS (`/checkout/[serviceId]/schedule`) | Visualización de 14 días laborales y franjas horarias | **PASS** | Horarios `09:00`, `10:30`, `14:00`, `15:30`, `17:00` desplegados |
 | **I1.D** | PASO 3 RESERVA: PAGO MANUAL Y VOUCHER (`/checkout/[serviceId]/pay`) | Cuentas Nequi/Daviplata/Bancolombia visibles + subida de comprobante | **PASS** | `POST /api/bookings/create` retorna ID `BNK-DEMO-XXXX` y vista de éxito |
-| **I1.E** | PASO 3 RESERVA: PAGO PASARELA (`NEXT_PUBLIC_PAYMENT_MODE=gateway`) | Interfaz de pasarela Wompi y simulación de webhook | **PASS** | Condición `isGatewayMode` verificada |
+| **I1.E** | PASO 3 RESERVA: PAGO PASARELA (`NEXT_PUBLIC_PAYMENT_PROVIDER=mercadopago`) | Interfaz de pasarela Mercado Pago y simulación de webhook idempotente | **PASS** | Generación de initPoint e integración con MCP Server |
 | **I1.F** | RESERVA: APROBACIÓN ADMIN (`/api/admin/approve-reserva`) | Cambio de estado, actualización de calendario y confirmación por mail | **PASS** | En modo demo `requireAdminSession()` otorga acceso para pruebas |
 | **I2.A** | TIENDA: CATÁLOGO DE PRODUCTOS (`/tienda`) | Carga de productos con stock > 0 | **PASS** | 6 productos artesanales renderizados con badges de stock |
 | **I2.B** | TIENDA: CARRITO Y DRAWER (`CartDrawer.tsx`) | `ProductCard` agrega al carrito y actualiza contador en header | **PASS** | Sincronización en tiempo real vía `CartContext` |

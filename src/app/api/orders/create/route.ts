@@ -7,7 +7,7 @@ import { productRepository } from '@/lib/supabase/repositories/products'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, shippingData, subtotal, shippingCost, total, paymentProof } = body
+    const { items, shippingData, subtotal, shippingCost, total, paymentProof, deferStockAdjustment } = body
 
     if (!items || !Array.isArray(items) || items.length === 0 || !shippingData || !shippingData.name || !shippingData.email) {
       return NextResponse.json({ error: 'Faltan datos obligatorios para registrar el pedido.' }, { status: 400 })
@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 1. Crear o actualizar cliente
     let customerId = ''
     const existingCustomers = await customerRepository.getByEmail(shippingData.email)
 
@@ -45,10 +44,8 @@ export async function POST(req: NextRequest) {
       customerId = newCustomer.id!
     }
 
-    // 2. Formatear dirección completa
     const fullAddress = `${shippingData.address}, Barrio: ${shippingData.neighborhood}, ${shippingData.city}`
 
-    // 3. Formatear ítems para la orden
     const orderItems = items.map((item: any) => ({
       productId: item.productId || item.id,
       quantity: item.quantity,
@@ -56,12 +53,13 @@ export async function POST(req: NextRequest) {
       total: item.price * item.quantity,
     }))
 
-    // 4. Crear Order en Firestore
+    const initialStatus = deferStockAdjustment ? 'PAYMENT_PENDING' : 'PAYMENT_SUBMITTED'
+
     const newOrder = await orderRepository.create(
       {
         customerId,
         adminId: null,
-        status: 'PAYMENT_SUBMITTED',
+        status: initialStatus,
         subtotal: subtotal || total,
         shipping: shippingCost || 0,
         total: total || subtotal,
@@ -73,13 +71,14 @@ export async function POST(req: NextRequest) {
       orderItems
     )
 
-    // 5. Reducir stock atómicamente por cada producto
-    for (const item of items) {
-      const prodId = item.productId || item.id
-      try {
-        await productRepository.adjustStock(prodId, -item.quantity, 'venta', newOrder.id!)
-      } catch (err) {
-        console.warn(`No se pudo ajustar stock para producto ${prodId}:`, err)
+    if (!deferStockAdjustment) {
+      for (const item of items) {
+        const prodId = item.productId || item.id
+        try {
+          await productRepository.adjustStock(prodId, -item.quantity, 'venta', newOrder.id!)
+        } catch (err) {
+          console.warn(`No se pudo ajustar stock para producto ${prodId}:`, err)
+        }
       }
     }
 

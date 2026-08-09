@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 
 const preprodVars = {
   NEXT_PUBLIC_DEMO_MODE: 'true',
-  NEXT_PUBLIC_PAYMENT_MODE: 'manual',
+  NEXT_PUBLIC_PAYMENT_PROVIDER: 'mercadopago',
   NEXT_PUBLIC_APP_NAME: 'Espíritu Ananda (Preproducción)',
   NEXT_PUBLIC_WHATSAPP_NUMBER: '573000000000',
   NEXTAUTH_SECRET: 'qa_secret_key_anandastore_v2_32_chars_long!',

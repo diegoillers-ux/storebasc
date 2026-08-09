@@ -98,7 +98,7 @@ Pasos:
 - Numeros/cuentas de pago manual en pantalla.
 
 ## 9) Estado de esta version entregable
-- Sin integracion activa de pasarela de pagos.
+- Integración activa con pasarela de pagos oficial Mercado Pago (Checkout Pro) + modo manual fallback.
 - Sin dependencias de Calendly.
 - Flujo principal centrado en:
 1. Reserva.

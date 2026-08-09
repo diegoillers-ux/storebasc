@@ -8,7 +8,7 @@ Una plataforma pensada para emprendedores que venden servicios y productos y nec
 - Panel admin simple para aprobar reservas y enviar enlaces.
 - Login seguro con Google para el administrador.
 - Flujo operativo claro para cliente y negocio.
-- Costos controlados, sin dependencia obligatoria de pasarela en esta version.
+- Pasarela de pagos integrada (Mercado Pago Checkout Pro) + transferencia manual.
 
 ## Caracteristicas destacadas
 1. Visual profesional y adaptable a marca.

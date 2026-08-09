@@ -82,10 +82,13 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     id TEXT PRIMARY KEY,
     customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
     service_id TEXT REFERENCES public.services(id) ON DELETE RESTRICT,
+    admin_id UUID REFERENCES public.admin_users(id) ON DELETE SET NULL,
     scheduled_at TIMESTAMPTZ NOT NULL,
     duration_minutes INT NOT NULL DEFAULT 60,
-    status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT' CHECK (status IN ('PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'COMPLETED')),
+    status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT' CHECK (status IN ('DRAFT', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'CONFIRMED', 'RESCHEDULED', 'CANCELLED', 'COMPLETED', 'NO_SHOW')),
+    notes TEXT,
     calendar_event_id TEXT,
+    whatsapp_link TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -94,13 +97,15 @@ CREATE TABLE IF NOT EXISTS public.bookings (
 CREATE TABLE IF NOT EXISTS public.orders (
     id TEXT PRIMARY KEY,
     customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
+    admin_id UUID REFERENCES public.admin_users(id) ON DELETE SET NULL,
     items JSONB NOT NULL DEFAULT '[]'::jsonb,
     subtotal NUMERIC NOT NULL DEFAULT 0,
     shipping NUMERIC NOT NULL DEFAULT 0,
     total NUMERIC NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'PAID', 'SHIPPED', 'CANCELLED', 'DELIVERED')),
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('NEW', 'PENDING', 'PAYMENT_PENDING', 'PAYMENT_SUBMITTED', 'PAID', 'PREPARING', 'READY', 'SHIPPED', 'CANCELLED', 'DELIVERED', 'REFUNDED')),
     delivery JSONB DEFAULT '{}'::jsonb,
     address TEXT,
+    notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -108,14 +113,20 @@ CREATE TABLE IF NOT EXISTS public.orders (
 -- 8. TABLA: payments (Comprobantes y Recibos de Pago)
 CREATE TABLE IF NOT EXISTS public.payments (
     id TEXT PRIMARY KEY,
+    customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
     booking_id TEXT REFERENCES public.bookings(id) ON DELETE SET NULL,
     order_id TEXT REFERENCES public.orders(id) ON DELETE SET NULL,
     amount NUMERIC NOT NULL,
     method TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'VERIFIED', 'REJECTED')),
+    provider TEXT,
+    reference TEXT UNIQUE,
+    provider_data JSONB,
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUBMITTED', 'APPROVED', 'REJECTED', 'VERIFIED', 'REFUNDED', 'CANCELLED')),
     voucher_url TEXT,
+    verified_at TIMESTAMPTZ,
     verified_by TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 9. TABLA: availability_settings (Configuración de Agenda)
@@ -126,7 +137,7 @@ CREATE TABLE IF NOT EXISTS public.availability_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 10. TABLA: ai_assets (Recursos y Copys de Inteligencia Artificial)
+-- 10. TABLA: ai_assets (Recursos, Rifas y Copys de Inteligencia Artificial)
 CREATE TABLE IF NOT EXISTS public.ai_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
@@ -147,10 +158,11 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.availability_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_assets ENABLE ROW LEVEL SECURITY;
 
--- Políticas de RLS predeterminadas (Lectura pública para catálogo/servicios; control total para Service Role)
+-- Políticas de RLS predeterminadas
 CREATE POLICY "Permitir lectura pública de servicios activos" ON public.services FOR SELECT USING (active = true);
 CREATE POLICY "Permitir lectura pública de productos activos" ON public.products FOR SELECT USING (active = true);
 CREATE POLICY "Permitir lectura pública de configuracion agenda" ON public.availability_settings FOR SELECT USING (id = 'default');
+CREATE POLICY "Permitir lectura pública de ai_assets raffles" ON public.ai_assets FOR SELECT USING (type = 'raffle');
 
 -- Políticas para Service Role (API Backend Next.js)
 CREATE POLICY "Service Role Full Access Admin Users" ON public.admin_users USING (true) WITH CHECK (true);
