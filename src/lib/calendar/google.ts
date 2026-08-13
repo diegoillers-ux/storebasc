@@ -92,9 +92,24 @@ export class GoogleCalendarProvider implements CalendarProvider {
     }
   }
 
+  private isAttendeeForbiddenError(error: unknown): boolean {
+    let message = ''
+    if (error && typeof error === 'object' && 'message' in error) {
+      const maybe = (error as { message?: unknown }).message
+      if (typeof maybe === 'string') message = maybe
+    }
+    const lower = message.toLowerCase()
+    return (
+      message.includes('Domain-Wide Delegation') ||
+      (lower.includes('attendee') && lower.includes('invite')) ||
+      lower.includes('invite attendees')
+    )
+  }
+
   async createEvent(input: CreateCalendarEventInput): Promise<{ eventId: string; htmlLink?: string }> {
     const calendar = getGoogleCalendarClient();
-    const response = await calendar.events.insert({
+
+    const buildRequest = (withAttendees: boolean) => ({
       calendarId: this.calendarId,
       requestBody: {
         summary: input.summary,
@@ -108,11 +123,25 @@ export class GoogleCalendarProvider implements CalendarProvider {
           dateTime: input.endAt.toISOString(),
           timeZone: 'America/Bogota',
         },
-        attendees: input.attendeeEmail
-          ? [{ email: input.attendeeEmail, displayName: input.attendeeName || undefined }]
-          : [],
+        attendees:
+          withAttendees && input.attendeeEmail
+            ? [{ email: input.attendeeEmail, displayName: input.attendeeName || undefined }]
+            : [],
       },
     });
+
+    let response
+    try {
+      response = await calendar.events.insert(buildRequest(true))
+    } catch (error: unknown) {
+      // Las service accounts sin Domain-Wide Delegation no pueden invitar asistentes.
+      // Se reintenta sin asistentes para no bloquear la creación del evento.
+      if (input.attendeeEmail && this.isAttendeeForbiddenError(error)) {
+        response = await calendar.events.insert(buildRequest(false))
+      } else {
+        throw error
+      }
+    }
 
     return {
       eventId: response.data.id || '',
@@ -122,33 +151,45 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
   async updateEvent(input: UpdateCalendarEventInput): Promise<void> {
     const calendar = getGoogleCalendarClient();
-    const requestBody: any = {};
-    
-    if (input.summary) requestBody.summary = input.summary;
-    if (input.description !== undefined) requestBody.description = input.description;
-    if (input.location !== undefined) requestBody.location = input.location;
-    
-    if (input.startAt) {
-      requestBody.start = {
-        dateTime: input.startAt.toISOString(),
-        timeZone: 'America/Bogota',
-      };
-    }
-    if (input.endAt) {
-      requestBody.end = {
-        dateTime: input.endAt.toISOString(),
-        timeZone: 'America/Bogota',
-      };
-    }
-    if (input.attendeeEmail) {
-      requestBody.attendees = [{ email: input.attendeeEmail, displayName: input.attendeeName || undefined }];
-    }
+    const buildRequest = (withAttendees: boolean): any => {
+      const requestBody: any = {};
 
-    await calendar.events.patch({
-      calendarId: this.calendarId,
-      eventId: input.eventId,
-      requestBody,
-    });
+      if (input.summary) requestBody.summary = input.summary;
+      if (input.description !== undefined) requestBody.description = input.description;
+      if (input.location !== undefined) requestBody.location = input.location;
+
+      if (input.startAt) {
+        requestBody.start = {
+          dateTime: input.startAt.toISOString(),
+          timeZone: 'America/Bogota',
+        };
+      }
+      if (input.endAt) {
+        requestBody.end = {
+          dateTime: input.endAt.toISOString(),
+          timeZone: 'America/Bogota',
+        };
+      }
+      if (withAttendees && input.attendeeEmail) {
+        requestBody.attendees = [{ email: input.attendeeEmail, displayName: input.attendeeName || undefined }];
+      }
+
+      return {
+        calendarId: this.calendarId,
+        eventId: input.eventId,
+        requestBody,
+      };
+    };
+
+    try {
+      await calendar.events.patch(buildRequest(true));
+    } catch (error: unknown) {
+      if (input.attendeeEmail && this.isAttendeeForbiddenError(error)) {
+        await calendar.events.patch(buildRequest(false));
+      } else {
+        throw error;
+      }
+    }
   }
 
   async cancelEvent(eventId: string): Promise<void> {

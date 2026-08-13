@@ -54,7 +54,10 @@ export async function POST(req: NextRequest) {
     // ─── 1. SI ES UNA RESERVA DE CITA/SERVICIO ───
     const booking = await bookingRepository.getById(event.referenceId)
     if (booking && booking.id) {
-      const isApproved = event.status === 'approved'
+      const service = await serviceRepository.getById(booking.serviceId)
+      const expectedAmount = Number(service?.price || 0)
+      const amountOk = expectedAmount <= 0 || event.amount >= expectedAmount
+      const isApproved = event.status === 'approved' && amountOk
 
       await paymentRepository.create({
         customerId: booking.customerId,
@@ -72,9 +75,14 @@ export async function POST(req: NextRequest) {
         verifiedBy: 'mercadopago-webhook',
       })
 
+      if (event.status === 'approved' && !amountOk) {
+        console.warn(
+          `[Webhook MP] Bajo-pago detectado: booking ${booking.id} esperaba ${expectedAmount} COP pero se pagaron ${event.amount} COP. No se confirma la reserva.`
+        )
+      }
+
       if (isApproved && booking.status !== 'CONFIRMED') {
         const customer = await customerRepository.getById(booking.customerId)
-        const service = await serviceRepository.getById(booking.serviceId)
 
         let calendarEventId: string | null = null
         let whatsappLink: string | null = null
@@ -124,7 +132,9 @@ export async function POST(req: NextRequest) {
     // ─── 2. SI ES UN PEDIDO DE PRODUCTOS FÍSICOS ───
     const order = await orderRepository.getById(event.referenceId)
     if (order && order.id) {
-      const isApproved = event.status === 'approved'
+      const expectedTotal = Number(order.total || 0)
+      const amountOk = expectedTotal <= 0 || event.amount >= expectedTotal
+      const isApproved = event.status === 'approved' && amountOk
 
       await paymentRepository.create({
         customerId: order.customerId,
@@ -141,6 +151,12 @@ export async function POST(req: NextRequest) {
         verifiedAt: isApproved ? new Date() : null,
         verifiedBy: 'mercadopago-webhook',
       })
+
+      if (event.status === 'approved' && !amountOk) {
+        console.warn(
+          `[Webhook MP] Bajo-pago detectado: order ${order.id} esperaba ${expectedTotal} COP pero se pagaron ${event.amount} COP. No se marca como PAID.`
+        )
+      }
 
       if (isApproved && order.status !== 'PAID') {
         const isPendingOrder = order.status === 'PAYMENT_PENDING' || (order.status as string) === 'PENDING'
