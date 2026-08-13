@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { sendPendingSaleEmail } from '@/lib/mailer';
@@ -18,7 +18,7 @@ function generateReservationCode() {
 
 export async function POST(req: NextRequest) {
     try {
-        const ip = getRequestIp(req.headers.get('x-forwarded-for'));
+        const ip = getRequestIp(req.headers.get('x-forwarded-for'), req.headers.get('x-real-ip'), req.headers.get('cf-connecting-ip'));
         if (isRateLimited(`createpending:${ip}`, 20, 60_000)) {
             return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta en un minuto.' }, { status: 429 });
         }

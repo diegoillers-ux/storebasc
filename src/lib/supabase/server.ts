@@ -12,12 +12,16 @@ export function getAdminSupabase(): SupabaseClient {
   }
 
   const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  if (!rawUrl || !rawKey) {
+    throw new Error('Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en variables de entorno del servidor.');
+  }
 
   const supabaseUrl = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))
     ? rawUrl
     : 'https://placeholder.supabase.co';
-  const serviceRoleKey = rawKey || 'placeholder-key';
+  const serviceRoleKey = rawKey;
 
   adminSupabaseInstance = createClient(supabaseUrl, serviceRoleKey, {
     auth: {

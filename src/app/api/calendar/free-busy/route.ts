@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
 import { isDemoMode } from '@/lib/demoMode';
 
 export async function GET(req: NextRequest) {
     try {
-        const ip = getRequestIp(req.headers.get('x-forwarded-for'));
+        const ip = getRequestIp(req.headers.get('x-forwarded-for'), req.headers.get('x-real-ip'), req.headers.get('cf-connecting-ip'));
         if (isRateLimited(`freebusy:${ip}`, 120, 60_000)) {
             return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta en un minuto.' }, { status: 429 });
         }

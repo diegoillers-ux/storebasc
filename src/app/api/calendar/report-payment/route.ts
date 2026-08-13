@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { sendAdminPaymentProofEmail } from '@/lib/mailer';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
-import { put } from '@vercel/blob';
+import { put, getDownloadUrl } from '@vercel/blob';
 import { isDemoMode } from '@/lib/demoMode';
 import { demoGetEventById, demoUpdateEvent } from '@/lib/demoStore';
 
@@ -11,7 +11,7 @@ const MAX_PROOF_SIZE_BYTES = 2 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
     try {
-        const ip = getRequestIp(req.headers.get('x-forwarded-for'));
+        const ip = getRequestIp(req.headers.get('x-forwarded-for'), req.headers.get('x-real-ip'), req.headers.get('cf-connecting-ip'));
         if (isRateLimited(`reportpayment:${ip}`, 20, 60_000)) {
             return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta en un minuto.' }, { status: 429 });
         }
@@ -81,10 +81,10 @@ export async function POST(req: NextRequest) {
                 const safeName = proof.name.replace(/[^a-zA-Z0-9._-]/g, '_');
                 const blobPath = `proofs/${eventId}/${Date.now()}-${safeName}`;
                 const uploaded = await put(blobPath, fileBuffer, {
-                    access: 'public',
+                    access: 'private',
                     contentType: proof.type,
                 });
-                proofUrl = uploaded.url;
+                proofUrl = getDownloadUrl(uploaded.url);
             } catch (blobError) {
                 console.error('Blob upload failed, keeping email attachment fallback:', blobError);
             }

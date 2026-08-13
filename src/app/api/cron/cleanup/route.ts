@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
+import { isAuthorizedCronRequest } from '@/lib/cronAuth';
 
 export async function GET(req: NextRequest) {
-    if (process.env.NODE_ENV === 'production' && !process.env.CRON_SECRET) {
-        return NextResponse.json({ error: 'CRON_SECRET no configurado en produccion.' }, { status: 500 });
-    }
-
-    const authHeader = req.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isAuthorizedCronRequest(req)) {
         return NextResponse.json({ error: 'No autorizado / Unauthorized' }, { status: 401 });
     }
 

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { orderRepository } from '@/lib/supabase/repositories/orders'
+import { isAuthorizedCronRequest } from '@/lib/cronAuth'
 
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!isAuthorizedCronRequest(req)) {
       return NextResponse.json({ error: 'No autorizado para ejecutar cron' }, { status: 401 })
     }
 

@@ -93,6 +93,10 @@ export class MercadoPagoProvider implements PaymentProvider {
       throw new Error('ID de pago no provisto en la notificación de Mercado Pago')
     }
 
+    if (!this.webhookSecret && process.env.NODE_ENV === 'production') {
+      throw new Error('MERCADOPAGO_WEBHOOK_SECRET es obligatorio en producción: webhook rechazado.')
+    }
+
     if (this.webhookSecret) {
       this.validateSignature(paymentId, signature, options?.requestId, options?.dataId)
     }

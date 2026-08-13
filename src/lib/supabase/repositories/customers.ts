@@ -1,5 +1,10 @@
 import { getAdminSupabase } from '../server';
 
+const MAX_OTP_ATTEMPTS = 5;
+const OTP_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+
+const otpAttempts = new Map<string, { count: number; resetAt: number }>();
+
 export interface Customer {
   id?: string;
   name: string;
@@ -134,6 +139,7 @@ export const customerRepository = {
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos de validez
 
     if (existing.length > 0) {
+      otpAttempts.delete(email.trim().toLowerCase());
       await this.update(existing[0].id!, {
         otpCode,
         otpExpiresAt: expiresAt,
@@ -148,11 +154,33 @@ export const customerRepository = {
     const customer = existing[0];
     if (!customer.otpCode) return false;
 
+    // Expiración efectiva del código
+    if (customer.otpExpiresAt && Date.now() > customer.otpExpiresAt.getTime()) {
+      await this.update(customer.id!, { otpCode: null, otpExpiresAt: null });
+      return false;
+    }
+
+    // Límite de intentos fallidos (in-memory; se reinicia al generar un nuevo OTP)
+    const key = email.trim().toLowerCase();
+    const now = Date.now();
+    const bucket = otpAttempts.get(key);
+    if (bucket && now < bucket.resetAt && bucket.count >= MAX_OTP_ATTEMPTS) {
+      await this.update(customer.id!, { otpCode: null, otpExpiresAt: null });
+      return false;
+    }
+    if (!bucket || now > bucket.resetAt) {
+      otpAttempts.set(key, { count: 1, resetAt: now + OTP_ATTEMPT_WINDOW_MS });
+    } else {
+      bucket.count += 1;
+    }
+
     if (customer.otpCode.trim() === code.trim()) {
+      otpAttempts.delete(key);
       await this.update(customer.id!, {
         isVerified: true,
         active: true,
         otpCode: null,
+        otpExpiresAt: null,
       });
       return true;
     }

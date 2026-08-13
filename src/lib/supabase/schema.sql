@@ -165,16 +165,16 @@ CREATE POLICY "Permitir lectura pública de configuracion agenda" ON public.avai
 CREATE POLICY "Permitir lectura pública de ai_assets raffles" ON public.ai_assets FOR SELECT USING (type = 'raffle');
 
 -- Políticas para Service Role (API Backend Next.js)
-CREATE POLICY "Service Role Full Access Admin Users" ON public.admin_users USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Customers" ON public.customers USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Services" ON public.services USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Products" ON public.products USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Stock Movements" ON public.stock_movements USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Bookings" ON public.bookings USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Orders" ON public.orders USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Payments" ON public.payments USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access Availability" ON public.availability_settings USING (true) WITH CHECK (true);
-CREATE POLICY "Service Role Full Access AI Assets" ON public.ai_assets USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Admin Users" ON public.admin_users TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Customers" ON public.customers TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Services" ON public.services TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Products" ON public.products TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Stock Movements" ON public.stock_movements TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Bookings" ON public.bookings TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Orders" ON public.orders TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Payments" ON public.payments TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access Availability" ON public.availability_settings TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service Role Full Access AI Assets" ON public.ai_assets TO service_role USING (true) WITH CHECK (true);
 
 -- STORAGE BUCKETS
 INSERT INTO storage.buckets (id, name, public) 

@@ -1,6 +1,6 @@
 /**
  * Capa adaptadora de pagos — intercambiable sin modificar lógica de reservas u órdenes
- * Proveedor activo: process.env.NEXT_PUBLIC_PAYMENT_PROVIDER o process.env.PAYMENT_PROVIDER ('manual' | 'mercadopago')
+ * Proveedor activo: process.env.NEXT_PUBLIC_PAYMENT_PROVIDER ('manual' | 'mercadopago')
  */
 
 export interface CreatePaymentInput {
@@ -42,7 +42,7 @@ export interface PaymentProvider {
 }
 
 export async function getPaymentProvider(): Promise<PaymentProvider> {
-  const provider = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER ?? process.env.PAYMENT_PROVIDER ?? 'manual'
+  const provider = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER ?? 'manual'
   switch (provider.toLowerCase()) {
     case 'mercadopago':
       const { MercadoPagoProvider } = await import('./mercadopago')
