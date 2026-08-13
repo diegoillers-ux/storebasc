@@ -11,8 +11,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user, profile }) {
       if (user) {
-        token.role = (user as any).role || 'SUPER_ADMIN';
-        token.isAdmin = (user as any).isAdmin ?? true;
+        token.role = (user as any).role || null;
+        token.isAdmin = (user as any).isAdmin ?? false;
         token.email = user.email || token.email;
       }
 
@@ -31,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.role = adminUser.role;
             token.isAdmin = adminUser.active;
           } else {
-            const adminEmails = (process.env.ADMIN_EMAILS || 'diegoillers@gmail.com,diegoillers.ux@gmail.com,lina@espiritananda.com')
+            const adminEmails = (process.env.ADMIN_EMAILS || '')
               .split(',')
               .map((e) => e.trim().toLowerCase());
             if (adminEmails.includes(targetEmail.toLowerCase())) {
@@ -44,8 +44,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         } catch (error) {
           console.error('Error fetching admin user role in jwt callback:', error);
-          token.role = token.role || 'SUPER_ADMIN';
-          token.isAdmin = token.isAdmin ?? true;
+          token.role = null;
+          token.isAdmin = false;
         }
       }
       return token;
@@ -53,8 +53,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub || '';
-        session.user.role = (token.role as AdminRole) || 'SUPER_ADMIN';
-        session.user.isAdmin = Boolean(token.isAdmin ?? true);
+        session.user.role = (token.role as AdminRole) || null;
+        session.user.isAdmin = Boolean(token.isAdmin ?? false);
       }
       return session;
     },

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { randomInt } from 'crypto';
 
 export default async function RegisterPage({
   searchParams,
@@ -44,7 +45,20 @@ export default async function RegisterPage({
               redirect('/register?error=Por+favor+diligencia+todos+los+campos+obligatorios.');
             }
 
+            if (password.length < 6) {
+              redirect('/register?error=La+contraseña+debe+tener+mínimo+6+caracteres.');
+            }
+
             try {
+              // Rate limit: 5 registros por IP cada 15 minutos
+              const { headers } = await import('next/headers');
+              const { isRateLimited, getRequestIp } = await import('@/lib/rateLimit');
+              const headerList = await headers();
+              const ip = getRequestIp(headerList.get('x-forwarded-for'));
+              if (isRateLimited(`register-ip:${ip}`, 5, 15 * 60_000) || isRateLimited(`register-email:${email}`, 3, 15 * 60_000)) {
+                redirect('/register?error=Demasiados+intentos.+Espera+unos+minutos+y+vuelve+a+intentar.');
+              }
+
               // 1. Registro nativo en Supabase Auth
               try {
                 const { getAdminSupabase } = await import('@/lib/supabase/server');
@@ -61,8 +75,8 @@ export default async function RegisterPage({
                 console.log('[Register] Supabase Auth note:', supaErr);
               }
 
-              // 2. Generar Código OTP seguro de 6 dígitos
-              const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+              // 2. Generar Código OTP seguro de 6 dígitos (criptográfico)
+              const verificationCode = String(randomInt(100000, 1000000));
 
               // 3. Guardar o actualizar registro en la tabla customers de Supabase PostgreSQL con OTP seguro
               try {
@@ -79,7 +93,7 @@ export default async function RegisterPage({
                     otpCode: verificationCode,
                     otpExpiresAt: expiresAt,
                     isVerified: false,
-                    active: true,
+                    active: false, // Bloqueado hasta verificar el OTP
                   });
                 } else {
                   await customerRepository.update(existing[0].id!, {

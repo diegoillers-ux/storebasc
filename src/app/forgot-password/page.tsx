@@ -24,10 +24,32 @@ export default async function ForgotPasswordPage({
           <form
             action={async (formData: FormData) => {
               'use server';
-              const email = String(formData.get('email') || '').trim();
+              const { redirect } = await import('next/navigation');
+              const email = String(formData.get('email') || '').trim().toLowerCase();
               if (!email) return;
 
-              // Simulación / Integración de envío de correo de recuperación
+              try {
+                const { headers } = await import('next/headers');
+                const { isRateLimited, getRequestIp } = await import('@/lib/rateLimit');
+                const headerList = await headers();
+                const ip = getRequestIp(headerList.get('x-forwarded-for'));
+                if (isRateLimited(`forgot-ip:${ip}`, 10, 60_000) || isRateLimited(`forgot-email:${email}`, 3, 15 * 60_000)) {
+                  redirect('/forgot-password?sent=1');
+                }
+
+                const { getAdminSupabase } = await import('@/lib/supabase/server');
+                const supabase = getAdminSupabase();
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${appUrl}/login?reset=complete`,
+                });
+                if (error) {
+                  console.error('[ForgotPassword] Error:', error.message);
+                }
+              } catch (err) {
+                console.error('[ForgotPassword] Error:', err);
+              }
+              redirect('/forgot-password?sent=1');
             }}
             className="space-y-4 text-left mb-6"
           >

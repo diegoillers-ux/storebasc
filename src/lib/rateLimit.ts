@@ -22,7 +22,22 @@ export function isRateLimited(key: string, limit: number, windowMs: number) {
     return false;
 }
 
-export function getRequestIp(forwardedFor?: string | null) {
-    if (!forwardedFor) return 'unknown';
-    return forwardedFor.split(',')[0]?.trim() || 'unknown';
+export function getRequestIp(
+  forwardedFor?: string | null,
+  realIp?: string | null,
+  cfConnectingIp?: string | null
+) {
+  const candidates = [
+    forwardedFor?.split(',')[0]?.trim(),
+    realIp,
+    cfConnectingIp,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && candidate !== 'unknown' && candidate.toLowerCase() !== 'localhost') {
+      return candidate;
+    }
+  }
+
+  return 'unknown';
 }

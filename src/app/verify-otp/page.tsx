@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { customerRepository } from '@/lib/supabase/repositories/customers';
 
 export default async function VerifyOtpPage({
   searchParams,
@@ -11,21 +10,6 @@ export default async function VerifyOtpPage({
   const phone = params?.phone || '';
   const error = params?.error || '';
   const resent = params?.resent || '';
-
-  // Buscar el registro del cliente en Supabase para obtener el código OTP asignado
-  let devOtpNotice: string | null = null;
-  let hasSmtpConfigured = Boolean(process.env.SMTP_USER || process.env.GMAIL_USER);
-
-  if (email) {
-    try {
-      const customers = await customerRepository.getByEmail(email);
-      if (customers.length > 0 && customers[0].otpCode) {
-        devOtpNotice = customers[0].otpCode;
-      }
-    } catch (e) {
-      console.log('[VerifyOTP] DB search note:', e);
-    }
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAF5FF] p-4 sm:p-6">
@@ -56,21 +40,6 @@ export default async function VerifyOtpPage({
           </div>
         )}
 
-        {/* Asistencia si aún no se han configurado credenciales de SMTP/Email en Vercel */}
-        {(!hasSmtpConfigured || devOtpNotice) && devOtpNotice && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs text-left leading-relaxed">
-            💡 <strong>Código de Verificación Generado:</strong>{' '}
-            <span className="font-mono font-bold tracking-widest text-[#2D1B69] text-sm bg-white px-2 py-0.5 rounded border border-amber-300">
-              {devOtpNotice}
-            </span>
-            {!hasSmtpConfigured && (
-              <p className="mt-1 text-[11px] text-amber-700">
-                (Nota: Si no te llegó por correo, agrega las variables <code>SMTP_USER</code> y <code>SMTP_PASSWORD</code> en Vercel para el envío directo a tu bandeja).
-              </p>
-            )}
-          </div>
-        )}
-
         <form
           action={async (formData: FormData) => {
             'use server';
@@ -87,12 +56,7 @@ export default async function VerifyOtpPage({
               if (email) {
                 const verified = await customerRepository.verifyOtp(email, code);
                 if (!verified) {
-                  const customers = await customerRepository.getByEmail(email);
-                  if (customers.length > 0 && customers[0].otpCode && customers[0].otpCode.trim() === code) {
-                    await customerRepository.update(customers[0].id!, { isVerified: true, active: true, otpCode: null });
-                  } else {
-                    redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Código+OTP+incorrecto.+Verifica+el+código+recibido+e+inténtalo+de+nuevo.`);
-                  }
+                  redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Código+OTP+incorrecto,+expirado+o+demasiados+intentos.+Verifica+e+inténtalo+de+nuevo.`);
                 }
               }
             } catch (dbErr: any) {
@@ -136,9 +100,17 @@ export default async function VerifyOtpPage({
           action={async () => {
             'use server';
             const { redirect } = await import('next/navigation');
+            const { headers } = await import('next/headers');
+            const { randomInt } = await import('crypto');
+            const { isRateLimited, getRequestIp } = await import('@/lib/rateLimit');
             if (email) {
+              const headerList = await headers();
+              const ip = getRequestIp(headerList.get('x-forwarded-for'));
+              if (isRateLimited(`otp-resend:${ip}`, 10, 60_000) || isRateLimited(`otp-resend-email:${email.toLowerCase()}`, 3, 10 * 60_000)) {
+                redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Demasiados+intentos.+Espera+unos+minutos+antes+de+reenviar+el+código.`);
+              }
               try {
-                const newCode = String(Math.floor(100000 + Math.random() * 900000));
+                const newCode = String(randomInt(100000, 1000000));
                 const { customerRepository } = await import('@/lib/supabase/repositories/customers');
                 await customerRepository.setOtp(email, newCode);
 

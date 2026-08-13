@@ -2,11 +2,19 @@ import nodemailer from 'nodemailer';
 
 import { getSaleTypeLabel, type SaleType } from '@/lib/sales';
 
-function getMailerConfigError() {
-    const user = process.env.SMTP_USER || process.env.GMAIL_USER;
-    const pass = process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
-    if (!user || !pass) return 'Falta configurar SMTP_USER y SMTP_PASSWORD (o GMAIL_USER y GMAIL_APP_PASSWORD) en variables de entorno.';
-    return null;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function escapeHtml(value: string): string {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function isValidEmail(email: string): boolean {
+    return EMAIL_RE.test(email);
 }
 
 function getAdminEmails(): string[] {
@@ -17,8 +25,8 @@ function getAdminEmails(): string[] {
 }
 
 function getTransporter() {
-    const user = process.env.SMTP_USER || process.env.GMAIL_USER;
-    const pass = process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASSWORD;
     const host = process.env.SMTP_HOST || 'smtp.gmail.com';
     const port = Number(process.env.SMTP_PORT || 587);
 
@@ -33,7 +41,7 @@ function getTransporter() {
 }
 
 function getSender() {
-    return process.env.SMTP_FROM || `"Espíritu Ananda" <${process.env.SMTP_USER || process.env.GMAIL_USER || 'no-reply@espiritananda.com'}>`;
+    return process.env.SMTP_FROM || `"Espíritu Ananda" <${process.env.SMTP_USER || 'no-reply@espiritananda.com'}>`;
 }
 
 function getPendingCopy(saleType: SaleType, itemName: string) {
@@ -81,7 +89,7 @@ function getApprovedCopy(saleType: SaleType, itemName: string, meetingLink = '')
         subject: `Reserva confirmada - ${itemName}`,
         body: `Hemos verificado tu pago. Tu sesion de ${itemName} ya fue confirmada.`,
         extra: meetingLink
-            ? `<p>Aqui tienes el enlace para conectarnos ese dia:<br/><br/><a href="${meetingLink}" style="background-color: #D5BDA9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Unirse a la sesion</a></p>`
+            ? `<p>Aqui tienes el enlace para conectarnos ese dia:<br/><br/><a href="${escapeHtml(meetingLink)}" style="background-color: #D5BDA9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Unirse a la sesion</a></p>`
             : '<p>Recibiras por correo los detalles finales de la atencion.</p>',
     };
 }
@@ -108,6 +116,11 @@ export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
     const mailer = getTransporter();
     if (!mailer) return;
 
+    if (!isValidEmail(payload.toEmail)) {
+        console.error('[Mailer] Email de destinatario inválido, se omite envío:', payload.toEmail);
+        return;
+    }
+
     const saleType = payload.saleType || 'service';
     const copy = getPendingCopy(saleType, payload.itemName);
 
@@ -117,11 +130,11 @@ export async function sendPendingSaleEmail(payload: PendingSaleEmailPayload) {
         subject: `${copy.subject}${payload.reservationCode ? ` (${payload.reservationCode})` : ''}`,
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #D5BDA9; text-align: center;">Hola ${payload.clientName}</h2>
+        <h2 style="color: #D5BDA9; text-align: center;">Hola ${escapeHtml(payload.clientName)}</h2>
         <p>${copy.body}</p>
-        <p>Referencia: <strong>${payload.itemName}</strong>.</p>
-        <p>Fecha asociada: <strong>${payload.dateTime}</strong>.</p>
-        ${payload.reservationCode ? `<p><strong>Codigo de transaccion:</strong> ${payload.reservationCode}</p>` : ''}
+        <p>Referencia: <strong>${escapeHtml(payload.itemName)}</strong>.</p>
+        <p>Fecha asociada: <strong>${escapeHtml(payload.dateTime)}</strong>.</p>
+        ${payload.reservationCode ? `<p><strong>Codigo de transaccion:</strong> ${escapeHtml(payload.reservationCode)}</p>` : ''}
         <div style="background-color: #fcfbf9; padding: 15px; border-left: 4px solid #D5BDA9; margin: 20px 0;">
           <p style="margin: 0; font-weight: bold;">Importante:</p>
           <p style="margin: 5px 0 0 0;">Tienes <strong>30 minutos</strong> para completar la consignacion y reportar el comprobante.</p>
@@ -145,6 +158,11 @@ export async function sendApprovedSaleEmail(payload: ApprovedSaleEmailPayload) {
     const mailer = getTransporter();
     if (!mailer) return;
 
+    if (!isValidEmail(payload.toEmail)) {
+        console.error('[Mailer] Email de destinatario inválido, se omite envío:', payload.toEmail);
+        return;
+    }
+
     const saleType = payload.saleType || 'service';
     const copy = getApprovedCopy(saleType, payload.itemName, payload.meetingLink || '');
 
@@ -155,10 +173,10 @@ export async function sendApprovedSaleEmail(payload: ApprovedSaleEmailPayload) {
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
         <h2 style="color: #a4c9b3; text-align: center;">Pago validado</h2>
-        <p>Hola ${payload.clientName},</p>
+        <p>Hola ${escapeHtml(payload.clientName)},</p>
         <p>${copy.body}</p>
-        <p>Referencia: <strong>${payload.itemName}</strong>.</p>
-        <p>Fecha asociada: <strong>${payload.dateTime}</strong>.</p>
+        <p>Referencia: <strong>${escapeHtml(payload.itemName)}</strong>.</p>
+        <p>Fecha asociada: <strong>${escapeHtml(payload.dateTime)}</strong>.</p>
         ${copy.extra}
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
         <p style="font-size: 0.8em; color: #888; text-align: center;">Nos vemos pronto.<br/>Equipo de soporte</p>
@@ -240,13 +258,13 @@ export async function sendAdminPaymentProofEmail(payload: AdminProofPayload) {
       <div style="font-family: sans-serif; color: #333; max-width: 640px; margin: 0 auto; border: 1px solid #efe9e5; padding: 20px; border-radius: 10px;">
         <h2 style="color: #D5BDA9; text-align: center;">Nuevo comprobante recibido</h2>
                 <p><strong>Tipo de venta:</strong> ${getSaleTypeLabel(payload.saleType || 'service')}</p>
-        <p><strong>Reserva ID:</strong> ${payload.eventId}</p>
-        <p><strong>Codigo de reserva:</strong> ${payload.reservationCode || 'No disponible'}</p>
-        <p><strong>Cliente:</strong> ${payload.clientName}</p>
-        <p><strong>Email:</strong> ${payload.clientEmail}</p>
-        <p><strong>Servicio:</strong> ${payload.serviceName}</p>
-        <p><strong>Fecha reservada:</strong> ${payload.dateTime}</p>
-        <p><strong>Nota del cliente:</strong> ${payload.paymentNote || 'Sin nota adicional'}</p>
+        <p><strong>Reserva ID:</strong> ${escapeHtml(payload.eventId)}</p>
+        <p><strong>Codigo de reserva:</strong> ${escapeHtml(payload.reservationCode || 'No disponible')}</p>
+        <p><strong>Cliente:</strong> ${escapeHtml(payload.clientName)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(payload.clientEmail)}</p>
+        <p><strong>Servicio:</strong> ${escapeHtml(payload.serviceName)}</p>
+        <p><strong>Fecha reservada:</strong> ${escapeHtml(payload.dateTime)}</p>
+        <p><strong>Nota del cliente:</strong> ${escapeHtml(payload.paymentNote || 'Sin nota adicional')}</p>
         <p>Se adjunta comprobante para validacion manual en banco y aprobacion desde el portal.</p>
       </div>
     `,
@@ -274,6 +292,11 @@ export async function sendVerificationEmail(toEmail: string, clientName: string,
         return false;
     }
 
+    if (!isValidEmail(toEmail)) {
+        console.error('[Mailer] Email de destinatario inválido, se omite envío:', toEmail);
+        return false;
+    }
+
     const mailOptions = {
         from: getSender(),
         to: toEmail,
@@ -281,7 +304,7 @@ export async function sendVerificationEmail(toEmail: string, clientName: string,
         html: `
       <div style="font-family: sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #FAF5FF; padding: 25px; border-radius: 16px; background-color: #ffffff;">
         <h2 style="color: #2D1B69; text-align: center; margin-top: 0;">✦ Espíritu Ananda</h2>
-        <p style="font-size: 14px; text-align: center; color: #666;">Hola <strong>${clientName}</strong>,</p>
+        <p style="font-size: 14px; text-align: center; color: #666;">Hola <strong>${escapeHtml(clientName)}</strong>,</p>
         <p style="font-size: 14px; text-align: center; color: #444;">Gracias por registrarte en nuestra plataforma. Utiliza el siguiente código numérico de 6 dígitos para verificar tu cuenta e iniciar sesión:</p>
         <div style="background-color: #FAF5FF; padding: 18px; border-radius: 12px; text-align: center; margin: 25px 0;">
           <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #2D1B69;">${verificationCode}</span>
@@ -299,37 +322,6 @@ export async function sendVerificationEmail(toEmail: string, clientName: string,
         return true;
     } catch (error) {
         console.error('Error sending verification email:', error);
-        return false;
-    }
-}
-
-export async function sendPasswordResetEmail(toEmail: string, resetCode: string) {
-    const mailer = getTransporter();
-    if (!mailer) return false;
-
-    const mailOptions = {
-        from: getSender(),
-        to: toEmail,
-        subject: `Recuperación de Contraseña - Código: ${resetCode}`,
-        html: `
-      <div style="font-family: sans-serif; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #FAF5FF; padding: 25px; border-radius: 16px; background-color: #ffffff;">
-        <h2 style="color: #2D1B69; text-align: center; margin-top: 0;">✦ Espíritu Ananda</h2>
-        <p style="font-size: 14px; text-align: center; color: #666;">Has solicitado restablecer tu contraseña.</p>
-        <p style="font-size: 14px; text-align: center; color: #444;">Utiliza este código de verificación de 6 dígitos:</p>
-        <div style="background-color: #FAF5FF; padding: 18px; border-radius: 12px; text-align: center; margin: 25px 0;">
-          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #2D1B69;">${resetCode}</span>
-        </div>
-        <p style="font-size: 12px; color: #888; text-align: center;">Este código caduca en 15 minutos.</p>
-      </div>
-    `,
-    };
-
-    try {
-        await mailer.sendMail(mailOptions);
-        console.log(`[Email Sent] Password reset email to: ${toEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Error sending password reset email:', error);
         return false;
     }
 }

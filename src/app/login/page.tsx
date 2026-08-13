@@ -4,16 +4,19 @@ import Link from 'next/link';
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; registered?: string; email?: string }>;
+  searchParams?: Promise<{ error?: string; registered?: string; reset?: string; email?: string }>;
 }) {
   const params = await searchParams;
   const error = params?.error;
   const registered = params?.registered;
+  const reset = params?.reset;
   const defaultEmail = params?.email || '';
 
   let errorMessage = '';
   if (error === 'CredentialsSignin') {
     errorMessage = 'Credenciales incorrectas. Verifica tu correo/cédula o contraseña.';
+  } else if (error === 'TooManyAttempts') {
+    errorMessage = 'Demasiados intentos fallidos. Espera unos minutos y vuelve a intentar.';
   } else if (error === 'AccessDenied') {
     errorMessage = 'Acceso denegado. Tu usuario no tiene permisos suficientes.';
   } else if (error) {
@@ -37,6 +40,14 @@ export default async function LoginPage({
           </div>
         )}
 
+        {reset && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium text-left leading-relaxed shadow-xs">
+            🔑 <strong>¡Contraseña actualizada!</strong>
+            <br />
+            Ingresa tu correo y la nueva contraseña para iniciar sesión.
+          </div>
+        )}
+
         {errorMessage && (
           <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium text-left leading-relaxed">
             ⚠️ {errorMessage}
@@ -49,6 +60,17 @@ export default async function LoginPage({
             const email = String(formData.get('email') || '').trim();
             const password = String(formData.get('password') || '').trim();
             try {
+              const { headers } = await import('next/headers');
+              const { isRateLimited, getRequestIp } = await import('@/lib/rateLimit');
+              const headerList = await headers();
+              const ip = getRequestIp(headerList.get('x-forwarded-for'));
+              if (
+                isRateLimited(`login-ip:${ip}`, 20, 60_000) ||
+                isRateLimited(`login-email:${email.toLowerCase()}`, 10, 15 * 60_000)
+              ) {
+                const { redirect } = await import('next/navigation');
+                redirect('/login?error=TooManyAttempts');
+              }
               await signIn('admin-credentials', {
                 email,
                 password,
