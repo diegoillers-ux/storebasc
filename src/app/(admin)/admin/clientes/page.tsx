@@ -102,14 +102,18 @@ export default function CustomersPage() {
   const handleSaveNotes = async () => {
     if (!selectedCustomer) return;
     try {
-      // Usamos import dinámico en el API, aquí hacemos PUT al id
       const res = await fetch(`/api/admin/customers`, {
-        method: 'POST', // reutilizamos para crear/editar si aplica, o podemos simular en demo
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...selectedCustomer, notes: editedNotes }),
       });
 
-      // Simular actualización local para fines visuales rápidos
+      const data = await res.json();
+      if (!data.success) {
+        showNotice('error', 'Error al guardar', data.error);
+        return;
+      }
+
       setSelectedCustomer({ ...selectedCustomer, notes: editedNotes });
       setCustomers(customers.map(c => c.id === selectedCustomer.id ? { ...c, notes: editedNotes } : c));
       setIsEditNotesMode(false);

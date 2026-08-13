@@ -191,7 +191,7 @@ export default function ConfigurationPage() {
 
       const data = await res.json();
       if (data.success) {
-        showNotice('success', 'Horarios guardados', 'Tu configuración semanal ha sido guardada en Firestore.');
+        showNotice('success', 'Horarios guardados', 'Tu configuración semanal ha sido guardada correctamente.');
       } else {
         showNotice('error', 'Error al guardar', data.error);
       }
@@ -201,7 +201,7 @@ export default function ConfigurationPage() {
   };
 
   const handleSaveSmtpTemplates = () => {
-    showNotice('success', 'Plantillas guardadas', 'Textos y firmas de notificación SMTP almacenados correctamente.');
+    showNotice('error', 'Función en desarrollo', 'La edición de plantillas aún no se persiste; por ahora se envían las plantillas estándar del sistema.');
   };
 
   const getDayName = (day: number) => {

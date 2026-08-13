@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
-import { isDemoMode } from '@/lib/demoMode';
-
-// Números vendidos simulados para la rifa mística
-const MOCK_TICKETS = [
-  { number: 3, customerName: 'María Fernanda Rojas', phone: '573123456789', status: 'PAID' },
-  { number: 7, customerName: 'Juan Pablo Gómez', phone: '573219876543', status: 'PAID' },
-  { number: 12, customerName: 'Camila Restrepo', phone: '573155556677', status: 'PAID' },
-  { number: 17, customerName: 'David Londoño', phone: '573001234567', status: 'PENDING_PAYMENT' },
-  { number: 22, customerName: 'Diana Cardona', phone: '573119876543', status: 'PAID' },
-];
 
 export async function GET(
   req: NextRequest,
@@ -21,17 +11,10 @@ export async function GET(
   try {
     const { id } = await params;
 
-    if (isDemoMode()) {
-      return NextResponse.json({
-        rifa: { id, title: 'Gran Sorteo del Equinoccio de Primavera', pricePerNumber: 15000, totalNumbers: 100, soldCount: 5, active: true, prizeDescription: 'Lectura Astral Completa y Kit Sahumerio Sagrado' },
-        tickets: MOCK_TICKETS,
-      });
-    }
-
-    // Fallback real
+    // TODO: Integración real con Supabase para detalle de rifa y boletos
     return NextResponse.json({
-      rifa: { id, title: 'Gran Sorteo Real', pricePerNumber: 15000, totalNumbers: 100, soldCount: 5, active: true },
-      tickets: MOCK_TICKETS,
+      rifa: { id },
+      tickets: [],
     });
   } catch (error: unknown) {
     const details = error instanceof Error ? error.message : 'Unknown error';
@@ -48,40 +31,15 @@ export async function PUT(
   if (authError) return authError;
 
   try {
-    const { id } = await params;
+    await params;
     const body = await req.json();
     const { action } = body;
 
     if (action === 'draw') {
-      if (isDemoMode()) {
-        const paidTickets = MOCK_TICKETS.filter(t => t.status === 'PAID');
-        if (paidTickets.length === 0) {
-          return NextResponse.json({ error: 'No hay boletos pagados registrados para realizar el sorteo.' }, { status: 400 });
-        }
-
-        // Seleccionar ganador aleatorio
-        const randomIdx = Math.floor(Math.random() * paidTickets.length);
-        const winner = paidTickets[randomIdx];
-
-        return NextResponse.json({
-          success: true,
-          winnerNumber: winner.number,
-          winnerName: winner.customerName,
-          winnerPhone: winner.phone,
-        });
-      }
-
-      // Fallback real
-      const paidTickets = MOCK_TICKETS.filter(t => t.status === 'PAID');
-      const randomIdx = Math.floor(Math.random() * paidTickets.length);
-      const winner = paidTickets[randomIdx];
-
-      return NextResponse.json({
-        success: true,
-        winnerNumber: winner.number,
-        winnerName: winner.customerName,
-        winnerPhone: winner.phone,
-      });
+      return NextResponse.json(
+        { error: 'El sorteo no puede ejecutarse: el módulo de rifas aún no está conectado a la base de datos.' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ error: 'Acción no soportada.' }, { status: 400 });

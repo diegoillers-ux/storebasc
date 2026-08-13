@@ -3,19 +3,13 @@ import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 
-const MOCK_BOOKINGS = [
-  { id: 'book-1', customerId: 'cust-1', serviceId: 'serv-1', scheduledAt: new Date(Date.now() + 3600000 * 2).toISOString(), durationMinutes: 60, status: 'CONFIRMED', notes: 'Desea enfatizar en el retorno de Saturno y tránsitos personales.', whatsappLink: 'https://wa.me/573123456789?text=Hola' },
-  { id: 'book-2', customerId: 'cust-2', serviceId: 'serv-2', scheduledAt: new Date(Date.now() + 86400000).toISOString(), durationMinutes: 30, status: 'PAYMENT_SUBMITTED', notes: 'Comprobante de Nequi subido, espera confirmación.', whatsappLink: null },
-  { id: 'book-3', customerId: 'cust-3', serviceId: 'serv-3', scheduledAt: new Date(Date.now() + 172800000).toISOString(), durationMinutes: 90, status: 'PENDING_PAYMENT', notes: 'Agendada por panel, pendiente de pago manual.', whatsappLink: null },
-];
-
 export async function GET() {
   const authError = await requireAdminSession();
   if (authError) return authError;
 
   try {
     if (isDemoMode()) {
-      return NextResponse.json({ bookings: MOCK_BOOKINGS });
+      return NextResponse.json({ bookings: [] });
     }
 
     const bookings = await bookingRepository.list();

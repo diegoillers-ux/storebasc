@@ -130,9 +130,6 @@ export default function RifasPage() {
     setWinnerResult(null);
 
     try {
-      // Retrasar 2 segundos para dar emoción al sorteo
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
       const res = await fetch(`/api/admin/rifas/${selectedRifa.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

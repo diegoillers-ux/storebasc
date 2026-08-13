@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Calendar,
   Users,
-  TrendingUp,
   CreditCard,
   ShoppingBag,
   Package,
@@ -23,7 +23,6 @@ const NAV_ITEMS = [
   { href: '/admin', label: 'Inicio', icon: LayoutDashboard },
   { href: '/admin/agenda', label: 'Agenda', icon: Calendar },
   { href: '/admin/clientes', label: 'Clientes', icon: Users },
-  { href: '/admin/ventas', label: 'Ventas', icon: TrendingUp },
   { href: '/admin/pagos', label: 'Pagos', icon: CreditCard },
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { href: '/admin/catalogo', label: 'Catálogo', icon: Package },
@@ -35,6 +34,12 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const userEmail = session?.user?.email || null;
+  const roleLabel = session?.user?.role
+    ? session.user.role.charAt(0) + session.user.role.slice(1).toLowerCase()
+    : 'Administrador';
 
   return (
     <aside className="w-64 bg-[#1A0F3D] text-white flex flex-col h-full shrink-0 border-r border-[#2D1B69]/30 relative z-20">
@@ -93,9 +98,9 @@ export function AdminSidebar() {
           <div className="w-8 h-8 rounded-lg bg-violet-900/40 border border-violet-700/30 flex items-center justify-center text-xs font-semibold text-violet-200">
             EA
           </div>
-          <div>
-            <p className="text-xs text-violet-300/60 leading-none">Rol: Administrador</p>
-            <p className="text-sm font-medium text-white mt-1 leading-none">Espíritu Ananda</p>
+          <div className="min-w-0">
+            <p className="text-xs text-violet-300/60 leading-none">Rol: {roleLabel}</p>
+            <p className="text-sm font-medium text-white mt-1 leading-none truncate">{userEmail || 'Espíritu Ananda'}</p>
           </div>
         </div>
         

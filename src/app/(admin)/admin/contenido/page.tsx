@@ -343,7 +343,18 @@ export default function ContenidoIAPage() {
           <span>Galería de Contenido y Calificaciones</span>
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {loading ? (
+          <LoadingState message="Cargando contenido generado..." />
+        ) : assets.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-premium p-12 text-center">
+            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto" />
+            <p className="text-sm font-semibold text-gray-500 mt-3">Aún no hay contenido generado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+              Los banners y piezas de marketing generados por IA aparecerán aquí para su revisión y calificación. La generación de imágenes se habilitará próximamente.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {assets.map((asset) => {
             const isApproved = asset.status === 'APPROVED';
             const isRejected = asset.status === 'REJECTED';
@@ -422,7 +433,8 @@ export default function ContenidoIAPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
     </div>

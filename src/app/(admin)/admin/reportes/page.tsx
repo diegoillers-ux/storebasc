@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   BarChart3,
   DollarSign,
@@ -8,24 +8,9 @@ import {
   CreditCard,
   ShoppingBag,
   Sparkles,
-  ArrowRight,
-  TrendingDown,
 } from 'lucide-react';
-import LoadingState from '@/components/ui/LoadingState';
 
 export default function ReportesPage() {
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Simular carga de métricas complejas agregadas
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <LoadingState message="Agregando y consolidando transacciones contables..." />;
-  }
-
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -44,7 +29,7 @@ export default function ReportesPage() {
             </div>
           </div>
           <div>
-            <p className="text-2xl font-black text-gray-950">$15.420.000 COP</p>
+            <p className="text-2xl font-black text-gray-950">—</p>
             <p className="text-xs text-gray-400 mt-1">Sumatoria de transacciones aprobadas</p>
           </div>
         </div>
@@ -57,8 +42,8 @@ export default function ReportesPage() {
             </div>
           </div>
           <div>
-            <p className="text-2xl font-black text-gray-950">$4.500.000 COP</p>
-            <p className="text-xs text-gray-400 mt-1">Progreso actual: 54% completado</p>
+            <p className="text-2xl font-black text-gray-950">—</p>
+            <p className="text-xs text-gray-400 mt-1">Avance frente a la meta definida</p>
           </div>
         </div>
 
@@ -70,7 +55,7 @@ export default function ReportesPage() {
             </div>
           </div>
           <div>
-            <p className="text-2xl font-black text-gray-950">$98.500 COP</p>
+            <p className="text-2xl font-black text-gray-950">—</p>
             <p className="text-xs text-gray-400 mt-1">Calculado sobre reservas y carritos</p>
           </div>
         </div>
@@ -86,11 +71,11 @@ export default function ReportesPage() {
             <span>Medios de Pago Utilizados</span>
           </h3>
 
-          <div className="space-y-4">
-            <ProgressRow label="Nequi" percentage={45} value="$6.939.000 COP" color="bg-violet-600" />
-            <ProgressRow label="Daviplata" percentage={25} value="$3.855.000 COP" color="bg-gold-500" />
-            <ProgressRow label="Pasarelas de Pago" percentage={20} value="$3.084.000 COP" color="bg-teal-600" />
-            <ProgressRow label="Efectivo / Caja física" percentage={10} value="$1.542.000 COP" color="bg-gray-400" />
+          <div className="py-10 text-center">
+            <p className="text-sm font-semibold text-gray-500">Sin datos suficientes</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+              La distribución por medio de pago (Nequi, Daviplata, tarjeta) se generará cuando existan pagos aprobados registrados.
+            </p>
           </div>
         </div>
 
@@ -101,78 +86,29 @@ export default function ReportesPage() {
             <span>Distribución de Ingresos</span>
           </h3>
 
-          <div className="space-y-4">
-            <ProgressRow label="Sesiones y Lecturas Astrales" percentage={65} value="$10.023.000 COP" color="bg-violet-600" />
-            <ProgressRow label="Productos Físicos (Sahumerios, Cristales, Velas)" percentage={25} value="$3.855.000 COP" color="bg-teal-600" />
-            <ProgressRow label="Sorteos / Rifas Astrales" percentage={10} value="$1.542.000 COP" color="bg-gold-500" />
+          <div className="py-10 text-center">
+            <p className="text-sm font-semibold text-gray-500">Sin datos suficientes</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+              El desglose entre sesiones y lecturas, productos físicos y rifas se calculará automáticamente con las ventas aprobadas.
+            </p>
           </div>
         </div>
 
       </div>
 
-      {/* Recents logs */}
+      {/* Recent logs */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-premium p-6">
         <h3 className="font-bold text-gray-950 text-base mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-gray-400" />
           <span>Ventas Recientes Auditadas</span>
         </h3>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead>
-              <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase select-none">
-                <th className="py-3 px-4">Concepto</th>
-                <th className="py-3 px-4">Método</th>
-                <th className="py-3 px-4 text-right">Monto</th>
-                <th className="py-3 px-4 text-right">Fecha</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 text-gray-700">
-              <tr>
-                <td className="py-3.5 px-4 font-semibold text-gray-950">Lectura Astral Completa - María Rojas</td>
-                <td className="py-3.5 px-4"><span className="font-bold text-violet-600">NEQUI</span></td>
-                <td className="py-3.5 px-4 text-right font-bold">$120.000 COP</td>
-                <td className="py-3.5 px-4 text-right text-gray-400">Hoy 09:12 AM</td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-semibold text-gray-950">Vela Consagrada de Lavanda + Sahumerio</td>
-                <td className="py-3.5 px-4"><span className="font-bold text-violet-600">DAVIPLATA</span></td>
-                <td className="py-3.5 px-4 text-right font-bold">$65.000 COP</td>
-                <td className="py-3.5 px-4 text-right text-gray-400">Ayer 18:24 PM</td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-semibold text-gray-950">Lectura de Tarot Express - Juan Gómez</td>
-                <td className="py-3.5 px-4"><span className="font-bold text-violet-600">NEQUI</span></td>
-                <td className="py-3.5 px-4 text-right font-bold">$50.000 COP</td>
-                <td className="py-3.5 px-4 text-right text-gray-400">Hace 2 días</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="py-10 text-center">
+          <p className="text-sm font-semibold text-gray-500">Aún no hay ventas registradas</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+            Las transacciones aprobadas aparecerán aquí con su concepto, método de pago, monto y fecha.
+          </p>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ProgressRow({
-  label,
-  percentage,
-  value,
-  color,
-}: {
-  label: string;
-  percentage: number;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div className="space-y-1 text-xs">
-      <div className="flex justify-between font-semibold">
-        <span className="text-gray-700">{label}</span>
-        <span className="text-gray-900">{value} ({percentage}%)</span>
-      </div>
-      <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden border border-gray-100/50">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );
