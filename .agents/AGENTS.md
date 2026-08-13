@@ -24,19 +24,33 @@ El proyecto ha sido refactorizado y estandarizado al 100% en la versión 2.0. El
 | **Correos** | Nodemailer (SMTP / Gmail) | Plantillas HTML automáticas para recibos, confirmaciones y códigos de verificación |
 | **Tareas Cron** | Vercel Cron (`/api/cron/cleanup`) | Liberación de citas reservadas no pagadas (>30 min) |
 
+### ✅ Estado Validado (2026-08-12)
+
+- **Flujo de pago E2E validado en sandbox** (2 ventas): reserva → preferencia MP → pago aprobado → webhook → booking `CONFIRMED` → evento en Google Calendar → correo automático → link de WhatsApp.
+- **Google Calendar operativo**: calendario compartido con la Service Account (permiso de edición) y fix de invitación de asistentes cuando la cuenta no tiene Domain-Wide Delegation (`isAttendeeForbiddenError`).
+- **RLS auditado y aplicado** (L1): 14 policies verificadas (10 `service_role` + 4 lectura pública).
+- **Login real**: contraseña contra Supabase Auth (sin proveedor demo); recuperación de clave funcional; `NEXT_PUBLIC_DEMO_MODE="false"`.
+- **CRM sin simulación**: dashboard/reportes con estados vacíos y texto de contexto; módulos sin backend (rifas, contenido IA) devuelven respuestas vacías/501 honestos.
+- Pendiente para piloto: ver `docs/04-HOJA-RUTA-PILOTO.md`.
+
 ---
 
 ## 📁 2. Estructura de Directorios Estandarizada (`main`)
 
 ```
 storebasc/
+├── .agents/                        # Guía del proyecto, MCP config y skills (este archivo)
 ├── .vscode/                        # Configuración de editor y MCP Server de Mercado Pago (mcp.json)
-├── docs/                           # Documentación oficial y checklists activos
+├── docs/                           # Documentación viva del proyecto (doc mantenida activamente)
+│   ├── 03-ROLES-Y-ACCESOS.md       # Modelo de roles, autenticación y permisos (español)
+│   ├── 04-HOJA-RUTA-PILOTO.md      # Hoja de ruta hacia las primeras pruebas de uso real
 │   ├── PROJECT-MANUAL-V2.md        # Manual técnico definitivo y esquema PostgreSQL
 │   ├── QA-E2E-CHECKLIST.md         # Matriz de evaluación End-to-End (PASS)
 │   ├── BUGS-FOUND.md               # Bitácora de hallazgos y correcciones
+│   ├── CHECKLIST-CLIENTE-REQUISITOS.md  # Requisitos y credenciales pendientes del cliente (Lina)
 │   └── VERCEL-VARIABLES-GUIDE.md   # Matriz limpia de variables de entorno de Vercel
-├── public/                         # Assets estáticos (logotipos, favicons)
+├── ENTREGA-CLIENTE/                # Paquete oficial de entrega al cliente (MD + PDF) — no editar aquí
+├── public/                         # Assets estáticos (logo de la marca)
 ├── src/
 │   ├── app/                        # Rutas de Next.js (App Router)
 │   │   ├── (admin)/admin/          # Panel administrativo único protegido (/admin/*)
@@ -53,17 +67,24 @@ storebasc/
 │   │   └── ui/                     # Alertas, modales, loaders
 │   ├── context/                    # CartContext global de e-commerce
 │   └── lib/                        # Lógica de negocio y repositorios de datos
+│       ├── calendar/               # Google Calendar (provider en google.ts + cliente en ../googleCalendar.ts)
 │       ├── payments/               # Capa adaptadora de pagos (mercadopago.ts, manual.ts, index.ts)
 │       ├── supabase/               # Conexión Supabase (client, server, schema.sql, migraciones y repositorios SQL)
-│       ├── auth.ts                 # Configuración de NextAuth v5 & Supabase Auth
+│       ├── auth.ts                 # Configuración de NextAuth v5 & Supabase Auth (callbacks, JWT)
+│       ├── auth.config.ts          # Opciones de NextAuth (login por correo o cédula)
+│       ├── adminAuth.ts            # requireAdminSession() para rutas API del panel
+│       ├── cronAuth.ts             # Validación de CRON_SECRET para tareas programadas
+│       ├── rateLimit.ts            # Rate limiting de endpoints sensibles (login, checkout, webhook)
 │       ├── demoMode.ts             # Helper de modo dual (Demo vs Producción Real)
 │       ├── mailer.ts               # Envío de correos Nodemailer (Recibos, Notificaciones, OTP)
-│       └── googleCalendar.ts       # Integración con Google Calendar SDK
+│       └── googleCalendar.ts       # Cliente oficial de Google Calendar SDK
 ├── .env.example                    # Plantilla oficial de variables de entorno
-├── .env.local                      # Variables locales de desarrollo/preproducción
+├── .npmrc                          # legacy-peer-deps (instalación reproducible)
+├── .gitignore                      # Incluye .env*, logs, *.tsbuildinfo, .vscode/
+├── CLAUDE.md                       # Apunta a AGENTS.md
 ├── opencode.json                   # Registro del MCP Server de Mercado Pago para opencode
-├── AGENTS.md                       # Este documento de referencia para agentes AI y desarrolladores
-├── next.config.ts                  # Configuración Next.js y redirecciones
+├── AGENTS.md                       # Bloque auto-generado por `next dev` (reglas Next.js 16) — no editar
+├── next.config.ts                  # Configuración Next.js, redirecciones y headers de seguridad (CSP)
 ├── seed-supabase.mjs               # Script de siembra inicial de la base de datos Supabase
 ├── tailwind.config.ts              # Tokens de diseño místico y paletas Ananda
 └── vercel.json                     # Configuración de despliegue Vercel y Cron
@@ -87,52 +108,30 @@ storebasc/
    - Las escrituras backend en Supabase se realizan mediante `SUPABASE_SERVICE_ROLE_KEY` exclusivamente desde el servidor (`src/lib/supabase/server.ts`).
 5. **Respetar Modo Dual de Operación**:
    - `NEXT_PUBLIC_DEMO_MODE="true"` permite probar y evaluar la aplicación en preproducción sin requerir credenciales reales en producción.
+   - **En producción la variable debe ser `"false"`** (hoy lo es). Las ramas demo-mode solo devuelven arrays vacíos — nunca datos simulados.
+6. **CRM/Dashboard sin datos simulados**:
+   - Prohibido reintroducir métricas, citas, ventas o alertas falsas en el panel. Los módulos sin datos muestran estados vacíos con texto de contexto o prefill genérico (presets de branding y defaults de formulario sí están permitidos).
+7. **Módulos sin backend integrado**:
+   - Las APIs de módulos no conectados (rifas, contenido IA) deben responder con arrays vacíos o 501/400 honestos ("integración pendiente") — nunca devolver mock data.
+8. **Next.js 16 (reglas de `node_modules/next/dist/docs/`)**:
+   - Leer la guía relevante antes de escribir código; respetar deprecaciones (pendiente: migrar `middleware.ts` → `proxy`).
 
 ---
 
 ## 🚀 4. Propuesta de Plan de Trabajo para las Fases Siguientes (J, K, L) — Hoja de Ruta Pendiente
 
 > [!IMPORTANT]
-> **ESTE PLAN ESTÁ PLANIFICADO Y LISTO PARA EJECUCIÓN FUTURA. SE LE DARÁ PRIORIDAD UNA VEZ FINALIZADA LA INTEGRACIÓN Y CERRADO EL PROTOCOLO DE MERCADO PAGO.**
+> **Estado 2026-08-12:** J3, K1, L1 y L3 están COMPLETOS. K2 y K3 fueron CANCELADOS por decisión del usuario. Pendientes: J1, J2 (parcial), J4 y L2. La ruta de avance a pruebas reales está en `docs/04-HOJA-RUTA-PILOTO.md`.
 
-```mermaid
-flowchart TD
-    subgraph FaseJ ["Fase J: Credenciales & Servicios Reales"]
-        J1["J1. SMTP Gmail App Password real de Lina"]
-        J2["J2. Google Service Account & Calendar ID real"]
-        J3["J3. Key real de Supabase Service Role en Vercel"]
-        J4["J4. Credenciales Mercado Pago Producción APP_USR-..."]
-    end
-
-    subgraph FaseK ["Fase K: UX, PWA & Automatización"]
-        K1["K1. Mensajes automáticos de WhatsApp con link dinámico"]
-        K2["K2. PWA (Service Worker & Manifest)"]
-        K3["K3. Optimizaciones de carga en celulares"]
-    end
-
-    subgraph FaseL ["Fase L: Pase a Producción"]
-        L1["L1. Auditoría final de tablas Supabase RLS"]
-        L2["L2. Conexión de dominio espiritananda.com"]
-        L3["L3. Desactivación de Demo Mode (NEXT_PUBLIC_DEMO_MODE=false)"]
-    end
-
-    FaseJ --> FaseK --> FaseL
-```
-
-### 📋 Detalle de Fases Planificadas Pendientes:
-
-#### **Fase J — Integraciones & Credenciales Reales (Lina)**
-- **J1. Configuración SMTP Real**: Reemplazar las variables `SMTP_USER` y `SMTP_PASSWORD` con las credenciales de aplicación de Gmail de Lina para enviar correos transaccionales reales.
-- **J2. Google Calendar API de Producción**: Vincular el email personal de Lina (`NEXT_PUBLIC_CALENDAR_ID`) con una Service Account de Google Cloud para el agendamiento directo en su agenda personal.
-- **J3. Supabase Service Role Key**: Configurar `SUPABASE_SERVICE_ROLE_KEY` en el panel de Vercel para conectarse al proyecto Supabase de producción real.
-- **J4. Mercado Pago Producción (`APP_USR-...`)**: Reemplazar credenciales Sandbox `TEST-...` por el Access Token y Public Key de producción real obtenidos en Mercado Pago Developers.
-
-#### **Fase K — Experiencia de Usuario, PWA & Automatizaciones**
-- **K1. Automatización WhatsApp**: Probar y refinar la redirección inteligente con mensaje prediligenciado que contenga la confirmación del pago en Mercado Pago y el resumen de la cita/pedido directamente al WhatsApp de Lina.
-- **K2. Configuración PWA**: Crear `manifest.json` y `service-worker.js` con soporte offline e instalación en pantalla de inicio para Android e iOS.
-- **K3. Rendimiento Móvil**: Optimización de imágenes en formatos WebP/AVIF y lazy loading en dispositivos móviles de gama media/baja.
-
-#### **Fase L — Pase a Producción & Lanzamiento Comercial**
-- **L1. Auditoría de Seguridad**: Verificación final de políticas de seguridad RLS en PostgreSQL Supabase (`src/lib/supabase/schema.sql`).
-- **L2. Dominio Personalizado**: Asignar y certificar SSL para `espiritananda.com` en Vercel.
-- **L3. Conmutación a Producción Real**: Cambiar `NEXT_PUBLIC_DEMO_MODE="false"` y retirar el acceso demo de la pantalla de login.
+| Fase | Tarea | Estado |
+| :--- | :--- | :--- |
+| **J1** | SMTP Gmail App Password real de Lina | ⏳ Pendiente |
+| **J2** | Google Calendar de producción: la Service Account YA funciona y el calendario está compartido (permiso edición), pero apunta al calendario de Diego → falta el de Lina | 🔶 Parcial |
+| **J3** | Key real de Supabase Service Role (proyecto remoto) | ✅ Completo |
+| **J4** | Credenciales Mercado Pago Producción `APP_USR-...` | ⏳ Pendiente |
+| **K1** | Link de WhatsApp con mensaje prediligenciado (confirmación + resumen) | ✅ Completo (validado E2E) |
+| **K2** | PWA (Service Worker & Manifest) | ❌ Cancelado (decisión del usuario) |
+| **K3** | Optimizaciones de carga en celulares | ❌ Cancelado (decisión del usuario) |
+| **L1** | Auditoría final de tablas Supabase RLS | ✅ Completo (14 policies verificadas) |
+| **L2** | Conexión de dominio espiritananda.com | ⏳ Pendiente |
+| **L3** | `NEXT_PUBLIC_DEMO_MODE="false"` y retiro de acceso demo del login | ✅ Completo |

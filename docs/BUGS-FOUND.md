@@ -1,7 +1,7 @@
 # Reporte de Hallazgos y Correcciones de QA — AnandaStore V2
-**Fecha:** 25 de Julio, 2026  
-**Proyecto:** AnandaStore V2  
-**Rama:** `redesign/ananda-v2`  
+**Última actualización:** 12 de Agosto, 2026
+**Proyecto:** AnandaStore V2
+**Rama:** `main` (única rama oficial)
 
 ---
 
@@ -61,3 +61,31 @@
 ### 13. BUG-13 — Success page sin diferenciar estado del pago
 - **Diagnóstico:** `back_urls` retornan `?status=approved|pending|failure` pero la página siempre mostraba confirmación de éxito.
 - **Solución:** Se lee `status` y se varía título, mensaje e incluso CTA de "Reintentar pago" cuando la transacción falló.
+
+---
+
+## Correcciones — Ciclo de Validación Real (12 de Agosto, 2026)
+
+| ID | Severidad | Descripción del Defecto | Archivo Afectado | Estado |
+| :---: | :---: | :--- | :--- | :---: |
+| **BUG-14** | **P1** | Las Service Accounts de Google sin Domain-Wide Delegation no pueden invitar asistentes: `createEvent`/`updateEvent` fallaban al insertar el asistente del cliente, rompiendo la confirmación de citas. | `src/lib/calendar/google.ts` | **FIXED** |
+| **BUG-15** | **P2** | Las notas del cliente se "guardaban" con un POST que solo actualizaba el estado local en memoria — no persistían en Supabase. | `src/app/(admin)/admin/clientes/page.tsx` + `src/app/api/admin/customers/route.ts` | **FIXED** |
+| **BUG-16** | **P2** | Dashboard y Reportes mostraban métricas, citas y alertas **simuladas** que inducían a error al operador (parecían datos reales). | `src/app/(admin)/admin/page.tsx`, `reportes/page.tsx` | **FIXED** |
+| **BUG-17** | **P3** | Enlace roto `/admin/ventas` (404) y perfil hardcodeado en la barra lateral del panel. | `src/components/admin/AdminSidebar.tsx` | **FIXED** |
+
+### 14. BUG-14 — Invitación de asistentes sin Domain-Wide Delegation
+- **Diagnóstico:** La API de Google Calendar devuelve error 400/403 al intentar crear eventos con `attendees` cuando la Service Account no tiene DWD habilitado. Rompía el flujo completo de confirmación (webhook MP y verificación manual).
+- **Solución:** Se agregó `isAttendeeForbiddenError()` y reintento automático del evento sin asistentes en `createEvent`/`updateEvent` (`src/lib/calendar/google.ts`).
+- **Verificado:** Evento real creado vía webhook MP con `calendar_event_id` y freebusy correctos.
+
+### 15. BUG-15 — Notas de cliente que no persistían
+- **Diagnóstico:** `handleSaveNotes` usaba `POST` contra la colección de clientes y solo mutaba el estado local.
+- **Solución:** Se agregó `PUT /api/admin/customers/:id` (update real vía repositorio) y la página ahora usa ese endpoint.
+
+### 16. BUG-16 — Datos simulados en CRM/Dashboard
+- **Diagnóstico:** El panel mostraba $2.450.000 de ingresos, 24 clientes, citas y alertas falsas, más una carga simulada de 800ms en reportes.
+- **Solución:** Rediseño del dashboard y reportes con estados vacíos y textos de contexto; eliminados los arrays MOCK de 6 rutas API admin (las ramas demo devuelven `[]`); módulos sin backend responden 501/400 honestos.
+
+### 17. BUG-17 — Sidebar con enlace roto y perfil falso
+- **Diagnóstico:** `Ventas` apuntaba a una ruta inexistente (404) y el perfil mostraba "Rol: Administrador" fijo.
+- **Solución:** Enlace eliminado y perfil ahora lee el rol y correo reales de la sesión (`useSession`).

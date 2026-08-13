@@ -36,39 +36,37 @@
 
 ```
 storebasc/
-├── docs/                           # Documentación oficial de arquitectura, QA y despliegue
-│   ├── PROJECT-MANUAL-V2.md        # Manual técnico definitivo y esquema SQL PostgreSQL
-│   ├── QA-E2E-CHECKLIST.md         # Matriz de evaluación End-to-End (PASS)
-│   ├── BUGS-FOUND.md               # Bitácora de hallazgos y correcciones
-│   └── VERCEL-VARIABLES-GUIDE.md   # Matriz limpia de variables de entorno de Vercel
-├── public/                         # Assets estáticos (imágenes, favicons)
+├── .agents/                       # Guía del proyecto, MCP config y skills
+├── docs/                          # Documentación viva (roles, hoja de ruta, manual, QA, bugs, checklists)
+├── ENTREGA-CLIENTE/               # Paquete oficial de entrega al cliente (MD + PDF)
+├── public/                        # Assets estáticos (logo de la marca)
 ├── src/
-│   ├── app/                        # Rutas de Next.js (App Router)
-│   │   ├── (admin)/admin/          # Panel administrativo protegido (/admin/*)
-│   │   ├── (public)/               # Portada pública comercial (/servicios, /tienda)
-│   │   ├── api/                    # API Routes backend (bookings, orders, availability, checkout, webhooks/mercadopago, cron)
-│   │   ├── checkout/               # Embudos de pago (3 pasos para citas, 4 pasos para tienda)
-│   │   ├── forgot-password/        # Pantalla de solicitud de recuperación de clave
-│   │   ├── login/                  # Pantalla de inicio de sesión
-│   │   ├── register/               # Pantalla de registro de nuevos administradores
-│   │   └── verify-otp/             # Pantalla de verificación de código numérico de 6 dígitos
-│   ├── components/                 # Componentes UI reutilizables
-│   │   ├── admin/                  # Sidebar, Topbar, visores zoom de recibos
-│   │   ├── public/                 # AvailabilityCalendar, CartDrawer, ProductCard, ServiceCard, PublicHeader, PublicFooter
-│   │   └── ui/                     # Alertas, modales, loaders
-│   ├── context/                    # Contextos globales (CartContext)
-│   └── lib/                        # Capa de lógica y repositorios
-│       ├── payments/               # Capa adaptadora de pagos (MercadoPagoProvider & ManualProvider)
-│       ├── supabase/               # Conexión Supabase (client, server, schema.sql y repositorios SQL)
-│       ├── auth.ts                 # Configuración de NextAuth v5 & Supabase Auth
-│       ├── demoMode.ts             # Helper de cambio dual (Modo Demo vs Producción Real)
-│       ├── mailer.ts               # Plantillas de correo SMTP y verificación OTP
-│       └── googleCalendar.ts       # Cliente oficial de Google Calendar SDK
-├── .env.example                    # Plantilla oficial de variables de entorno
-├── next.config.ts                  # Configuración de Next.js
-├── seed-supabase.mjs               # Script de siembra inicial de la base de datos Supabase
-├── tailwind.config.ts              # Tokens de diseño místico y paletas Ananda
-└── vercel.json                     # Configuración de despliegue y Vercel Cron
+│   ├── app/                       # Rutas de Next.js (App Router)
+│   │   ├── (admin)/admin/         # Panel administrativo protegido (/admin/*)
+│   │   ├── (public)/              # Portada pública comercial (/servicios, /tienda)
+│   │   ├── api/                   # API Routes backend (bookings, orders, availability, checkout, webhooks/mercadopago, cron)
+│   │   ├── checkout/              # Embudos de pago (3 pasos para citas, 4 pasos para tienda)
+│   │   ├── forgot-password/       # Recuperación de clave
+│   │   ├── login/                 # Inicio de sesión
+│   │   ├── register/              # Registro de administradores
+│   │   └── verify-otp/            # Verificación de código OTP de 6 dígitos
+│   ├── components/                # Componentes UI (admin/, public/, ui/)
+│   ├── context/                   # CartContext global de e-commerce
+│   └── lib/                       # Lógica de negocio y repositorios
+│       ├── calendar/              # Google Calendar (provider + client)
+│       ├── payments/              # Capa adaptadora de pagos (mercadopago, manual)
+│       ├── supabase/              # Conexión Supabase + repositorios SQL
+│       ├── auth.ts / auth.config.ts   # NextAuth v5 + Supabase Auth (roles en JWT)
+│       ├── adminAuth.ts           # requireAdminSession() para APIs del panel
+│       ├── cronAuth.ts            # Validación de CRON_SECRET
+│       ├── rateLimit.ts           # Rate limiting de endpoints sensibles
+│       ├── demoMode.ts            # Helper de modo dual (Demo vs Producción)
+│       └── mailer.ts              # Correos Nodemailer
+├── .env.example                   # Plantilla oficial de variables de entorno
+├── next.config.ts                 # Configuración, redirecciones y headers de seguridad (CSP)
+├── seed-supabase.mjs              # Siembra inicial de la base de datos Supabase
+├── tailwind.config.ts             # Tokens de diseño y paletas Ananda
+└── vercel.json                    # Despliegue y Vercel Cron
 ```
 
 ---
@@ -78,25 +76,36 @@ storebasc/
 Crea un archivo `.env.local` basado en `.env.example`:
 
 ```env
-# Modo de Operación (true para desarrollo/demo local)
-NEXT_PUBLIC_DEMO_MODE="true"
+# Modo de Operación (true solo para vista previa/demo; false en producción)
+NEXT_PUBLIC_DEMO_MODE="false"
 NEXT_PUBLIC_PAYMENT_PROVIDER="mercadopago"  # 'manual' | 'mercadopago'
 
 # Mercado Pago Pasarela
-MERCADOPAGO_ACCESS_TOKEN="TEST-..."
-MERCADOPAGO_PUBLIC_KEY="TEST-..."
-MERCADOPAGO_WEBHOOK_SECRET=""
+MERCADOPAGO_ACCESS_TOKEN="TEST-..."          # APP_USR-... en producción
+MERCADOPAGO_WEBHOOK_SECRET=""                # Generar en el panel de MP (producción)
 
 # URLs de Aplicación
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # Supabase (Base de Datos PostgreSQL & Autenticación)
 NEXT_PUBLIC_SUPABASE_URL="https://abcdefgh.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
+NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_..."   # Navegador (claves nuevas sb_publishable_/sb_secret_)
+SUPABASE_SERVICE_ROLE_KEY="sb_secret_..."            # SOLO servidor
 
-# Administradores Autorizados
+# NextAuth v5
+AUTH_SECRET="clave_secreta_jwt_32_caracteres"
+AUTH_TRUST_HOST="true"
+
+# Administradores Autorizados (respaldo; el rol real vive en admin_users)
 ADMIN_EMAILS="diegoillers@gmail.com"
+
+# Google Calendar (Service Account)
+NEXT_PUBLIC_CALENDAR_ID="lina@espiritananda.com"
+GOOGLE_CLIENT_EMAIL="ananda-service@tu-proyecto.iam.gserviceaccount.com"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+
+# Cron (Vercel)
+CRON_SECRET="secreto_para_invocar_cron_cleanup"
 
 # Cuentas para Transferencias Manuales
 NEXT_PUBLIC_NEQUI_NUMBER="300 123 4567"
@@ -129,3 +138,4 @@ node seed-supabase.mjs
 - **Rama única oficial:** `main`
 - **Integridad:** Todo el historial de rediseño, pruebas E2E y fixes ha sido consolidado en `main`.
 - **Despliegue Vercel:** Vinculado al proyecto `diego-illeras-projects/storebasc`.
+- **Estado 2026-08-12:** flujo de pago E2E validado en sandbox (Mercado Pago → webhook → calendario → correo), RLS auditado, login real sin demo. Ruta de avance a pruebas de uso real en `docs/04-HOJA-RUTA-PILOTO.md`.

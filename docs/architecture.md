@@ -13,7 +13,7 @@ Este documento define las especificaciones técnicas, decisiones de arquitectura
 - **Repositorios Supabase Disponibles** (en `src/lib/supabase/repositories/`): `services.ts`, `products.ts`, `bookings.ts`, `payments.ts`, `customers.ts`, `availability.ts`, `admin-users.ts`
 - **Helpers Disponibles**: `src/lib/whatsapp.ts`, `src/lib/mailer.ts`
 - **Layout Público**: `src/app/(public)/layout.tsx` con `PublicHeader` y `PublicFooter` en `src/components/public/`
-- **Modo Demo**: `src/lib/demoMode.ts` — si `isDemoMode()` retorna mock data para preproducción, en producción usa Supabase PostgreSQL real.
+- **Modo Demo**: `src/lib/demoMode.ts` — `NEXT_PUBLIC_DEMO_MODE="true"` habilita ramas demo que devuelven arrays vacíos (sin datos simulados); con `"false"` (producción) todo usa Supabase PostgreSQL real.
 
 ---
 
