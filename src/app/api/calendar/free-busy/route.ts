@@ -1,7 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
 import { isDemoMode } from '@/lib/demoMode';
+import { GoogleCalendarProvider } from '@/lib/calendar/google';
+import { serviceRepository } from '@/lib/supabase/repositories/services';
 
 export async function GET(req: NextRequest) {
     try {
@@ -18,30 +19,41 @@ export async function GET(req: NextRequest) {
         }
 
         if (isDemoMode()) {
-            return NextResponse.json({ busy: [] });
+            return NextResponse.json({ busy: [], availableSlots: ['09:00', '10:30', '14:00', '15:30', '17:00'] });
         }
 
-        const calendar = getGoogleCalendarClient();
         const calendarId = process.env.NEXT_PUBLIC_CALENDAR_ID;
 
         if (!calendarId) {
             return NextResponse.json({ error: 'Configuracion de calendario faltante.' }, { status: 500 });
         }
 
-        const timeMin = new Date(`${dateStr}T00:00:00-05:00`).toISOString();
-        const timeMax = new Date(`${dateStr}T23:59:59-05:00`).toISOString();
+        const serviceId = searchParams.get('serviceId');
+        const service = serviceId ? await serviceRepository.getById(serviceId) : null;
+        const durationMinutes = service?.duration || 60;
+        const timeMin = new Date(`${dateStr}T00:00:00-05:00`);
+        const timeMax = new Date(`${dateStr}T23:59:59-05:00`);
 
-        const response = await calendar.freebusy.query({
-            requestBody: {
-                timeMin,
-                timeMax,
-                timeZone: 'America/Bogota',
-                items: [{ id: calendarId }],
-            },
+        if (Number.isNaN(timeMin.getTime()) || Number.isNaN(timeMax.getTime())) {
+            return NextResponse.json({ error: 'Fecha inválida.' }, { status: 400 });
+        }
+
+        const availability = await new GoogleCalendarProvider().getAvailability({
+            serviceId: serviceId || '',
+            from: timeMin,
+            to: timeMax,
+            durationMinutes,
         });
+        const availableSlots = availability
+            .filter((slot) => slot.available)
+            .map((slot) => slot.start.toLocaleTimeString('es-CO', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/Bogota',
+            }));
 
-        const busySlots = response.data.calendars?.[calendarId]?.busy || [];
-        return NextResponse.json({ busy: busySlots });
+        return NextResponse.json({ busy: [], availableSlots });
     } catch (error) {
         console.error('Error fetching free-busy data:', error);
         return NextResponse.json({ error: 'Error al consultar disponibilidad del calendario.' }, { status: 500 });

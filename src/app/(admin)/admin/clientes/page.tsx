@@ -17,14 +17,41 @@ import {
 } from 'lucide-react';
 import LoadingState from '@/components/ui/LoadingState';
 import FeedbackAlert from '@/components/ui/FeedbackAlert';
+import { getCustomerWhatsAppLink } from '@/lib/whatsapp';
 
 interface Customer {
   id?: string;
   name: string;
   email: string | null;
   phone: string;
+  cedula?: string | null;
+  birthDate?: string | null;
+  source?: string | null;
+  isVerified?: boolean;
   notes: string | null;
   createdAt: string;
+}
+
+interface CustomerDetail {
+  bookings: Array<{
+    id?: string;
+    serviceName: string;
+    scheduledAt: string;
+    status: string;
+  }>;
+  orders: Array<{
+    id?: string;
+    total: number;
+    status: string;
+    createdAt: string;
+  }>;
+  payments: Array<{
+    id?: string;
+    amount: number;
+    method: string;
+    status: string;
+    createdAt: string;
+  }>;
 }
 
 export default function CustomersPage() {
@@ -36,6 +63,8 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isEditNotesMode, setIsEditNotesMode] = useState<boolean>(false);
   const [editedNotes, setEditedNotes] = useState<string>('');
+  const [customerDetail, setCustomerDetail] = useState<CustomerDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   
   // Create Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -123,6 +152,25 @@ export default function CustomersPage() {
     }
   };
 
+  const handleSelectCustomer = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setEditedNotes(customer.notes || '');
+    setIsEditNotesMode(false);
+    setCustomerDetail(null);
+    setDetailLoading(true);
+
+    try {
+      const res = await fetch(`/api/admin/customers/${customer.id}`);
+      const data = await res.json();
+      if (res.ok) setCustomerDetail(data);
+      else showNotice('error', 'Error al cargar ficha', data.error);
+    } catch {
+      showNotice('error', 'Error del sistema', 'No se pudo cargar el historial del cliente.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto relative min-h-[calc(100vh-120px)] flex flex-col">
       {/* Header */}
@@ -181,9 +229,7 @@ export default function CustomersPage() {
                   <div
                     key={customer.id}
                     onClick={() => {
-                      setSelectedCustomer(customer);
-                      setEditedNotes(customer.notes || '');
-                      setIsEditNotesMode(false);
+                       void handleSelectCustomer(customer);
                     }}
                     className={`p-5 flex items-center justify-between cursor-pointer transition-all ${
                       selectedCustomer?.id === customer.id
@@ -203,7 +249,7 @@ export default function CustomersPage() {
 
                     <div className="flex items-center gap-4">
                       <a
-                        href={`https://wa.me/${customer.phone}`}
+                         href={getCustomerWhatsAppLink(customer.phone, `Hola ${customer.name}, te escribo de Espíritu Ananda. ¿Cómo estás? 🌟`)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()} // Evitar abrir el panel de detalles
@@ -237,7 +283,7 @@ export default function CustomersPage() {
               </div>
 
               {/* Quick Contacts */}
-              <div className="space-y-3 bg-[#FAF8FF] p-4 rounded-2xl border border-gray-100/30">
+               <div className="space-y-3 bg-[#FAF8FF] p-4 rounded-2xl border border-gray-100/30">
                 <div className="flex items-center gap-2.5 text-xs text-gray-600">
                   <MessageSquare className="w-4 h-4 text-violet-500" />
                   <span className="font-semibold">{selectedCustomer.phone}</span>
@@ -248,7 +294,78 @@ export default function CustomersPage() {
                     <span className="truncate">{selectedCustomer.email}</span>
                   </div>
                 )}
+                {selectedCustomer.cedula && (
+                  <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                    <User className="w-4 h-4 text-violet-500" />
+                    <span>Cédula: <span className="font-semibold">{selectedCustomer.cedula}</span></span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                  <span className="w-4 h-4 rounded-full bg-violet-100 text-violet-600 text-[9px] flex items-center justify-center font-bold">i</span>
+                  <span>Origen: <span className="font-semibold">{selectedCustomer.source || 'No registrado'}</span></span>
+                </div>
+                {selectedCustomer.birthDate && (
+                  <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                    <Calendar className="w-4 h-4 text-violet-500" />
+                    <span>Fecha de nacimiento: <span className="font-semibold">{selectedCustomer.birthDate}</span></span>
+                  </div>
+                )}
               </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-2xl bg-violet-50 p-3 text-center">
+                  <p className="text-lg font-bold text-violet-700">{customerDetail?.bookings.length ?? '-'}</p>
+                  <p className="text-[10px] text-violet-600">Reservas</p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-3 text-center">
+                  <p className="text-lg font-bold text-amber-700">{customerDetail?.orders.length ?? '-'}</p>
+                  <p className="text-[10px] text-amber-600">Pedidos</p>
+                </div>
+                <div className="rounded-2xl bg-emerald-50 p-3 text-center">
+                  <p className="text-lg font-bold text-emerald-700">{customerDetail?.payments.length ?? '-'}</p>
+                  <p className="text-[10px] text-emerald-600">Pagos</p>
+                </div>
+              </div>
+
+              {detailLoading ? (
+                <p className="text-xs text-gray-400">Cargando historial...</p>
+              ) : customerDetail && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Historial operativo</h3>
+                  <div className="space-y-2">
+                    {customerDetail.bookings.map((booking) => (
+                      <div key={booking.id} className="rounded-xl bg-violet-50/60 p-3 text-xs">
+                        <div className="flex justify-between gap-2 font-semibold text-gray-800">
+                          <span>{booking.serviceName}</span>
+                          <span className="text-violet-600">{booking.status}</span>
+                        </div>
+                        <p className="text-gray-500 mt-1">{new Date(booking.scheduledAt).toLocaleString('es-CO')}</p>
+                      </div>
+                    ))}
+                    {customerDetail.orders.map((order) => (
+                      <div key={order.id} className="rounded-xl bg-amber-50/60 p-3 text-xs">
+                        <div className="flex justify-between gap-2 font-semibold text-gray-800">
+                          <span>Pedido #{order.id?.slice(-6).toUpperCase()}</span>
+                          <span>${order.total.toLocaleString('es-CO')}</span>
+                        </div>
+                        <p className="text-gray-500 mt-1">{order.status} · {new Date(order.createdAt).toLocaleDateString('es-CO')}</p>
+                      </div>
+                    ))}
+                    {customerDetail.payments.map((payment) => (
+                      <div key={payment.id} className="rounded-xl bg-emerald-50/60 p-3 text-xs">
+                        <div className="flex justify-between gap-2 font-semibold text-gray-800">
+                          <span>Pago {payment.method}</span>
+                          <span>${payment.amount.toLocaleString('es-CO')}</span>
+                        </div>
+                        <p className="text-gray-500 mt-1">{payment.status} · {new Date(payment.createdAt).toLocaleDateString('es-CO')}</p>
+                      </div>
+                    ))}
+                    {customerDetail.bookings.length === 0 && customerDetail.orders.length === 0 && customerDetail.payments.length === 0 && (
+                      <p className="text-xs text-gray-400">Todavía no hay movimientos asociados.</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Consultation Notes / Astral Bio */}
               <div className="space-y-3">

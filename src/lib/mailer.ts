@@ -64,7 +64,7 @@ function getPendingCopy(saleType: SaleType, itemName: string) {
     return {
         subject: `Reserva pendiente de pago - ${itemName}`,
         body: `Gracias por reservar con nuestra tienda tu sesion de ${itemName}.`,
-        followUp: 'Si ya realizaste el pago, usa el boton de confirmacion en pantalla y adjunta el comprobante.',
+        followUp: 'Recibimos tu comprobante y Lina lo validará manualmente antes de confirmar la sesión.',
     };
 }
 
@@ -90,7 +90,7 @@ function getApprovedCopy(saleType: SaleType, itemName: string, meetingLink = '')
         body: `Hemos verificado tu pago. Tu sesion de ${itemName} ya fue confirmada.`,
         extra: meetingLink
             ? `<p>Aqui tienes el enlace para conectarnos ese dia:<br/><br/><a href="${escapeHtml(meetingLink)}" style="background-color: #D5BDA9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Unirse a la sesion</a></p>`
-            : '<p>Recibiras por correo los detalles finales de la atencion.</p>',
+            : '<p>Coordinaremos los detalles y la entrega de tu lectura directamente por WhatsApp.</p>',
     };
 }
 

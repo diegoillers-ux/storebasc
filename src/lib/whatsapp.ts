@@ -1,4 +1,9 @@
-import { buildWhatsAppLink, buildBookingConfirmationMessage } from '@/types/whatsapp'
+import {
+  buildWhatsAppLink,
+  buildBookingConfirmationMessage,
+  buildBookingReminderMessage,
+  buildReadingDeliveryMessage,
+} from '@/types/whatsapp'
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ''
 
@@ -28,4 +33,31 @@ export function getServiceInquiryLink(serviceName: string): string {
     phone: WHATSAPP_NUMBER,
     message: `¡Hola! Me interesa el servicio de *${serviceName}*. ¿Podrías darme más información? 🙏`,
   })
+}
+
+export function getCustomerWhatsAppLink(phone: string, message: string): string {
+  return buildWhatsAppLink({ phone, message })
+}
+
+export function getBookingConfirmationCustomerLink(params: {
+  phone: string
+  customerName: string
+  serviceName: string
+  scheduledAt: Date
+  bookingId: string
+}): string {
+  return getCustomerWhatsAppLink(params.phone, buildBookingConfirmationMessage(params))
+}
+
+export function getBookingReminderLink(params: {
+  phone: string
+  customerName: string
+  serviceName: string
+  scheduledAt: Date
+}): string {
+  return getCustomerWhatsAppLink(params.phone, buildBookingReminderMessage(params))
+}
+
+export function getReadingDeliveryLink(phone: string, customerName: string, serviceName: string): string {
+  return getCustomerWhatsAppLink(phone, buildReadingDeliveryMessage(customerName, serviceName))
 }

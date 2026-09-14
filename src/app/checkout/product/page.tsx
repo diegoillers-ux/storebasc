@@ -45,10 +45,11 @@ export default function ProductCheckoutWizard() {
     notes: '',
   })
   const [file, setFile] = useState<File | null>(null)
-  const [fileBase64, setFileBase64] = useState<string>('')
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [orderResult, setOrderResult] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
+  const [paymentMode, setPaymentMode] = useState<'gateway' | 'manual'>('gateway')
+  const [paymentMethod, setPaymentMethod] = useState<'NEQUI' | 'DAVIPLATA' | 'TRANSFER'>('NEQUI')
 
   const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
 
@@ -168,11 +169,6 @@ export default function ProductCheckoutWizard() {
     if (!selected) return
     setFile(selected)
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFileBase64(reader.result as string)
-    }
-    reader.readAsDataURL(selected)
   }
 
   // Enviar pedido al servidor en Paso 3
@@ -186,15 +182,19 @@ export default function ProductCheckoutWizard() {
     try {
       const res = await fetch('/api/orders/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          shippingData,
-          subtotal,
-          shippingCost,
-          total: grandTotal,
-          paymentProof: fileBase64 || null,
-        }),
+        body: (() => {
+          const formData = new FormData()
+          formData.append('payload', JSON.stringify({
+            items,
+            shippingData,
+            subtotal,
+            shippingCost,
+            total: grandTotal,
+            paymentMethod,
+          }))
+          if (file) formData.append('proof', file)
+          return formData
+        })(),
       })
 
       const data = await res.json()
@@ -575,7 +575,26 @@ export default function ProductCheckoutWizard() {
               </div>
             )}
 
-            {isGatewayMode ? (
+            {isGatewayMode && (
+              <div className="flex gap-2 p-1 rounded-2xl bg-ananda-100/60 mb-5">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('gateway')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'gateway' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+                >
+                  Mercado Pago
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('manual')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'manual' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+                >
+                  Transferencia manual
+                </button>
+              </div>
+            )}
+
+            {paymentMode === 'gateway' && isGatewayMode ? (
               <div className="text-center space-y-4">
                 <p className="text-xs text-gray-600">
                   Serás redirigido a la pasarela segura de Mercado Pago para efectuar tu pago en línea (Tarjetas, Nequi, PSE, Efecty).
@@ -608,7 +627,23 @@ export default function ProductCheckoutWizard() {
                       <span className="font-bold block text-amber-900 mb-1">💛 Bancolombia</span>
                       <span className="font-mono text-gray-700">{bancolombiaAccount}</span>
                     </div>
-                  </div>
+                 </div>
+               </div>
+
+                <div>
+                  <label htmlFor="product-payment-method" className="block text-xs font-bold text-ananda-900 uppercase mb-2">
+                    Medio utilizado
+                  </label>
+                  <select
+                    id="product-payment-method"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white border border-ananda-400/30 text-xs text-gray-700"
+                  >
+                    <option value="NEQUI">Nequi</option>
+                    <option value="DAVIPLATA">Daviplata</option>
+                    <option value="TRANSFER">Bancolombia</option>
+                  </select>
                 </div>
 
                 <div>

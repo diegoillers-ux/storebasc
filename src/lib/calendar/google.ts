@@ -1,5 +1,6 @@
 import { getGoogleCalendarClient } from '../googleCalendar';
 import { availabilityRepository } from '@/lib/supabase/repositories/availability';
+import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 import type { CalendarProvider, AvailabilityInput, TimeSlot, CreateCalendarEventInput, UpdateCalendarEventInput } from './index';
 
 export class GoogleCalendarProvider implements CalendarProvider {
@@ -12,6 +13,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       // 1. Obtener configuraciones de horario laboral de Supabase
       const weeklyAvails = await availabilityRepository.listWeekly();
       const blockedSlots = await availabilityRepository.listBlocked(from, to);
+      const activeBookings = await bookingRepository.listActiveByDateRange(from, to);
 
       // 2. Consultar slots ocupados (Freebusy) desde Google Calendar
       const calendar = getGoogleCalendarClient();
@@ -69,11 +71,19 @@ export class GoogleCalendarProvider implements CalendarProvider {
               return sStart < busyEnd && sEnd > busyStart;
             });
 
+            const isBookingBusy = activeBookings.some((booking) => {
+              const bookingStart = booking.scheduledAt.getTime();
+              const bookingEnd = bookingStart + booking.durationMinutes * 60_000;
+              const sStart = slotStart.getTime();
+              const sEnd = slotEnd.getTime();
+              return sStart < bookingEnd && sEnd > bookingStart;
+            });
+
             // Si está libre en ambas fuentes, se marca disponible
             slots.push({
               start: new Date(slotStart),
               end: new Date(slotEnd),
-              available: !isBlocked && !isGoogleBusy,
+              available: !isBlocked && !isGoogleBusy && !isBookingBusy,
             });
 
             // Avanzar al siguiente slot

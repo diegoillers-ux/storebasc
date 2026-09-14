@@ -6,6 +6,7 @@ import { customerRepository } from '@/lib/supabase/repositories/customers';
 import { serviceRepository } from '@/lib/supabase/repositories/services';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
 import { sendApprovedSaleEmail } from '@/lib/mailer';
+import { getBookingConfirmationCustomerLink, getBookingReminderLink } from '@/lib/whatsapp';
 
 const calendarProvider = new GoogleCalendarProvider();
 
@@ -64,8 +65,13 @@ export async function PUT(
         updateData.calendarEventId = calendarEvent.eventId;
         
         // Enlace dinámico de WhatsApp para chatear con el cliente
-        const messageText = `Hola ${customer.name}, tu sesión de "${service.name}" ha sido confirmada para el día ${startAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Bogota' })}. Nos encontraremos por aquí. ¡Bendiciones!`;
-        updateData.whatsappLink = `https://wa.me/${customer.phone}?text=${encodeURIComponent(messageText)}`;
+         updateData.whatsappLink = getBookingConfirmationCustomerLink({
+           phone: customer.phone,
+           customerName: customer.name,
+           serviceName: service.name,
+           scheduledAt: startAt,
+           bookingId: id,
+         });
 
         // Enviar email de confirmación
         if (customer.email) {
@@ -94,8 +100,12 @@ export async function PUT(
         });
 
         // Actualizar enlace de WhatsApp con la nueva fecha
-        const messageText = `Hola ${customer.name}, tu sesión de "${service.name}" ha sido reprogramada para el día ${startAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Bogota' })}. ¡Bendiciones!`;
-        updateData.whatsappLink = `https://wa.me/${customer.phone}?text=${encodeURIComponent(messageText)}`;
+         updateData.whatsappLink = getBookingReminderLink({
+           phone: customer.phone,
+           customerName: customer.name,
+           serviceName: service.name,
+           scheduledAt: startAt,
+         });
       } catch (calError) {
         console.error('Error rescheduling Google Calendar event:', calError);
       }

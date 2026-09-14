@@ -16,8 +16,6 @@ interface AvailableDay {
   isAvailable: boolean
 }
 
-const DEFAULT_TIME_SLOTS = ['09:00', '10:30', '14:00', '15:30', '17:00']
-
 export default function AvailabilityCalendar({
   serviceId,
   serviceName,
@@ -26,7 +24,7 @@ export default function AvailabilityCalendar({
   const [days, setDays] = useState<AvailableDay[]>([])
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
-  const [availableSlots, setAvailableSlots] = useState<string[]>(DEFAULT_TIME_SLOTS)
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   // Generar días disponibles para los próximos 14 días (excluyendo domingos)
@@ -74,22 +72,16 @@ export default function AvailabilityCalendar({
         const res = await fetch(`/api/calendar/free-busy?date=${selectedDate}&serviceId=${serviceId}`)
         if (res.ok) {
           const data = await res.json()
-          if (data.busy && Array.isArray(data.busy)) {
-            // Filtrar horas ocupadas
-            const busyTimes = data.busy.map((b: { start: string }) => {
-              const d = new Date(b.start)
-              return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-            })
-            const free = DEFAULT_TIME_SLOTS.filter((t) => !busyTimes.includes(t))
-            setAvailableSlots(free.length > 0 ? free : DEFAULT_TIME_SLOTS)
+          if (Array.isArray(data.availableSlots)) {
+            setAvailableSlots(Array.isArray(data.availableSlots) ? data.availableSlots : [])
           } else {
-            setAvailableSlots(DEFAULT_TIME_SLOTS)
+            setAvailableSlots([])
           }
         } else {
-          setAvailableSlots(DEFAULT_TIME_SLOTS)
+          setAvailableSlots([])
         }
       } catch {
-        setAvailableSlots(DEFAULT_TIME_SLOTS)
+        setAvailableSlots([])
       } finally {
         setLoading(false)
       }

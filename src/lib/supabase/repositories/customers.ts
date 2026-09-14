@@ -11,6 +11,7 @@ export interface Customer {
   phone: string;
   email: string | null;
   cedula?: string | null;
+  birthDate?: string | null;
   notes?: string | null;
   source?: string | null;
   otpCode?: string | null;
@@ -28,6 +29,7 @@ function mapCustomerFromDb(row: any): Customer {
     phone: row.phone || '',
     email: row.email || null,
     cedula: row.cedula || null,
+    birthDate: row.birth_date || null,
     notes: row.notes || null,
     source: row.source || null,
     otpCode: row.otp_code || null,
@@ -88,6 +90,7 @@ export const customerRepository = {
       phone: customer.phone,
       email: customer.email ? customer.email.trim().toLowerCase() : null,
       cedula: customer.cedula ? customer.cedula.trim() : null,
+      birth_date: customer.birthDate || null,
       notes: customer.notes,
       source: customer.source,
       otp_code: customer.otpCode || null,
@@ -119,6 +122,7 @@ export const customerRepository = {
     if (data.phone !== undefined) payload.phone = data.phone;
     if (data.email !== undefined) payload.email = data.email ? data.email.trim().toLowerCase() : null;
     if (data.cedula !== undefined) payload.cedula = data.cedula ? data.cedula.trim() : null;
+    if (data.birthDate !== undefined) payload.birth_date = data.birthDate || null;
     if (data.notes !== undefined) payload.notes = data.notes;
     if (data.source !== undefined) payload.source = data.source;
     if (data.otpCode !== undefined) payload.otp_code = data.otpCode;

@@ -80,7 +80,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, name, email, phone, notes } = body;
+    const { id, name, email, phone, notes, cedula, birthDate, source } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de cliente requerido.' }, { status: 400 });
@@ -97,6 +97,9 @@ export async function PUT(req: NextRequest) {
       updates.phone = cleanPhone;
     }
     if (notes !== undefined) updates.notes = notes;
+    if (cedula !== undefined) updates.cedula = cedula;
+    if (birthDate !== undefined) updates.birthDate = birthDate;
+    if (source !== undefined) updates.source = source;
 
     const existing = await customerRepository.getById(id);
     if (!existing) {

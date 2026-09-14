@@ -19,12 +19,13 @@ export default function CheckoutPayPage() {
 
   const [checkoutData, setCheckoutData] = useState<any>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [fileBase64, setFileBase64] = useState<string>('')
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [successBooking, setSuccessBooking] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
+  const [paymentMode, setPaymentMode] = useState<'gateway' | 'manual'>('gateway')
+  const [paymentMethod, setPaymentMethod] = useState<'NEQUI' | 'DAVIPLATA' | 'TRANSFER'>('NEQUI')
 
-  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
+  const hasGateway = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
 
   const nequiNumber = process.env.NEXT_PUBLIC_NEQUI_NUMBER || '300 123 4567'
   const daviplataNumber = process.env.NEXT_PUBLIC_DAVIPLATA_NUMBER || '300 123 4567'
@@ -53,7 +54,6 @@ export default function CheckoutPayPage() {
           },
           date: checkoutData.date,
           time: checkoutData.time,
-          paymentProof: null,
         }),
       })
 
@@ -123,11 +123,6 @@ export default function CheckoutPayPage() {
     if (!selectedFile) return
     setFile(selectedFile)
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFileBase64(reader.result as string)
-    }
-    reader.readAsDataURL(selectedFile)
   }
 
   const handleSubmitManualPayment = async (e: React.FormEvent) => {
@@ -144,20 +139,25 @@ export default function CheckoutPayPage() {
       const res = await fetch('/api/bookings/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceId: checkoutData.serviceId || serviceId,
-          customerData: {
-            name: checkoutData.name,
-            email: checkoutData.email,
-            whatsapp: checkoutData.whatsapp,
-            birthdate: checkoutData.birthdate,
-            context: checkoutData.context,
-          },
-          date: checkoutData.date,
-          time: checkoutData.time,
-          paymentProof: fileBase64 || null,
-        }),
-      })
+           body: (() => {
+             const formData = new FormData()
+             formData.append('payload', JSON.stringify({
+               serviceId: checkoutData.serviceId || serviceId,
+               customerData: {
+                 name: checkoutData.name,
+                 email: checkoutData.email,
+                 whatsapp: checkoutData.whatsapp,
+                 birthdate: checkoutData.birthdate,
+                 context: checkoutData.context,
+               },
+               date: checkoutData.date,
+               time: checkoutData.time,
+               paymentMethod,
+             }))
+             if (file) formData.append('proof', file)
+             return formData
+           })(),
+         })
 
       const data = await res.json()
 
@@ -286,7 +286,26 @@ export default function CheckoutPayPage() {
           )}
 
           {/* BIFURCACIÓN DE PAGO */}
-          {isGatewayMode ? (
+          {hasGateway && (
+            <div className="flex gap-2 p-1 rounded-2xl bg-ananda-100/60 mb-5">
+              <button
+                type="button"
+                onClick={() => setPaymentMode('gateway')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'gateway' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+              >
+                Mercado Pago
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMode('manual')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'manual' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+              >
+                Transferencia manual
+              </button>
+            </div>
+          )}
+
+          {paymentMode === 'gateway' && hasGateway ? (
             <div className="text-center space-y-4">
               <p className="text-xs text-gray-600">
                 Serás redirigido a la pasarela segura de Mercado Pago para realizar tu pago en línea (Tarjetas, Nequi, PSE, Efecty).
@@ -303,7 +322,7 @@ export default function CheckoutPayPage() {
           ) : (
             <form onSubmit={handleSubmitManualPayment} className="space-y-6">
               {/* Cuentas Bancarias */}
-              <div>
+               <div>
                 <label className="block text-xs font-bold text-ananda-900 uppercase mb-3">
                   1. Realiza la transferencia a una de nuestras cuentas
                 </label>
@@ -320,10 +339,26 @@ export default function CheckoutPayPage() {
                     <span className="font-bold block text-amber-900 mb-1">💛 Bancolombia</span>
                     <span className="font-mono text-gray-700">{bancolombiaAccount}</span>
                   </div>
-                </div>
-              </div>
+                 </div>
+               </div>
 
-              {/* Subir comprobante */}
+               <div>
+                 <label htmlFor="payment-method" className="block text-xs font-bold text-ananda-900 uppercase mb-2">
+                   Medio utilizado
+                 </label>
+                 <select
+                   id="payment-method"
+                   value={paymentMethod}
+                   onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                   className="w-full px-4 py-3 rounded-2xl bg-white border border-ananda-400/30 text-xs text-gray-700"
+                 >
+                   <option value="NEQUI">Nequi</option>
+                   <option value="DAVIPLATA">Daviplata</option>
+                   <option value="TRANSFER">Bancolombia</option>
+                 </select>
+               </div>
+
+               {/* Subir comprobante */}
               <div>
                 <label htmlFor="voucher" className="block text-xs font-bold text-ananda-900 uppercase mb-2">
                   2. Adjunta tu comprobante de pago (Imagen o PDF) *

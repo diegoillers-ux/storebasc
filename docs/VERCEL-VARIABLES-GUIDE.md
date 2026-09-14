@@ -61,6 +61,11 @@ Este documento detalla todas las variables de entorno utilizadas en **AnandaStor
 - **¿De dónde se saca?:** **Project Settings → API → Project API Keys** → `service_role` `secret`.
 - ⚠️ **Requisito de seguridad:** la clave configurada DEBE ser una `sb_secret_...`. No usar la publishable en esta variable (dejaría expuestas las políticas RLS de escritura).
 
+### `BLOB_READ_WRITE_TOKEN`
+- **¿Qué hace?:** Permite guardar los comprobantes de pago en Vercel Blob desde el servidor.
+- **¿De dónde se saca?:** Vercel Dashboard → proyecto `storebasc` → **Storage → Blob** → crear o conectar un Blob Store y copiar el token de lectura/escritura.
+- ⚠️ **Requisito de seguridad:** solo debe configurarse como variable server-side; nunca usar el prefijo `NEXT_PUBLIC_`.
+
 ---
 
 ## 🔐 4. Autenticación (NextAuth v5 — Email & Contraseña)

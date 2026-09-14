@@ -162,6 +162,26 @@ export const bookingRepository = {
     return data.map(mapBookingFromDb);
   },
 
+  async listActiveByDateRange(start: Date, end: Date): Promise<Booking[]> {
+    const bookings = await this.listByDateRange(start, end);
+    const activeStatuses: BookingStatus[] = [
+      'DRAFT',
+      'PENDING_PAYMENT',
+      'PAYMENT_SUBMITTED',
+      'CONFIRMED',
+      'RESCHEDULED',
+    ];
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+
+    return bookings.filter((booking) => {
+      if (!activeStatuses.includes(booking.status)) return false;
+      const bookingStart = booking.scheduledAt.getTime();
+      const bookingEnd = bookingStart + booking.durationMinutes * 60_000;
+      return bookingStart < endTime && bookingEnd > startTime;
+    });
+  },
+
   async addEvent(bookingId: string, event: Omit<BookingEvent, 'id' | 'bookingId' | 'createdAt'>): Promise<BookingEvent> {
     // Almacenar eventos en ai_assets o metadata por simplicidad si no hay tabla booking_events
     return {
