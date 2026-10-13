@@ -22,7 +22,7 @@ La consolidación no completa el piloto ni configura servicios remotos. CI se a�
 
 ## Bloqueos
 
-74 errores de ESLint heredados; Chromium no descargable localmente; dominio público devuelve 404; no hay credenciales autorizadas de integración en el entorno.
+74 errores de ESLint heredados; dominio público devuelve 404; no hay credenciales autorizadas de integración en el entorno. La descarga Chromium falló localmente, pero las cuatro pruebas de navegador pasaron en GitHub Actions (ver evidencia).
 
 ## Relevo
 

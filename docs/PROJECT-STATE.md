@@ -32,13 +32,13 @@ Las ramas originales se conservan; main no cambia hasta integrar la PR. No se bo
 
 ## Lo comprobado
 
-Instalación, tipos, compilación, tres regresiones y cuatro rutas por HTTP local. **ESLint falla** con 74 errores y 73 advertencias. **Navegador pendiente** por descarga fallida. Ver comandos, resultados e inventario en [verification/2026-10-13.md](verification/2026-10-13.md).
+Instalación, tipos, compilación, tres regresiones y cuatro rutas por HTTP local. **ESLint falla** con 74 errores y 73 advertencias. **Cuatro pruebas Chromium PASS en GitHub Actions**; la descarga fallida fue solo local. Ver comandos, resultados e inventario en [verification/2026-10-13.md](verification/2026-10-13.md).
 
 El dominio conocido responde **404 DEPLOYMENT_NOT_FOUND**. No se inspeccionaron equipos/proyectos en Vercel ni el estado remoto de Supabase; no inferir su disponibilidad desde documentación o correos anteriores.
 
 ## Bloqueos y deuda prioritaria
 
-1. Recuperar despliegue de pruebas y ejecutar smoke en navegador. La issue #1 continúa válida para despliegue; sus falsos positivos fueron abordados en código, con navegador pendiente.
+1. Recuperar despliegue de pruebas y ejecutar smoke contra ese dominio. La issue #1 continúa válida para despliegue; los falsos positivos fueron abordados en código y el smoke local de producción pasa con Chromium en GitHub Actions.
 2. Resolver lint sin silenciar reglas; controles CI deben mostrar estos fallos.
 3. Disponibilidad: horas y bloqueos no persistidos, consulta que omite solapes iniciados antes, reserva no atómica, dependencia de huso del proceso y errores del proveedor.
 4. Catálogos con fallback de ejemplos incluso fuera de demo; evitar presentarlos como datos reales y revisar prerenderizado/caché de catálogo.
