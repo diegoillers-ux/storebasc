@@ -1,32 +1,32 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { assertHealthyDocument } from './health';
 
-/**
- * Smoke test: rutas públicas críticas de storebasc.
- * Solo lectura/verificación de render — no crea datos.
- */
+async function navigate(page: Page, path: string) {
+  const response = await page.goto(path);
+  expect(response, `Sin respuesta para ${path}`).not.toBeNull();
+  assertHealthyDocument(response!.status(), await response!.text());
+}
 
-test('Portada carga y muestra el header de marca', async ({ page }) => {
-  await page.goto('/');
-  await expect(page).toHaveTitle(/\S/);
-  // Header visible (logo o navegación principal)
+test('Portada muestra la navegación de Ananda', async ({ page }) => {
+  await navigate(page, '/');
+  await expect(page).toHaveTitle(/Espíritu Ananda/);
   await expect(page.locator('header').first()).toBeVisible();
+  await expect(page.locator('header').first().getByRole('link', { name: /Tienda/i })).toBeVisible();
 });
 
-test('Tienda lista productos', async ({ page }) => {
-  await page.goto('/tienda');
-  // Espera a que haya contenido de productos (cards)
-  const cards = page.locator('main a[href*="/tienda/"], main article, main [class*="product"]').first();
-  await expect(cards).toBeVisible({ timeout: 15_000 });
+test('Tienda muestra su catálogo o estado vacío', async ({ page }) => {
+  await navigate(page, '/tienda');
+  await expect(page.getByRole('heading', { name: 'Objetos con Alma & Propósito' })).toBeVisible();
 });
 
-test('Servicios disponibles se renderizan', async ({ page }) => {
-  await page.goto('/servicios');
-  await expect(page.locator('main')).toBeVisible();
-  const content = await page.locator('main').innerText();
-  expect(content.trim().length).toBeGreaterThan(0);
+test('Servicios muestra su catálogo o estado vacío', async ({ page }) => {
+  await navigate(page, '/servicios');
+  await expect(page.getByRole('heading', { name: 'Sesiones & Lecturas Astrales' })).toBeVisible();
 });
 
-test('Página de login accesible', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.locator('main, form').first()).toBeVisible();
+test('Login muestra campos y botón de acceso reales', async ({ page }) => {
+  await navigate(page, '/login');
+  await expect(page.locator('form input[name="email"]')).toBeVisible();
+  await expect(page.locator('form input[name="password"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Iniciar Sesión/ })).toBeVisible();
 });

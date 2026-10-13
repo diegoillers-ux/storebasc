@@ -48,3 +48,10 @@ coverage/
 .turbo
 .env*
 *.tsbuildinfo
+
+# Plantilla pública y artefactos locales
+!.env.example
+test-results/
+playwright-report/
+blob-report/
+supabase/.temp/

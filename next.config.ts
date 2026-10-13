@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next'
 
-const nextConfig: any = {
+const nextConfig: NextConfig = {
   // Redirecciones de compatibilidad para enlaces legados
   async redirects() {
     return [
@@ -70,10 +70,6 @@ const nextConfig: any = {
     ]
   },
 
-  // Ignorar errores de TypeScript en build de Preview (no en producción)
-  typescript: {
-    ignoreBuildErrors: process.env.VERCEL_ENV === 'preview',
-  },
 }
 
 export default nextConfig
