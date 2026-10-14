@@ -1,9 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getGeneralContactLink } from '@/lib/whatsapp'
+import { createManualBookingRequest } from '@/lib/checkout/manual-booking-request'
+
+interface CheckoutData {
+  serviceId?: string
+  name?: string
+  email?: string
+  whatsapp?: string
+  phone?: string
+  birthdate?: string
+  birthDate?: string
+  context?: string
+  notes?: string
+  date?: string
+  time?: string
+  servicePrice?: number
+  serviceName?: string
+}
+
+interface SuccessBooking {
+  bookingId?: string
+}
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -15,12 +36,13 @@ function formatCOP(amount: number): string {
 
 export default function CheckoutPayPage() {
   const params = useParams()
+  const router = useRouter()
   const serviceId = params?.serviceId as string
 
-  const [checkoutData, setCheckoutData] = useState<any>(null)
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState<boolean>(false)
-  const [successBooking, setSuccessBooking] = useState<any>(null)
+  const [successBooking, setSuccessBooking] = useState<SuccessBooking | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [paymentMode, setPaymentMode] = useState<'gateway' | 'manual'>('gateway')
   const [paymentMethod, setPaymentMethod] = useState<'NEQUI' | 'DAVIPLATA' | 'TRANSFER'>('NEQUI')
@@ -84,14 +106,15 @@ export default function CheckoutPayPage() {
       }
 
       window.location.href = dataPref.initPoint
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error procesando pago con Mercado Pago:', err)
-      setErrorMsg(err.message || 'Error al conectar con la pasarela de pago.')
+      setErrorMsg(err instanceof Error ? err.message : 'Error al conectar con la pasarela de pago.')
       setSubmitting(false)
     }
   }
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search)
       const statusParam = urlParams.get('status')
@@ -106,17 +129,19 @@ export default function CheckoutPayPage() {
         const serviceQuery = parsedData?.serviceName ? `&service=${encodeURIComponent(parsedData.serviceName)}` : ''
         const dateQuery = parsedData?.date ? `&date=${encodeURIComponent(parsedData.date)}` : ''
         const timeQuery = parsedData?.time ? `&time=${encodeURIComponent(parsedData.time)}` : ''
-        window.location.href = `/checkout/success?type=booking&id=${refParam}&status=${statusParam}${nameQuery}${serviceQuery}${dateQuery}${timeQuery}`
+        router.push(`/checkout/success?type=booking&id=${refParam}&status=${statusParam}${nameQuery}${serviceQuery}${dateQuery}${timeQuery}`)
         return
       }
 
       if (parsedData) {
-        setCheckoutData(parsedData)
+        setCheckoutData(parsedData as CheckoutData)
       }
     } catch (e) {
       console.error('Error reading checkout data:', e)
     }
-  }, [])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [router])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -137,11 +162,7 @@ export default function CheckoutPayPage() {
 
     try {
       const res = await fetch('/api/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-           body: (() => {
-             const formData = new FormData()
-             formData.append('payload', JSON.stringify({
+        ...createManualBookingRequest({
                serviceId: checkoutData.serviceId || serviceId,
                customerData: {
                  name: checkoutData.name,
@@ -153,11 +174,8 @@ export default function CheckoutPayPage() {
                date: checkoutData.date,
                time: checkoutData.time,
                paymentMethod,
-             }))
-             if (file) formData.append('proof', file)
-             return formData
-           })(),
-         })
+             }, file),
+      })
 
       const data = await res.json()
 
@@ -168,8 +186,8 @@ export default function CheckoutPayPage() {
       // Limpiar datos de checkout tras éxito
       sessionStorage.removeItem('ananda_checkout_data')
       setSuccessBooking(data)
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Ocurrió un error al enviar el pago.')
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Ocurrió un error al enviar el pago.')
     } finally {
       setSubmitting(false)
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { generateAvailableDays, type AvailableDay } from '@/lib/calendar/available-days'
 
 export interface AvailabilityCalendarProps {
   serviceId: string
@@ -8,59 +9,15 @@ export interface AvailabilityCalendarProps {
   onConfirmSchedule: (date: string, time: string) => void
 }
 
-interface AvailableDay {
-  dateStr: string // YYYY-MM-DD
-  dayName: string // lun, mar, mié, etc.
-  dayNumber: number
-  monthName: string
-  isAvailable: boolean
-}
-
 export default function AvailabilityCalendar({
   serviceId,
-  serviceName,
   onConfirmSchedule,
 }: AvailabilityCalendarProps) {
-  const [days, setDays] = useState<AvailableDay[]>([])
-  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [days] = useState<AvailableDay[]>(generateAvailableDays)
+  const [selectedDate, setSelectedDate] = useState<string>(() => days[0]?.dateStr ?? '')
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-
-  // Generar días disponibles para los próximos 14 días (excluyendo domingos)
-  useEffect(() => {
-    const generated: AvailableDay[] = []
-    const today = new Date()
-    
-    for (let i = 1; i <= 14; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() + i)
-      const dayOfWeek = d.getDay() // 0 = Domingo
-      
-      if (dayOfWeek !== 0) { // Excluir domingos
-        const YYYY = d.getFullYear()
-        const MM = String(d.getMonth() + 1).padStart(2, '0')
-        const DD = String(d.getDate()).padStart(2, '0')
-        const dateStr = `${YYYY}-${MM}-${DD}`
-        
-        const dayNames = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-        
-        generated.push({
-          dateStr,
-          dayName: dayNames[dayOfWeek],
-          dayNumber: d.getDate(),
-          monthName: monthNames[d.getMonth()],
-          isAvailable: true,
-        })
-      }
-    }
-
-    setDays(generated)
-    if (generated.length > 0) {
-      setSelectedDate(generated[0].dateStr)
-    }
-  }, [])
 
   // Consultar disponibilidad al cambiar la fecha seleccionada
   useEffect(() => {

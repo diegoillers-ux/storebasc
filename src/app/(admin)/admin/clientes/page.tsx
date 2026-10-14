@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users,
   Search,
   Plus,
   MessageSquare,
   Mail,
   User,
   Calendar,
-  DollarSign,
   ChevronRight,
   Save,
   Check,
-  AlertCircle,
 } from 'lucide-react';
 import LoadingState from '@/components/ui/LoadingState';
 import FeedbackAlert from '@/components/ui/FeedbackAlert';
@@ -77,11 +74,12 @@ export default function CustomersPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [searchQuery]);
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
+  }, []);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       const url = searchQuery ? `/api/admin/customers?q=${encodeURIComponent(searchQuery)}` : '/api/admin/customers';
       const res = await fetch(url);
@@ -94,12 +92,12 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchCustomers(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchCustomers]);
 
   // Crear cliente
   const handleCreateCustomer = async (e: React.FormEvent) => {

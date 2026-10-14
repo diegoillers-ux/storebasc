@@ -1,4 +1,5 @@
 import { getGoogleCalendarClient } from '../googleCalendar';
+import type { calendar_v3 } from 'googleapis';
 import { availabilityRepository } from '@/lib/supabase/repositories/availability';
 import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 import type { CalendarProvider, AvailabilityInput, TimeSlot, CreateCalendarEventInput, UpdateCalendarEventInput } from './index';
@@ -161,8 +162,8 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
   async updateEvent(input: UpdateCalendarEventInput): Promise<void> {
     const calendar = getGoogleCalendarClient();
-    const buildRequest = (withAttendees: boolean): any => {
-      const requestBody: any = {};
+    const buildRequest = (withAttendees: boolean): calendar_v3.Params$Resource$Events$Patch => {
+      const requestBody: calendar_v3.Schema$Event = {};
 
       if (input.summary) requestBody.summary = input.summary;
       if (input.description !== undefined) requestBody.description = input.description;

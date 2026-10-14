@@ -1,6 +1,6 @@
 # Estado actual — punto de partida Storebasc
 
-**Fecha:** 2026-10-13. **Estado:** consolidación preparada para revisión; operación productiva no acreditada.
+**Fecha:** 2026-10-14. **Estado:** PR #2 actualizada y pendiente de revisión final; operación productiva no acreditada.
 
 ## Base elegida
 
@@ -26,13 +26,13 @@ Las ramas originales se conservan; main no cambia hasta integrar la PR. No se bo
 - Actualizado `.gitignore` y permitida explícitamente `.env.example`.
 - Corregido `next lint` a ESLint CLI; añadidos typecheck, regresiones y check; previews ya no omiten errores de tipos.
 - Smoke local por defecto, status HTTP y contenido propio por ruta; una página Vercel con main ya no basta para aprobar.
-- Añadidos CI y plantilla de PR. La protección de ramas y sus checks obligatorios no se configuraron remotamente.
+- Añadidos CI y plantilla de PR. Protección de `main` verificada por lectura en GitHub el 2026-10-14: requiere los checks `lint`, `types-and-regressions` y `build-and-smoke`, exige resolución de conversaciones, prohíbe force-push y borrado y se aplica a administradores. Como la cuenta tiene un único colaborador, no exige aprobación formal. La revisión independiente del agente sigue siendo manual; ver [verification/2026-10-14.md](verification/2026-10-14.md).
 - README e instrucciones raíz actualizados; `.agents/AGENTS.md` apunta a la entrada común y CLAUDE.md la importa.
 - Documentación de agosto conservada en `docs/archive/2026-08/` como evidencia histórica. `ENTREGA-CLIENTE/` y sus PDFs conservan su contenido original.
 
 ## Lo comprobado
 
-Instalación, tipos, compilación, tres regresiones y cuatro rutas por HTTP local. **ESLint falla** con 74 errores y 73 advertencias. **Cuatro pruebas Chromium PASS en GitHub Actions**; la descarga fallida fue solo local. Ver comandos, resultados e inventario en [verification/2026-10-13.md](verification/2026-10-13.md).
+Instalación, tipos, compilación, cuatro regresiones, cuatro rutas Chromium de smoke y ESLint de los archivos modificados pasan. `npm run lint` completo conserva 53 errores y 66 advertencias. CI analiza los archivos de código cambiados por cada PR, manteniendo la deuda restante visible y sin silenciar reglas. Detalle vigente: [verification/2026-10-14.md](verification/2026-10-14.md); inventario inicial: [verification/2026-10-13.md](verification/2026-10-13.md).
 
 El dominio conocido responde **404 DEPLOYMENT_NOT_FOUND**. No se inspeccionaron equipos/proyectos en Vercel ni el estado remoto de Supabase; no inferir su disponibilidad desde documentación o correos anteriores.
 

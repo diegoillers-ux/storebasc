@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getGeneralContactLink } from '@/lib/whatsapp'
@@ -24,6 +25,12 @@ interface ShippingData {
   notes: string
 }
 
+interface OrderResult {
+  orderId?: string
+  paymentSubmitted?: boolean
+  message?: string
+}
+
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -33,6 +40,7 @@ function formatCOP(amount: number): string {
 }
 
 export default function ProductCheckoutWizard() {
+  const router = useRouter()
   const [step, setStep] = useState<number>(1)
   const [items, setItems] = useState<CartItem[]>([])
   const [shippingData, setShippingData] = useState<ShippingData>({
@@ -46,7 +54,7 @@ export default function ProductCheckoutWizard() {
   })
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState<boolean>(false)
-  const [orderResult, setOrderResult] = useState<any>(null)
+  const [orderResult, setOrderResult] = useState<OrderResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [paymentMode, setPaymentMode] = useState<'gateway' | 'manual'>('gateway')
   const [paymentMethod, setPaymentMethod] = useState<'NEQUI' | 'DAVIPLATA' | 'TRANSFER'>('NEQUI')
@@ -108,10 +116,10 @@ export default function ProductCheckoutWizard() {
       }
 
       sessionStorage.removeItem('ananda_cart')
-      window.location.href = dataPref.initPoint
-    } catch (err: any) {
+      window.location.assign(dataPref.initPoint)
+    } catch (err: unknown) {
       console.error('Error procesando pago de productos con Mercado Pago:', err)
-      setErrorMsg(err.message || 'Error al conectar con la pasarela de pago.')
+      setErrorMsg(err instanceof Error ? err.message : 'Error al conectar con la pasarela de pago.')
       setSubmitting(false)
     }
   }
@@ -121,6 +129,7 @@ export default function ProductCheckoutWizard() {
   const bancolombiaAccount = process.env.NEXT_PUBLIC_BANCOLOMBIA_ACCOUNT || 'Ahorros 123-456789-00'
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search)
       const statusParam = urlParams.get('status')
@@ -128,18 +137,20 @@ export default function ProductCheckoutWizard() {
 
       if (statusParam && refParam) {
         sessionStorage.removeItem('ananda_cart')
-        window.location.href = `/checkout/success?type=order&id=${refParam}&status=${statusParam}`
+        router.push(`/checkout/success?type=order&id=${refParam}&status=${statusParam}`)
         return
       }
 
       const stored = sessionStorage.getItem('ananda_cart')
       if (stored) {
-        setItems(JSON.parse(stored))
+        setItems(JSON.parse(stored) as CartItem[])
       }
     } catch (e) {
       console.error('Error loading cart for checkout:', e)
     }
-  }, [])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [router])
 
   // Sincronizar cambios de cantidad en el carrito
   const updateQuantity = (id: string, newQty: number) => {
@@ -207,8 +218,8 @@ export default function ProductCheckoutWizard() {
       sessionStorage.removeItem('ananda_cart')
       setOrderResult(data)
       setStep(4) // Pasar al paso de confirmación
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Ocurrió un error al enviar el pedido.')
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Ocurrió un error al enviar el pedido.')
     } finally {
       setSubmitting(false)
     }
