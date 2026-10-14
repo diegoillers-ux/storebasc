@@ -18,7 +18,7 @@ export function buildBookingConfirmationMessage(params: {
   scheduledAt: Date
   bookingId: string
 }): string {
-  const date = params.scheduledAt.toLocaleDateString('es-CO', {
+  const date = params.scheduledAt.toLocaleString('es-CO', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -26,5 +26,25 @@ export function buildBookingConfirmationMessage(params: {
     hour: '2-digit',
     minute: '2-digit',
   })
-  return `¡Hola ${params.customerName}! 🌟 Tu reserva para *${params.serviceName}* ha sido confirmada para el *${date}*. Ref: #${params.bookingId.slice(-6).toUpperCase()}. Pronto me comunico contigo por aquí para coordinar los detalles. 🙏✨`
+  return `¡Hola ${params.customerName}! 🌟 Tu reserva para *${params.serviceName}* ha sido confirmada para el *${date}*. Ref: #${params.bookingId.slice(-6).toUpperCase()}. Coordinaremos y entregaremos tu lectura por este medio. 🙏✨`
+}
+
+export function buildBookingReminderMessage(params: {
+  customerName: string
+  serviceName: string
+  scheduledAt: Date
+}): string {
+  const date = params.scheduledAt.toLocaleString('es-CO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Bogota',
+  })
+  return `Hola ${params.customerName}, te recuerdo que tu lectura de *${params.serviceName}* está programada para ${date}. Te atenderé por este chat. 🌟`
+}
+
+export function buildReadingDeliveryMessage(customerName: string, serviceName: string): string {
+  return `Hola ${customerName}, ya tengo lista tu lectura de *${serviceName}*. Te la enviaré por este chat. Cuando la recibas, cuéntame si tienes alguna pregunta. 🙏✨`
 }

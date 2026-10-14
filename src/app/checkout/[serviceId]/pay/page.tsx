@@ -1,9 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getGeneralContactLink } from '@/lib/whatsapp'
+import { createManualBookingRequest } from '@/lib/checkout/manual-booking-request'
+
+interface CheckoutData {
+  serviceId?: string
+  name?: string
+  email?: string
+  whatsapp?: string
+  phone?: string
+  birthdate?: string
+  birthDate?: string
+  context?: string
+  notes?: string
+  date?: string
+  time?: string
+  servicePrice?: number
+  serviceName?: string
+}
+
+interface SuccessBooking {
+  bookingId?: string
+}
 
 function formatCOP(amount: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -15,16 +36,18 @@ function formatCOP(amount: number): string {
 
 export default function CheckoutPayPage() {
   const params = useParams()
+  const router = useRouter()
   const serviceId = params?.serviceId as string
 
-  const [checkoutData, setCheckoutData] = useState<any>(null)
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [fileBase64, setFileBase64] = useState<string>('')
   const [submitting, setSubmitting] = useState<boolean>(false)
-  const [successBooking, setSuccessBooking] = useState<any>(null)
+  const [successBooking, setSuccessBooking] = useState<SuccessBooking | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
+  const [paymentMode, setPaymentMode] = useState<'gateway' | 'manual'>('gateway')
+  const [paymentMethod, setPaymentMethod] = useState<'NEQUI' | 'DAVIPLATA' | 'TRANSFER'>('NEQUI')
 
-  const isGatewayMode = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
+  const hasGateway = process.env.NEXT_PUBLIC_PAYMENT_PROVIDER === 'mercadopago'
 
   const nequiNumber = process.env.NEXT_PUBLIC_NEQUI_NUMBER || '300 123 4567'
   const daviplataNumber = process.env.NEXT_PUBLIC_DAVIPLATA_NUMBER || '300 123 4567'
@@ -53,7 +76,6 @@ export default function CheckoutPayPage() {
           },
           date: checkoutData.date,
           time: checkoutData.time,
-          paymentProof: null,
         }),
       })
 
@@ -84,14 +106,15 @@ export default function CheckoutPayPage() {
       }
 
       window.location.href = dataPref.initPoint
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error procesando pago con Mercado Pago:', err)
-      setErrorMsg(err.message || 'Error al conectar con la pasarela de pago.')
+      setErrorMsg(err instanceof Error ? err.message : 'Error al conectar con la pasarela de pago.')
       setSubmitting(false)
     }
   }
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search)
       const statusParam = urlParams.get('status')
@@ -106,28 +129,25 @@ export default function CheckoutPayPage() {
         const serviceQuery = parsedData?.serviceName ? `&service=${encodeURIComponent(parsedData.serviceName)}` : ''
         const dateQuery = parsedData?.date ? `&date=${encodeURIComponent(parsedData.date)}` : ''
         const timeQuery = parsedData?.time ? `&time=${encodeURIComponent(parsedData.time)}` : ''
-        window.location.href = `/checkout/success?type=booking&id=${refParam}&status=${statusParam}${nameQuery}${serviceQuery}${dateQuery}${timeQuery}`
+        router.push(`/checkout/success?type=booking&id=${refParam}&status=${statusParam}${nameQuery}${serviceQuery}${dateQuery}${timeQuery}`)
         return
       }
 
       if (parsedData) {
-        setCheckoutData(parsedData)
+        setCheckoutData(parsedData as CheckoutData)
       }
     } catch (e) {
       console.error('Error reading checkout data:', e)
     }
-  }, [])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [router])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
     setFile(selectedFile)
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setFileBase64(reader.result as string)
-    }
-    reader.readAsDataURL(selectedFile)
   }
 
   const handleSubmitManualPayment = async (e: React.FormEvent) => {
@@ -142,21 +162,19 @@ export default function CheckoutPayPage() {
 
     try {
       const res = await fetch('/api/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceId: checkoutData.serviceId || serviceId,
-          customerData: {
-            name: checkoutData.name,
-            email: checkoutData.email,
-            whatsapp: checkoutData.whatsapp,
-            birthdate: checkoutData.birthdate,
-            context: checkoutData.context,
-          },
-          date: checkoutData.date,
-          time: checkoutData.time,
-          paymentProof: fileBase64 || null,
-        }),
+        ...createManualBookingRequest({
+               serviceId: checkoutData.serviceId || serviceId,
+               customerData: {
+                 name: checkoutData.name,
+                 email: checkoutData.email,
+                 whatsapp: checkoutData.whatsapp,
+                 birthdate: checkoutData.birthdate,
+                 context: checkoutData.context,
+               },
+               date: checkoutData.date,
+               time: checkoutData.time,
+               paymentMethod,
+             }, file),
       })
 
       const data = await res.json()
@@ -168,8 +186,8 @@ export default function CheckoutPayPage() {
       // Limpiar datos de checkout tras éxito
       sessionStorage.removeItem('ananda_checkout_data')
       setSuccessBooking(data)
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Ocurrió un error al enviar el pago.')
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Ocurrió un error al enviar el pago.')
     } finally {
       setSubmitting(false)
     }
@@ -286,7 +304,26 @@ export default function CheckoutPayPage() {
           )}
 
           {/* BIFURCACIÓN DE PAGO */}
-          {isGatewayMode ? (
+          {hasGateway && (
+            <div className="flex gap-2 p-1 rounded-2xl bg-ananda-100/60 mb-5">
+              <button
+                type="button"
+                onClick={() => setPaymentMode('gateway')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'gateway' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+              >
+                Mercado Pago
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMode('manual')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors ${paymentMode === 'manual' ? 'bg-white text-ananda-900 shadow-sm' : 'text-ananda-700'}`}
+              >
+                Transferencia manual
+              </button>
+            </div>
+          )}
+
+          {paymentMode === 'gateway' && hasGateway ? (
             <div className="text-center space-y-4">
               <p className="text-xs text-gray-600">
                 Serás redirigido a la pasarela segura de Mercado Pago para realizar tu pago en línea (Tarjetas, Nequi, PSE, Efecty).
@@ -303,7 +340,7 @@ export default function CheckoutPayPage() {
           ) : (
             <form onSubmit={handleSubmitManualPayment} className="space-y-6">
               {/* Cuentas Bancarias */}
-              <div>
+               <div>
                 <label className="block text-xs font-bold text-ananda-900 uppercase mb-3">
                   1. Realiza la transferencia a una de nuestras cuentas
                 </label>
@@ -320,10 +357,26 @@ export default function CheckoutPayPage() {
                     <span className="font-bold block text-amber-900 mb-1">💛 Bancolombia</span>
                     <span className="font-mono text-gray-700">{bancolombiaAccount}</span>
                   </div>
-                </div>
-              </div>
+                 </div>
+               </div>
 
-              {/* Subir comprobante */}
+               <div>
+                 <label htmlFor="payment-method" className="block text-xs font-bold text-ananda-900 uppercase mb-2">
+                   Medio utilizado
+                 </label>
+                 <select
+                   id="payment-method"
+                   value={paymentMethod}
+                   onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                   className="w-full px-4 py-3 rounded-2xl bg-white border border-ananda-400/30 text-xs text-gray-700"
+                 >
+                   <option value="NEQUI">Nequi</option>
+                   <option value="DAVIPLATA">Daviplata</option>
+                   <option value="TRANSFER">Bancolombia</option>
+                 </select>
+               </div>
+
+               {/* Subir comprobante */}
               <div>
                 <label htmlFor="voucher" className="block text-xs font-bold text-ananda-900 uppercase mb-2">
                   2. Adjunta tu comprobante de pago (Imagen o PDF) *

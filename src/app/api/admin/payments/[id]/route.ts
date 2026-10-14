@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { paymentRepository } from '@/lib/supabase/repositories/payments';
+import { paymentRepository, type Payment, type PaymentStatus } from '@/lib/supabase/repositories/payments';
 import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 import { orderRepository } from '@/lib/supabase/repositories/orders';
 import { customerRepository } from '@/lib/supabase/repositories/customers';
 import { serviceRepository } from '@/lib/supabase/repositories/services';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
 import { sendApprovedSaleEmail } from '@/lib/mailer';
+import { getBookingConfirmationCustomerLink } from '@/lib/whatsapp';
 
 const calendarProvider = new GoogleCalendarProvider();
 
@@ -35,8 +36,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Pago no encontrado.' }, { status: 404 });
     }
 
-    const updateData: any = {
-      status,
+    const updateData: Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>> = {
+      status: status as PaymentStatus,
       verifiedAt: new Date(),
       verifiedBy: 'system-admin', // ID o correo del administrador en sesión
     };
@@ -72,8 +73,13 @@ export async function PUT(
               });
 
               // Mensaje dinámico de WhatsApp
-              const messageText = `Hola ${customer.name}, tu pago de $${payment.amount.toLocaleString('es-CO')} ha sido aprobado. Tu sesión de "${service.name}" está CONFIRMADA para el día ${startAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Bogota' })}. ¡Bendiciones!`;
-              const whatsappLink = `https://wa.me/${customer.phone}?text=${encodeURIComponent(messageText)}`;
+               const whatsappLink = getBookingConfirmationCustomerLink({
+                 phone: customer.phone,
+                 customerName: customer.name,
+                 serviceName: service.name,
+                 scheduledAt: startAt,
+                 bookingId: payment.bookingId,
+               });
 
               await bookingRepository.update(payment.bookingId, {
                 status: 'CONFIRMED',
@@ -104,6 +110,13 @@ export async function PUT(
         if (order && order.status !== 'PAID') {
           await orderRepository.updateStatus(payment.orderId, 'PAID', null);
         }
+      }
+    }
+
+    if (status === 'REJECTED' && payment.bookingId) {
+      const booking = await bookingRepository.getById(payment.bookingId);
+      if (booking && booking.status === 'PAYMENT_SUBMITTED') {
+        await bookingRepository.update(payment.bookingId, { status: 'PENDING_PAYMENT' });
       }
     }
 

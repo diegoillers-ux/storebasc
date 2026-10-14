@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # 🔑 Manual Oficial de Variables de Entorno — AnandaStore V2
 
 Este documento detalla todas las variables de entorno utilizadas en **AnandaStore V2**, su función dentro de la arquitectura de la aplicación y el procedimiento paso a paso para obtener cada clave o credencial desde las consolas oficiales (Google Cloud, Supabase, Vercel, Gmail).
@@ -60,6 +62,11 @@ Este documento detalla todas las variables de entorno utilizadas en **AnandaStor
 - **¿Qué hace?:** Clave maestra de servidor (prefijo `sb_secret_`). Bypass de RLS para el backend (`src/lib/supabase/server.ts`). **NUNCA** se expone al navegador.
 - **¿De dónde se saca?:** **Project Settings → API → Project API Keys** → `service_role` `secret`.
 - ⚠️ **Requisito de seguridad:** la clave configurada DEBE ser una `sb_secret_...`. No usar la publishable en esta variable (dejaría expuestas las políticas RLS de escritura).
+
+### `BLOB_READ_WRITE_TOKEN`
+- **¿Qué hace?:** Permite guardar los comprobantes de pago en Vercel Blob desde el servidor.
+- **¿De dónde se saca?:** Vercel Dashboard → proyecto `storebasc` → **Storage → Blob** → crear o conectar un Blob Store y copiar el token de lectura/escritura.
+- ⚠️ **Requisito de seguridad:** solo debe configurarse como variable server-side; nunca usar el prefijo `NEXT_PUBLIC_`.
 
 ---
 

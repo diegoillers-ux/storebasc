@@ -1,0 +1,83 @@
+name: Storebasc checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Lint changed TypeScript and JavaScript files
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            base_sha="$PR_BASE_SHA"
+          else
+            base_sha="$PUSH_BASE_SHA"
+          fi
+
+          if [[ "$base_sha" =~ ^0+$ ]]; then
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+
+          mapfile -d '' changed_files < <(git diff --name-only -z --diff-filter=ACMR "$base_sha...$GITHUB_SHA")
+          lint_files=()
+          for file in "${changed_files[@]}"; do
+            if [[ "$file" =~ \.(js|jsx|ts|tsx)$ ]]; then
+              lint_files+=("$file")
+            fi
+          done
+
+          if ((${#lint_files[@]} == 0)); then
+            echo "No changed JavaScript or TypeScript files; full-repository lint debt remains documented."
+          else
+            npx eslint "${lint_files[@]}"
+          fi
+  types-and-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_DEMO_MODE: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-failure
+          path: test-results/
+          retention-days: 7

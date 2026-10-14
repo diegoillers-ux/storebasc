@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # 📋 Checklist de Requisitos — Lina (Espíritu Ananda)
 
 > **Propósito:** reunir TODO lo que el cliente debe entregar para activar

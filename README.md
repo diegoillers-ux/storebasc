@@ -1,141 +1,54 @@
-# AnandaStore V2 — Plataforma Holística & E-Commerce Astral
+# Storebasc
 
-**Proyecto:** AnandaStore V2  
-**Rama Principal:** `main` (Única rama oficial de producción)  
-**Stack Principal:** Next.js 16 (App Router + Turbopack) + TypeScript + Tailwind CSS v4 + Supabase (PostgreSQL & Auth) + NextAuth v5 + Google Calendar API  
+Plataforma Next.js para tienda, reservas y administración. La implementación actual sigue personalizada para **Espíritu Ananda**; el producto reutilizable Storebasc Core es el objetivo de evolución.
 
----
+## Punto de partida
 
-## 🌟 Visión del Proyecto
+Consolidación preparada el **2026-10-13** desde `V2`, descendiente de `main`. El detalle verificable está en [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md).
 
-**AnandaStore V2** es una plataforma integral diseñada para la consultante mística Lina (**Espíritu Ananda**). Combina:
-1. **Embudo de Servicios Astrales**: Catálogo de lecturas (Carta Natal, Tarot Express, Revolución Solar, Sinastría), registro natal del consultante, agendamiento de horarios en vivo con cálculo de disponibilidad y subida de comprobantes de pago manual (Nequi, Daviplata, Bancolombia) o pasarela Mercado Pago.
-2. **Tienda Holística E-Commerce**: Catálogo de productos artesanales (sahumerios, cuarzos, velas, elixires) con carrito lateral dinámico (`CartDrawer`), control de inventario y wizard de despacho en 4 pasos.
-3. **Panel Administrativo (CRM & Finanzas)**: Gestión de clientes astrales, agenda de citas, conciliación de pagos en cascada con sincronización automática a Google Calendar, notificaciones SMTP por correo y webhooks de Mercado Pago.
-4. **Módulo de Autenticación & Permisos**: Registro de usuarios administradores con confirmación por correo electrónico, envío de código numérico OTP de 6 dígitos, recuperación de clave y control de roles (`SUPER_ADMIN`, `ADMIN`, `OPERATOR`, `READER`).
+**La compilación no acredita operación real.** Hay deuda de lint, validaciones externas pendientes y el dominio conocido devuelve `404 DEPLOYMENT_NOT_FOUND`. No presentar este repositorio como producto terminado.
 
----
+## Preparación
 
-## 🚀 Arquitectura Tecnológica & Stack V2
-
-| Capa | Tecnología / Herramienta | Función |
-| :--- | :--- | :--- |
-| **Core Framework** | Next.js 16.1 (App Router + Turbopack) | Enrutamiento híbrido (SSR, ISR, Server Components) |
-| **Lenguaje** | TypeScript 5 | Tipado estricto en repositorios, APIs y componentes UI |
-| **Estilos & UI** | Tailwind CSS v4 + PostCSS | Diseño místico, paleta `--color-ananda-*`, tarjetas glassmorphism |
-| **Base de Datos** | Supabase (PostgreSQL Relacional) | Base de datos SQL serverless (repositorios en `src/lib/supabase/repositories/`) |
-| **Pasarela de Pagos** | Mercado Pago SDK v2 (Checkout Pro) | Pago en línea (Nequi, PSE, Tarjetas), Webhooks IPN idempotentes y MCP Server |
-| **Autenticación** | Supabase Auth Nativo + NextAuth v5 | Registro de usuarios, confirmación por email, código OTP 6 dígitos y recuperación de clave |
-| **Calendario** | Google Calendar API | Verificación de franjas libres/ocupadas y creación de eventos |
-| **Notificaciones** | Nodemailer (SMTP / Gmail) | Correos automáticos de confirmación, recibos y códigos de verificación OTP |
-| **Tareas Programadas** | Vercel Cron (`/api/cron/cleanup`) | Liberación automática de citas reservadas no pagadas (>30 min) |
-
----
-
-## 📁 Estructura Completa del Proyecto (`main`)
-
-```
-storebasc/
-├── .agents/                       # Guía del proyecto, MCP config y skills
-├── docs/                          # Documentación viva (roles, hoja de ruta, manual, QA, bugs, checklists)
-├── ENTREGA-CLIENTE/               # Paquete oficial de entrega al cliente (MD + PDF)
-├── public/                        # Assets estáticos (logo de la marca)
-├── src/
-│   ├── app/                       # Rutas de Next.js (App Router)
-│   │   ├── (admin)/admin/         # Panel administrativo protegido (/admin/*)
-│   │   ├── (public)/              # Portada pública comercial (/servicios, /tienda)
-│   │   ├── api/                   # API Routes backend (bookings, orders, availability, checkout, webhooks/mercadopago, cron)
-│   │   ├── checkout/              # Embudos de pago (3 pasos para citas, 4 pasos para tienda)
-│   │   ├── forgot-password/       # Recuperación de clave
-│   │   ├── login/                 # Inicio de sesión
-│   │   ├── register/              # Registro de administradores
-│   │   └── verify-otp/            # Verificación de código OTP de 6 dígitos
-│   ├── components/                # Componentes UI (admin/, public/, ui/)
-│   ├── context/                   # CartContext global de e-commerce
-│   └── lib/                       # Lógica de negocio y repositorios
-│       ├── calendar/              # Google Calendar (provider + client)
-│       ├── payments/              # Capa adaptadora de pagos (mercadopago, manual)
-│       ├── supabase/              # Conexión Supabase + repositorios SQL
-│       ├── auth.ts / auth.config.ts   # NextAuth v5 + Supabase Auth (roles en JWT)
-│       ├── adminAuth.ts           # requireAdminSession() para APIs del panel
-│       ├── cronAuth.ts            # Validación de CRON_SECRET
-│       ├── rateLimit.ts           # Rate limiting de endpoints sensibles
-│       ├── demoMode.ts            # Helper de modo dual (Demo vs Producción)
-│       └── mailer.ts              # Correos Nodemailer
-├── .env.example                   # Plantilla oficial de variables de entorno
-├── next.config.ts                 # Configuración, redirecciones y headers de seguridad (CSP)
-├── seed-supabase.mjs              # Siembra inicial de la base de datos Supabase
-├── tailwind.config.ts             # Tokens de diseño y paletas Ananda
-└── vercel.json                    # Despliegue y Vercel Cron
-```
-
----
-
-## 🔑 Variables de Entorno Recomendadas
-
-Crea un archivo `.env.local` basado en `.env.example`:
-
-```env
-# Modo de Operación (true solo para vista previa/demo; false en producción)
-NEXT_PUBLIC_DEMO_MODE="false"
-NEXT_PUBLIC_PAYMENT_PROVIDER="mercadopago"  # 'manual' | 'mercadopago'
-
-# Mercado Pago Pasarela
-MERCADOPAGO_ACCESS_TOKEN="TEST-..."          # APP_USR-... en producción
-MERCADOPAGO_WEBHOOK_SECRET=""                # Generar en el panel de MP (producción)
-
-# URLs de Aplicación
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Supabase (Base de Datos PostgreSQL & Autenticación)
-NEXT_PUBLIC_SUPABASE_URL="https://abcdefgh.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_..."   # Navegador (claves nuevas sb_publishable_/sb_secret_)
-SUPABASE_SERVICE_ROLE_KEY="sb_secret_..."            # SOLO servidor
-
-# NextAuth v5
-AUTH_SECRET="clave_secreta_jwt_32_caracteres"
-AUTH_TRUST_HOST="true"
-
-# Administradores Autorizados (respaldo; el rol real vive en admin_users)
-ADMIN_EMAILS="diegoillers@gmail.com"
-
-# Google Calendar (Service Account)
-NEXT_PUBLIC_CALENDAR_ID="lina@espiritananda.com"
-GOOGLE_CLIENT_EMAIL="ananda-service@tu-proyecto.iam.gserviceaccount.com"
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-
-# Cron (Vercel)
-CRON_SECRET="secreto_para_invocar_cron_cleanup"
-
-# Cuentas para Transferencias Manuales
-NEXT_PUBLIC_NEQUI_NUMBER="300 123 4567"
-NEXT_PUBLIC_DAVIPLATA_NUMBER="300 123 4567"
-NEXT_PUBLIC_BANCOLOMBIA_ACCOUNT="Ahorros 123-456789-00"
-```
-
----
-
-## 🛠️ Comandos de Desarrollo & Mantenimiento
+Requisitos: Git, Node 24, npm y acceso a las credenciales de un entorno de pruebas para validar integraciones.
 
 ```bash
-# 1. Instalar dependencias
-npm install
-
-# 2. Iniciar servidor de desarrollo
+npm ci
+cp .env.example .env.local
 npm run dev
-
-# 3. Compilar bundle de producción y verificar TypeScript
-npm run build
-
-# 4. Poblar la base de datos de prueba en Supabase
-node seed-supabase.mjs
 ```
 
----
+En PowerShell usa `Copy-Item .env.example .env.local`. Sustituye placeholders en el archivo local; nunca subas sus valores. No ejecutar semillas ni migraciones sobre una base remota sin revisar el destino.
 
-## 📌 Estado de Git y Despliegue
+Sin credenciales pueden verificarse compilación y parte del renderizado. Los catálogos actualmente tienen fallbacks con datos de ejemplo: que aparezcan tarjetas no demuestra conexión a Supabase.
 
-- **Rama única oficial:** `main`
-- **Integridad:** Todo el historial de rediseño, pruebas E2E y fixes ha sido consolidado en `main`.
-- **Despliegue Vercel:** Vinculado al proyecto `diego-illeras-projects/storebasc`.
-- **Estado 2026-08-12:** flujo de pago E2E validado en sandbox (Mercado Pago → webhook → calendario → correo), RLS auditado, login real sin demo. Ruta de avance a pruebas de uso real en `docs/04-HOJA-RUTA-PILOTO.md`.
+## Verificaciones
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+El smoke inicia automáticamente `next start` en `http://127.0.0.1:3000`. Para un despliegue autorizado define `E2E_BASE_URL`; en ese caso no inicia servidor local. Las pruebas solo leen las rutas públicas y verifican renderizado; no prueban compras ni autenticación completa.
+
+`npm run check` ejecuta lint, tipos, regresiones y build, deteniéndose ante el primer fallo. El lint tiene deuda conocida; no está desactivado. CI ejecuta los controles en jobs separados para ver los resultados aunque lint falle.
+
+## Documentación vigente
+
+| Archivo | Uso |
+|---|---|
+| [AGENTS.md](AGENTS.md) | Entrada común para agentes |
+| [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md) | Estado, evidencias y límites |
+| [docs/architecture.md](docs/architecture.md) | Estructura técnica actual |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Prioridades y criterios de salida |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md) | Ejecución y revisión de tareas |
+| [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Entornos e integraciones |
+| [docs/tasks/SB-001-consolidation.md](docs/tasks/SB-001-consolidation.md) | Relevo de esta consolidación |
+
+`CLAUDE.md` importa la entrada común. Para otros arneses, indica explícitamente que lean `AGENTS.md` y la tarea. Cada arnés configura por separado credenciales, herramientas y permisos.
+
+Los documentos de agosto están conservados en `docs/archive/2026-08/`. El paquete `ENTREGA-CLIENTE/` es histórico y sus PDFs no se regeneraron en esta consolidación.

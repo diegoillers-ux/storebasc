@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # Manual Técnico & Guía de Arquitectura V2 — Espíritu Ananda
 
 **Proyecto:** AnandaStore V2  

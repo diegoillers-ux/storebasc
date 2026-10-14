@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { generateAvailableDays, type AvailableDay } from '@/lib/calendar/available-days'
 
 export interface AvailabilityCalendarProps {
   serviceId: string
@@ -8,61 +9,15 @@ export interface AvailabilityCalendarProps {
   onConfirmSchedule: (date: string, time: string) => void
 }
 
-interface AvailableDay {
-  dateStr: string // YYYY-MM-DD
-  dayName: string // lun, mar, mié, etc.
-  dayNumber: number
-  monthName: string
-  isAvailable: boolean
-}
-
-const DEFAULT_TIME_SLOTS = ['09:00', '10:30', '14:00', '15:30', '17:00']
-
 export default function AvailabilityCalendar({
   serviceId,
-  serviceName,
   onConfirmSchedule,
 }: AvailabilityCalendarProps) {
-  const [days, setDays] = useState<AvailableDay[]>([])
-  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [days] = useState<AvailableDay[]>(generateAvailableDays)
+  const [selectedDate, setSelectedDate] = useState<string>(() => days[0]?.dateStr ?? '')
   const [selectedTime, setSelectedTime] = useState<string>('')
-  const [availableSlots, setAvailableSlots] = useState<string[]>(DEFAULT_TIME_SLOTS)
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-
-  // Generar días disponibles para los próximos 14 días (excluyendo domingos)
-  useEffect(() => {
-    const generated: AvailableDay[] = []
-    const today = new Date()
-    
-    for (let i = 1; i <= 14; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() + i)
-      const dayOfWeek = d.getDay() // 0 = Domingo
-      
-      if (dayOfWeek !== 0) { // Excluir domingos
-        const YYYY = d.getFullYear()
-        const MM = String(d.getMonth() + 1).padStart(2, '0')
-        const DD = String(d.getDate()).padStart(2, '0')
-        const dateStr = `${YYYY}-${MM}-${DD}`
-        
-        const dayNames = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-        
-        generated.push({
-          dateStr,
-          dayName: dayNames[dayOfWeek],
-          dayNumber: d.getDate(),
-          monthName: monthNames[d.getMonth()],
-          isAvailable: true,
-        })
-      }
-    }
-
-    setDays(generated)
-    if (generated.length > 0) {
-      setSelectedDate(generated[0].dateStr)
-    }
-  }, [])
 
   // Consultar disponibilidad al cambiar la fecha seleccionada
   useEffect(() => {
@@ -74,22 +29,16 @@ export default function AvailabilityCalendar({
         const res = await fetch(`/api/calendar/free-busy?date=${selectedDate}&serviceId=${serviceId}`)
         if (res.ok) {
           const data = await res.json()
-          if (data.busy && Array.isArray(data.busy)) {
-            // Filtrar horas ocupadas
-            const busyTimes = data.busy.map((b: { start: string }) => {
-              const d = new Date(b.start)
-              return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-            })
-            const free = DEFAULT_TIME_SLOTS.filter((t) => !busyTimes.includes(t))
-            setAvailableSlots(free.length > 0 ? free : DEFAULT_TIME_SLOTS)
+          if (Array.isArray(data.availableSlots)) {
+            setAvailableSlots(Array.isArray(data.availableSlots) ? data.availableSlots : [])
           } else {
-            setAvailableSlots(DEFAULT_TIME_SLOTS)
+            setAvailableSlots([])
           }
         } else {
-          setAvailableSlots(DEFAULT_TIME_SLOTS)
+          setAvailableSlots([])
         }
       } catch {
-        setAvailableSlots(DEFAULT_TIME_SLOTS)
+        setAvailableSlots([])
       } finally {
         setLoading(false)
       }

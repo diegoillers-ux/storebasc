@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # Reporte de Hallazgos y Correcciones de QA — AnandaStore V2
 **Última actualización:** 12 de Agosto, 2026
 **Proyecto:** AnandaStore V2

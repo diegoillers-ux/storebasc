@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # QA End-to-End Checklist — AnandaStore V2
 **Rama:** `main` (única rama oficial)
 **Última actualización:** 12 de Agosto, 2026

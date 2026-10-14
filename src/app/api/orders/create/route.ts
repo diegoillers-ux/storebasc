@@ -4,13 +4,51 @@ import { orderRepository } from '@/lib/supabase/repositories/orders'
 import { customerRepository } from '@/lib/supabase/repositories/customers'
 import { productRepository } from '@/lib/supabase/repositories/products'
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit'
+import { paymentRepository, type PaymentMethod } from '@/lib/supabase/repositories/payments'
+import { uploadPaymentProof } from '@/lib/payments/proof'
+import { sendAdminPaymentProofEmail, sendPendingSaleEmail } from '@/lib/mailer'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
+type OrderItemInput = {
+  id?: string
+  productId?: string
+  quantity?: number | string
+}
+
+type ShippingDataInput = {
+  name: string
+  email: string
+  phone?: string
+  address?: string
+  neighborhood?: string
+  city?: string
+  notes?: string
+}
+
+type OrderRequestBody = {
+  items?: OrderItemInput[]
+  shippingData?: ShippingDataInput
+  shippingCost?: number | string
+  deferStockAdjustment?: boolean
+  paymentMethod?: PaymentMethod
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { items, shippingData, shippingCost, deferStockAdjustment } = body
+    const contentType = req.headers.get('content-type') || ''
+    let body: OrderRequestBody
+    let proofFile: File | null = null
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      body = JSON.parse(String(formData.get('payload') || '{}')) as OrderRequestBody
+      const submittedProof = formData.get('proof')
+      proofFile = submittedProof instanceof File ? submittedProof : null
+    } else {
+      body = await req.json() as OrderRequestBody
+    }
+
+    const { items, shippingData, shippingCost, deferStockAdjustment, paymentMethod = 'TRANSFER' } = body
 
     if (!items || !Array.isArray(items) || items.length === 0 || !shippingData || !shippingData.name || !shippingData.email) {
       return NextResponse.json({ error: 'Faltan datos obligatorios para registrar el pedido.' }, { status: 400 })
@@ -23,6 +61,14 @@ export async function POST(req: NextRequest) {
 
     if (!EMAIL_RE.test(String(shippingData.email))) {
       return NextResponse.json({ error: 'El correo de contacto no es vÃ¡lido.' }, { status: 400 })
+    }
+
+    const allowedPaymentMethods: PaymentMethod[] = ['TRANSFER', 'NEQUI', 'DAVIPLATA', 'CASH', 'GATEWAY']
+    if (!allowedPaymentMethods.includes(paymentMethod)) {
+      return NextResponse.json({ error: 'Medio de pago no válido.' }, { status: 400 })
+    }
+    if (contentType.includes('multipart/form-data') && !proofFile) {
+      return NextResponse.json({ error: 'Debes adjuntar un comprobante.' }, { status: 400 })
     }
 
     if (isDemoMode()) {
@@ -121,9 +167,59 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (proofFile) {
+      try {
+        const uploadedProof = await uploadPaymentProof(proofFile, `order-${newOrder.id}`)
+        await paymentRepository.create({
+          customerId,
+          bookingId: null,
+          orderId: newOrder.id!,
+          method: paymentMethod,
+          provider: 'manual',
+          amount: total,
+          currency: 'COP',
+          status: 'SUBMITTED',
+          reference: null,
+          receiptUrl: uploadedProof.url,
+          providerData: { filename: proofFile.name, contentType: proofFile.type },
+          verifiedAt: null,
+          verifiedBy: null,
+        })
+
+        const paymentNote = `${shippingData.notes || 'Sin nota adicional'}\nEntrega: ${fullAddress}`
+        await sendAdminPaymentProofEmail({
+          eventId: newOrder.id!,
+          reservationCode: newOrder.id!,
+          clientName: shippingData.name,
+          clientEmail: shippingData.email,
+          serviceName: `Pedido de productos (${orderItems.length} ítems)`,
+          dateTime: 'Pedido sin agenda',
+          paymentNote,
+          filename: proofFile.name,
+          contentType: proofFile.type,
+          content: uploadedProof.buffer,
+          saleType: 'product',
+        })
+        sendPendingSaleEmail({
+          toEmail: shippingData.email,
+          clientName: shippingData.name,
+          itemName: `Pedido de productos (${orderItems.length} ítems)`,
+          dateTime: 'Pedido sin agenda',
+          reservationCode: newOrder.id!,
+          saleType: 'product',
+        }).catch(console.error)
+      } catch (proofError) {
+        console.error('Error processing order payment proof:', proofError)
+        return NextResponse.json({
+          error: proofError instanceof Error ? proofError.message : 'No se pudo guardar el comprobante.',
+        }, { status: 500 })
+      }
+    }
+
     return NextResponse.json({
       success: true,
       orderId: newOrder.id,
+      paymentSubmitted: Boolean(proofFile),
       message: 'Pedido registrado exitosamente.',
       totals: { subtotal, shipping, total },
     })

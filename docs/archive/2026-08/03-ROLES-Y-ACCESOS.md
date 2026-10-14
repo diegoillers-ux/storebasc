@@ -1,3 +1,5 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # Roles y Accesos — Espíritu Ananda (AnandaStore V2)
 
 Documento de referencia para el manejo de roles, autenticación y permisos del proyecto.

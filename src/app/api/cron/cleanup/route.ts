@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGoogleCalendarClient } from '@/lib/googleCalendar';
 import { isAuthorizedCronRequest } from '@/lib/cronAuth';
+import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 
 export async function GET(req: NextRequest) {
     if (!isAuthorizedCronRequest(req)) {
@@ -8,46 +8,24 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const calendar = getGoogleCalendarClient();
-        const calendarId = process.env.NEXT_PUBLIC_CALENDAR_ID;
+        const expirationTime = new Date(Date.now() - 30 * 60 * 1000);
+        const bookings = await bookingRepository.list();
+        const expiredBookings = bookings.filter((booking) =>
+            booking.status === 'PENDING_PAYMENT' && booking.createdAt < expirationTime
+        );
 
-        if (!calendarId) {
-            return NextResponse.json({ error: 'Configuracion calendario faltante' }, { status: 500 });
-        }
-
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const response = await calendar.events.list({
-            calendarId,
-            timeMin: startOfDay.toISOString(),
-            maxResults: 100,
-            singleEvents: true,
-            q: '[PENDIENTE]',
-        });
-
-        const pendingEvents = response.data.items || [];
-        let deletedCount = 0;
+        let cancelledCount = 0;
         const now = Date.now();
 
-        for (const event of pendingEvents) {
-            if (!event.created || !event.id) continue;
-
-            const createdTime = new Date(event.created).getTime();
-            const diffMinutes = (now - createdTime) / (1000 * 60);
-
-            if (diffMinutes > 30) {
-                await calendar.events.delete({
-                    calendarId,
-                    eventId: event.id,
-                });
-                deletedCount++;
-            }
+        for (const booking of expiredBookings) {
+            await bookingRepository.update(booking.id!, { status: 'CANCELLED' });
+            cancelledCount++;
         }
 
         return NextResponse.json({
             success: true,
-            message: `Cron Job: ${deletedCount} cupos expirados fueron liberados.`,
+            message: `Cron Job: ${cancelledCount} reservas expiradas fueron liberadas.`,
+            checkedAt: new Date(now).toISOString(),
         });
     } catch (error: unknown) {
         const details = error instanceof Error ? error.message : 'Unknown error';

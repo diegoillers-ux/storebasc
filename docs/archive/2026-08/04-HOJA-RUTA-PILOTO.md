@@ -1,6 +1,8 @@
+> Documento histórico. No acredita el estado actual; consultar ../../PROJECT-STATE.md.
+
 # Hoja de Ruta — Camino a Pruebas de Uso Real (Piloto)
 
-**Fecha:** 2026-08-12
+**Fecha:** 2026-08-26
 **Objetivo:** Llevar AnandaStore V2 de "plataforma validada en sandbox" a "primeras ventas reales con Lina" en el menor tiempo posible, sin sacrificar seguridad ni confianza en los datos.
 
 ---
@@ -16,10 +18,10 @@
 | CRM / Dashboard sin datos simulados | ✅ Limpio (estados vacíos con contexto) |
 | Rifas y Contenido IA | ⚠️ UI completa, **sin backend** (APIs vacías/501 honestos) |
 | Dashboard / Reportes con métricas | ⚠️ Muestran estados vacíos (aún sin agregaciones reales) |
-| Disponibilidad de horarios (`/api/availability`) | ⚠️ Franjas con valores por defecto (pendiente conectar a configuración real) |
+| Disponibilidad de horarios | ✅ Google Calendar + configuración semanal + reservas activas de Supabase |
 | Webhook MP en producción | ⚠️ Requiere dominio público + `MERCADOPAGO_WEBHOOK_SECRET` + verificación de firma |
-| Pago manual (Nequi/Daviplata/Bancolombia) | ⚠️ Sin validar E2E completo (subida comprobante → verificación admin → evento) |
-| Tienda (pedidos con MP) | ⚠️ Sin validar E2E |
+| Pago manual (Nequi/Daviplata/Bancolombia) | ✅ Implementado en reservas y pedidos: comprobante → `payments.SUBMITTED` → verificación admin |
+| Tienda (pedidos con MP) | ⚠️ Sin validar E2E completo en entorno real |
 | Credenciales reales de Lina | ❌ Pendiente (SMTP, calendario, token MP producción, cuentas bancarias) |
 
 ---
@@ -30,7 +32,7 @@
 
 | # | Tarea | Detalle |
 | :--- | :--- | :--- |
-| P1.1 | **Disponibilidad real** | Conectar `/api/availability` a `availability_settings` (y opcionalmente a Google Calendar freebusy) para que el cliente solo vea franjas reales. |
+| P1.1 | **Disponibilidad real** | ✅ El calendario público calcula franjas desde `availability_settings`, Google Calendar freebusy y reservas activas en Supabase. |
 | P1.2 | **Dashboard con métricas reales** | Conectar `/admin` a Supabase: citas de hoy, comprobantes por verificar, alertas de inventario, ingresos del mes. |
 | P1.3 | **Decisión Rifas + Contenido IA** | Elegir: (a) ocultar del menú hasta tener backend, o (b) construir backend de rifas (tablas + compra de boletos) y motor de imágenes IA. **Recomendado para el piloto: (a)**. |
 | P1.4 | **Webhook de producción** | Desplegar en Vercel, generar `MERCADOPAGO_WEBHOOK_SECRET` en el panel de MP, activar validación de firma y probar el primer pago real de extremo a extremo. |
@@ -43,10 +45,10 @@
 
 | # | Tarea | Detalle |
 | :--- | :--- | :--- |
-| P2.1 | **Pago manual completo** | Cliente agenda → elige Nequi/Daviplata/transferencia → sube comprobante → admin verifica en `/admin/pagos` → booking CONFIRMED + evento calendario + correo. Validar ambos estados (aprobar/rechazar). |
-| P2.2 | **Tienda E2E** | Compra de producto con carrito → checkout 4 pasos → pago MP → pedido CONFIRMED → correo + descuento de inventario. |
+| P2.1 | **Pago manual completo** | ✅ Cliente agenda → elige Nequi/Daviplata/transferencia → sube comprobante → `payments.SUBMITTED`; falta validar en producción aprobar/rechazar desde `/admin/pagos`. |
+| P2.2 | **Tienda E2E** | Compra de producto con carrito → checkout 4 pasos → pago MP o manual → pedido `PAID` tras verificación + correo + descuento de inventario. Validar E2E. |
 | P2.3 | **Auth en navegador** | Probar registro con correo/cédula, OTP de 6 dígitos, recuperación de clave y login por cédula en el navegador real (con sesión MP cerrada para no bloquear el checkout). |
-| P2.4 | **Cron de limpieza** | Verificar que `/api/cron/cleanup` libera citas reservadas sin pagar (>30 min) y que `CRON_SECRET` está activo en Vercel. |
+| P2.4 | **Cron de limpieza** | Verificar que `/api/cron/cleanup` libera reservas `PENDING_PAYMENT` en Supabase (>30 min) y que `CRON_SECRET` está activo en Vercel. |
 | P2.5 | **Reportes** | Conectar `/admin/reportes` a las agregaciones reales (ventas, medios de pago, distribución) ahora que el dashboard ya tiene datos. |
 
 ## 3. Fase P3 — Credenciales Reales y Piloto con Lina (1 semana)
@@ -83,4 +85,4 @@
 
 ## 6. Decisión de Alcance para el Piloto (recomendado)
 
-**Alcance mínimo viable del piloto:** Servicios + reservas + Mercado Pago + pago manual + tienda + panel admin (agenda, clientes, pagos, pedidos, catálogo, configuración). **Fuera del piloto:** Rifas, Contenido IA, Reportes avanzados (se ocultan del menú o se marcan "próximamente").
+**Alcance mínimo viable del piloto:** Servicios + reservas + Mercado Pago + pago manual + tienda + panel admin (agenda, clientes con ficha 360°, pagos, pedidos, catálogo, configuración). **Fuera del piloto:** Rifas, Contenido IA, Reportes avanzados (se ocultan del menú o se marcan "próximamente").
