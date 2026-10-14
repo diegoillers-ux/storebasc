@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { paymentRepository } from '@/lib/supabase/repositories/payments';
+import { paymentRepository, type Payment, type PaymentStatus } from '@/lib/supabase/repositories/payments';
 import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 import { orderRepository } from '@/lib/supabase/repositories/orders';
 import { customerRepository } from '@/lib/supabase/repositories/customers';
@@ -36,8 +36,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Pago no encontrado.' }, { status: 404 });
     }
 
-    const updateData: any = {
-      status,
+    const updateData: Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>> = {
+      status: status as PaymentStatus,
       verifiedAt: new Date(),
       verifiedBy: 'system-admin', // ID o correo del administrador en sesión
     };

@@ -27,4 +27,4 @@ Pueden aplicarse en sesiones sucesivas. No se necesita un orquestador multiagent
 
 ## Controles
 
-CI define `lint`, `types-and-regressions` y `build-and-smoke`. Deben configurarse como obligatorios en la protección de `main` una vez revisada la política. Esta PR no cambia permisos ni protección del repositorio. El lint heredado sigue fallando y bloquea `npm run check`; no se silencia para permitir integración.
+CI define `lint`, `types-and-regressions` y `build-and-smoke`. El check `lint` analiza todos los archivos JavaScript/TypeScript modificados por la PR; así los fallos conocidos del resto del repositorio no bloquean cambios no relacionados. `npm run lint` sigue siendo la comprobación completa local y conserva la deuda visible; no se desactivan reglas. En `main` están configurados como obligatorios los tres checks, la resolución de conversaciones, la prohibición de force-push y la prohibición de borrar la rama. La protección no exige aprobaciones formales: la cuenta tiene un único colaborador.

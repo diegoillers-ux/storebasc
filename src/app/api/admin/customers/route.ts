@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { customerRepository } from '@/lib/supabase/repositories/customers';
+import { customerRepository, type Customer } from '@/lib/supabase/repositories/customers';
 
 export async function GET(req: NextRequest) {
   const authError = await requireAdminSession();
@@ -106,7 +106,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Cliente no encontrado.' }, { status: 404 });
     }
 
-    await customerRepository.update(id, updates as any);
+    await customerRepository.update(id, updates as Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>);
     const updated = await customerRepository.getById(id);
 
     return NextResponse.json({ success: true, customer: updated });

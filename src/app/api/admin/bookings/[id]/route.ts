@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { bookingRepository } from '@/lib/supabase/repositories/bookings';
+import { bookingRepository, type Booking, type BookingStatus } from '@/lib/supabase/repositories/bookings';
 import { customerRepository } from '@/lib/supabase/repositories/customers';
 import { serviceRepository } from '@/lib/supabase/repositories/services';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
@@ -38,8 +38,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Cliente o servicio no encontrado para esta reserva.' }, { status: 404 });
     }
 
-    const updateData: any = {};
-    if (status !== undefined) updateData.status = status;
+    const updateData: Partial<Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>> = {};
+    if (status !== undefined) updateData.status = status as BookingStatus;
     if (scheduledAt !== undefined) updateData.scheduledAt = new Date(scheduledAt);
     if (notes !== undefined) updateData.notes = notes;
     if (durationMinutes !== undefined) updateData.durationMinutes = Number(durationMinutes);

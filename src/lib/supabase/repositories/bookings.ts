@@ -33,20 +33,20 @@ export interface BookingEvent {
   createdAt: Date;
 }
 
-function mapBookingFromDb(row: any): Booking {
+function mapBookingFromDb(row: Record<string, unknown>): Booking {
   return {
-    id: row.id,
-    customerId: row.customer_id,
-    serviceId: row.service_id,
-    adminId: row.admin_id || null,
-    scheduledAt: new Date(row.scheduled_at),
+    id: typeof row.id === 'string' ? row.id : undefined,
+    customerId: String(row.customer_id ?? ''),
+    serviceId: String(row.service_id ?? ''),
+    adminId: typeof row.admin_id === 'string' ? row.admin_id : null,
+    scheduledAt: new Date(String(row.scheduled_at)),
     durationMinutes: Number(row.duration_minutes || 60),
-    status: row.status as BookingStatus,
-    notes: row.notes || null,
-    calendarEventId: row.calendar_event_id || null,
-    whatsappLink: row.whatsapp_link || null,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    status: String(row.status) as BookingStatus,
+    notes: typeof row.notes === 'string' ? row.notes : null,
+    calendarEventId: typeof row.calendar_event_id === 'string' ? row.calendar_event_id : null,
+    whatsappLink: typeof row.whatsapp_link === 'string' ? row.whatsapp_link : null,
+    createdAt: new Date(String(row.created_at)),
+    updatedAt: new Date(String(row.updated_at)),
   };
 }
 
@@ -94,7 +94,7 @@ export const bookingRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.customerId !== undefined) payload.customer_id = data.customerId;
     if (data.serviceId !== undefined) payload.service_id = data.serviceId;
     if (data.adminId !== undefined) payload.admin_id = data.adminId;
@@ -193,7 +193,7 @@ export const bookingRepository = {
     };
   },
 
-  async listEvents(bookingId: string): Promise<BookingEvent[]> {
+  async listEvents(_bookingId: string): Promise<BookingEvent[]> {
     return [];
   },
 };
