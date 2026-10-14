@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "updated": "2026-10-14",
+  "max_tasks_per_launch": 1,
+  "max_repair_attempts": 3,
+  "target_minutes": 45,
+  "tasks": [
+    {
+      "id": "BOOT-001",
+      "status": "ready_for_review",
+      "authorized": true,
+      "depends_on": [],
+      "file": "docs/agent-loop/tasks/BOOT-001.md"
+    },
+    {
+      "id": "SB-002",
+      "status": "proposed",
+      "authorized": false,
+      "depends_on": [
+        "BOOT-001"
+      ],
+      "file": "docs/agent-loop/tasks/SB-002.md"
+    }
+  ]
+}
