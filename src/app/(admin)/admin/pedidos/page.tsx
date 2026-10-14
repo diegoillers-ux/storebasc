@@ -67,6 +67,11 @@ export default function PedidosPage() {
     fetchData();
   }, []);
 
+  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -86,11 +91,6 @@ export default function PedidosPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
   };
 
   const fetchOrderItems = async (orderId: string) => {

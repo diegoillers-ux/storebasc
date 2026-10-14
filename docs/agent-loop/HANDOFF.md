@@ -1,32 +1,29 @@
-# Relevo — Storebasc
+# Relevo — Sotorebasc
+Fecha: 2026-10-14 18:40 (America/Bogota).
+Agente: OpenCode (Muse Spark 1.3 Free).
+Tarea: SB-002 — resolver lint (running; lanzamiento parcial cerrado, sin revisión aún).
+Rama: fix/sb-002-lote-2 (desde origin/main @ aca6158, con pasarela Mercado Pago/manual).
+Base: main. Remoto: origin.
 
-Fecha: 2026-10-14 · Zona horaria: America/Bogota.
-Tarea: BOOT-001 — instalar y comprobar continuidad entre agentes.
-Rama de la PR: `chore/portable-agent-loop`.
-HEAD de entrada: `be0460cfcd871c00ab83eb8e425b116bf232848b`.
-HEAD de base sincronizada: `1dee8fa` (`chore/consolidate-baseline-20261013`, PR #2). La base directa de integración de esta PR es esa rama, no `main`.
-HEAD revisado y publicado: `83db4baf5134b8f13eab9f27f9b20aae1c5d7e9f`.
-PR: https://github.com/diegoillers-ux/storebasc/pull/3
+## Autorización
+Diego "autorizado, soluciona" + base = main con pasarela. QUEUE: BOOT-001 accepted; SB-002 authorized=true running.
 
-## Tarea y alcance
+## Resultado del lanzamiento
+- Portes lote 1 (de fix/sb-002-lint): page.tsx 4 citas &ldquo;/&rdquo; + rifas (orden hooks + 5 imports sin usar).
+- Lote 2a (6 admin: agenda, catalogo, configuracion, contenido, pagos, pedidos): showNotice movido sobre fetch (elimina clase immutability) + contenido:292 entidades.
+- Lint: 53E/66W (main) -> 45E/61W (portes) -> 43E/61W. Total lanzamiento: -10 errores, -5 warnings.
+- Los 6 useEffect ahora reportan set-state-in-effect (antes enmascarado como immutability, igual que rifas): la clase sistémica queda en 12 sitios y exige patrón común (lote 3). Sin cambios de comportamiento; pagos no tocados en lógica.
+- typecheck PASS (next typegen + tsc). npm test 6/6 PASS. git diff --check vacío.
 
-BOOT-001 instala el comando `/continuar`, las instrucciones portables y el agente revisor de solo lectura. La ficha actualizada enumera todos los archivos permitidos. No cambia código de producto, servicios ni credenciales.
+## Mapa restante (45 -> 43 errores)
+- set-state-in-effect x12: rifas:78, Step1ClientForm:38, schedule:18, product/pay:38, raffle/pay:37, CartContext:42 + 6 admin recién reclasificados.
+- no-explicit-any x31: repos (admin-users, ai-assets, orders, payments, products, services), api [id] (products, services), auth/auth.config/middleware, mercadopago:34, login/register/verify-otp, useRaffles, pedidos:120/122, configuracion:178. Patrón disponible: Record<string,unknown> + guards (ya usado en bookings.ts por 1dee8fa).
 
-## Referencias revisadas
+## Archivos del commit
+8 src (page.tsx público + 7 admin) + QUEUE.json + HANDOFF.md. lint-report.json generado y eliminado, no commiteado.
 
-- `AGENTS.md`
-- `docs/PROJECT-STATE.md`, `docs/WORKFLOW.md`, `docs/architecture.md` y `docs/ROADMAP.md`
-- `docs/agent-loop/LOOP.md`, `QUEUE.json`, `REVIEW.md`, `TASK-TEMPLATE.md` y las fichas BOOT-001/SB-002
-- `.opencode/commands/continuar.md` y `.opencode/agents/reviewer.md`
+## Siguiente paso exacto
+Lote 3: decidir patrón set-state-in-effect (opciones: cadena .then/.catch/.finally con flag de cancelación en el efecto; o verificar init true y documentar; NO silenciar regla) aplicarlo en 1 archivo, verificar, extender a los 12. Luego oleada any por archivo con patrón Record<string,unknown>, empezando fuera de pagos y entrando a pagos/pasarela al final con typecheck por archivo. Cerrar con build+e2e, revisión independiente y PR lista.
 
-## Revisión y estado
-
-La primera revisión independiente devolvió `CHANGES_REQUESTED`: corregir la base que HANDOFF declara, alinear el alcance de BOOT-001 con los archivos instalados y evitar que el lint heredado bloquee tareas documentales. Se corrigieron los hallazgos. El revisor independiente aprobó el diff publicado `83db4baf` y confirmó resuelto el bloqueo de lint. SB-002 sigue propuesta, `authorized=false`.
-
-## Verificación actual
-
-En el HEAD remoto anterior de la PR #3, `types-and-regressions` y `build-and-smoke` pasaron, y `lint` falló por deuda previa. La rama se sincronizó con la PR #2 publicada en `1dee8fa`; CI ahora comprueba los archivos JS/TS modificados y mantiene `npm run lint` como auditoría completa visible. Los checks de PR #2 pasaron en [run 38647619176](https://github.com/diegoillers-ux/storebasc/actions/runs/38647619176); la verificación local incluye 6 pruebas unitarias, typecheck, build, 4 smoke tests Chromium y lint de archivos tocados con 0 errores/1 advertencia. El lint global conserva 53 errores y 66 advertencias. Los tres checks de PR #3 pasaron en [run 38647744196](https://github.com/diegoillers-ux/storebasc/actions/runs/38647744196). La revisión independiente de solo lectura aprobó `83db4baf`; no publicó una revisión formal en GitHub.
-
-## Siguiente paso
-
-BOOT-001 está lista para decisión del dueño del producto. PR #3 sigue en borrador hasta que Diego decida si quiere presentarla para revisión humana. No iniciar SB-002, integrar ni desplegar.
+## Decisión requerida
+Ninguna para el lote 3. Revisión independiente solo al cerrar SB-002 (v2), no en parciales.

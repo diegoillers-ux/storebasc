@@ -403,7 +403,7 @@ export default async function HomePage() {
             </div>
 
             <p className="italic text-amber-200/90 text-sm font-display max-w-sm leading-relaxed mb-4">
-              "El cielo no determina tu destino, revela tu potencial infinito para caminar con propósito."
+              &ldquo;El cielo no determina tu destino, revela tu potencial infinito para caminar con propósito.&rdquo;
             </p>
             <span className="text-xs uppercase tracking-widest text-amber-400 font-semibold">
               Lina · Astróloga & Creadora
@@ -463,7 +463,7 @@ export default async function HomePage() {
               <div>
                 <div className="text-amber-400 text-sm mb-4">★★★★★</div>
                 <p className="text-gray-700 text-sm italic leading-relaxed">
-                  "La lectura de mi carta natal con Lina fue una experiencia reveladora. Me dio claridad y mucha tranquilidad para tomar decisiones importantes en mi carrera."
+                  &ldquo;La lectura de mi carta natal con Lina fue una experiencia reveladora. Me dio claridad y mucha tranquilidad para tomar decisiones importantes en mi carrera.&rdquo;
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-ananda-100 flex items-center justify-between">
@@ -476,7 +476,7 @@ export default async function HomePage() {
               <div>
                 <div className="text-amber-400 text-sm mb-4">★★★★★</div>
                 <p className="text-gray-700 text-sm italic leading-relaxed">
-                  "El kit de cristales llegó impecable y con una guía súper linda. Se nota el amor y la intención con la que empaquetan cada detalle."
+                  &ldquo;El kit de cristales llegó impecable y con una guía súper linda. Se nota el amor y la intención con la que empaquetan cada detalle.&rdquo;
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-ananda-100 flex items-center justify-between">
@@ -489,7 +489,7 @@ export default async function HomePage() {
               <div>
                 <div className="text-amber-400 text-sm mb-4">★★★★★</div>
                 <p className="text-gray-700 text-sm italic leading-relaxed">
-                  "Hice la consulta de Tarot Express por WhatsApp y quedé impresionada con la precisión y el trato tan amoroso. Sin duda volveré a agendar."
+                  &ldquo;Hice la consulta de Tarot Express por WhatsApp y quedé impresionada con la precisión y el trato tan amoroso. Sin duda volveré a agendar.&rdquo;
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-ananda-100 flex items-center justify-between">

@@ -7,15 +7,15 @@
   "tasks": [
     {
       "id": "BOOT-001",
-      "status": "ready_for_review",
+      "status": "accepted",
       "authorized": true,
       "depends_on": [],
       "file": "docs/agent-loop/tasks/BOOT-001.md"
     },
     {
       "id": "SB-002",
-      "status": "proposed",
-      "authorized": false,
+      "status": "running",
+      "authorized": true,
       "depends_on": [
         "BOOT-001"
       ],

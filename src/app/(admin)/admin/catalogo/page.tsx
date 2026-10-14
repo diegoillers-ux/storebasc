@@ -52,6 +52,11 @@ export default function CatalogoPage() {
     fetchProducts();
   }, []);
 
+  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -65,11 +70,6 @@ export default function CatalogoPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
   };
 
   // ─── Producto CRUD ───

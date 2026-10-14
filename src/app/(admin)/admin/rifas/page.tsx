@@ -4,15 +4,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Award,
   Plus,
-  User,
   Phone,
   Sparkles,
   CheckCircle,
-  XCircle,
-  HelpCircle,
-  Clock,
   ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
 import LoadingState from '@/components/ui/LoadingState';
 import FeedbackAlert from '@/components/ui/FeedbackAlert';
@@ -59,9 +54,10 @@ export default function RifasPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchRifas();
-  }, []);
+  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
+  };
 
   const fetchRifas = async () => {
     setLoading(true);
@@ -78,10 +74,9 @@ export default function RifasPage() {
     }
   };
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    fetchRifas();
+  }, []);
 
   const fetchTickets = async (rifaId: string) => {
     setLoadingTickets(true);

@@ -73,6 +73,11 @@ export default function ContenidoIAPage() {
     fetchAssets();
   }, []);
 
+  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
+  };
+
   const fetchAssets = async () => {
     setLoading(true);
     try {
@@ -86,11 +91,6 @@ export default function ContenidoIAPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -289,7 +289,7 @@ export default function ContenidoIAPage() {
               <div className="space-y-1">
                 <p className="text-[10px] text-gray-400 font-semibold uppercase leading-none">Prompt Optimizado</p>
                 <p className="text-xs font-semibold text-gray-800 leading-relaxed italic bg-white p-3.5 border border-gray-100 rounded-xl">
-                  "{generatedAsset.prompt}"
+                  &ldquo;{generatedAsset.prompt}&rdquo;
                 </p>
               </div>
 
