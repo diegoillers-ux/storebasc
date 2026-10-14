@@ -58,11 +58,6 @@ export default function ConfigurationPage() {
   
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  // Cargar datos al montar
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert(null), 5000);
@@ -92,6 +87,13 @@ export default function ConfigurationPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      fetchData();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   // ─── Servicios CRUD ───
 

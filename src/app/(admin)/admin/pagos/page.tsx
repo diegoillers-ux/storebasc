@@ -57,10 +57,6 @@ export default function PagosPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert(null), 5000);
@@ -82,6 +78,13 @@ export default function PagosPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      fetchData();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const handleVerifyPayment = async (status: 'APPROVED' | 'REJECTED') => {
     if (!selectedPayment) return;

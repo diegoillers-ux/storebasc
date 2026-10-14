@@ -48,10 +48,6 @@ export default function CatalogoPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert(null), 5000);
@@ -71,6 +67,13 @@ export default function CatalogoPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      fetchProducts();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   // ─── Producto CRUD ───
 

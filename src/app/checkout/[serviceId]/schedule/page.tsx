@@ -12,14 +12,17 @@ export default function CheckoutSchedulePage() {
   const [checkoutData, setCheckoutData] = useState<any>(null)
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem('ananda_checkout_data')
-      if (stored) {
-        setCheckoutData(JSON.parse(stored))
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const stored = sessionStorage.getItem('ananda_checkout_data')
+        if (stored) {
+          setCheckoutData(JSON.parse(stored))
+        }
+      } catch (e) {
+        console.error('Error reading checkout data:', e)
       }
-    } catch (e) {
-      console.error('Error reading checkout data:', e)
-    }
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   const handleConfirmSchedule = (date: string, time: string) => {

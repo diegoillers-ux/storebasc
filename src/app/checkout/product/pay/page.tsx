@@ -28,6 +28,7 @@ export default function ProductPayPage() {
     const [reservationCode, setReservationCode] = useState('');
 
     useEffect(() => {
+        const frame = window.requestAnimationFrame(() => {
         const savedOrder = sessionStorage.getItem('product_order');
         if (!savedOrder) {
             router.push('/');
@@ -96,6 +97,8 @@ export default function ProductPayPage() {
         };
 
         void ensurePendingSale();
+        });
+        return () => window.cancelAnimationFrame(frame);
     }, [router]);
 
     const handleFinish = async () => {

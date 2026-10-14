@@ -75,7 +75,10 @@ export default function RifasPage() {
   };
 
   useEffect(() => {
-    fetchRifas();
+    const frame = window.requestAnimationFrame(() => {
+      fetchRifas();
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const fetchTickets = async (rifaId: string) => {

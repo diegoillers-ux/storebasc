@@ -27,6 +27,7 @@ export default function RafflePayPage() {
     const [reservationCode, setReservationCode] = useState('');
 
     useEffect(() => {
+        const frame = window.requestAnimationFrame(() => {
         const savedOrder = sessionStorage.getItem('raffle_order');
         if (!savedOrder) {
             router.push('/');
@@ -94,6 +95,8 @@ export default function RafflePayPage() {
         };
 
         void ensurePendingSale();
+        });
+        return () => window.cancelAnimationFrame(frame);
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {

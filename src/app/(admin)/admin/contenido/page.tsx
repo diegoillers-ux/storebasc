@@ -69,10 +69,6 @@ export default function ContenidoIAPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchAssets();
-  }, []);
-
   const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert(null), 5000);
@@ -92,6 +88,13 @@ export default function ContenidoIAPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      fetchAssets();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();

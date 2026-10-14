@@ -63,10 +63,6 @@ export default function PedidosPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert(null), 5000);
@@ -92,6 +88,13 @@ export default function PedidosPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      fetchData();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const fetchOrderItems = async (orderId: string) => {
     setLoadingItems(true);
