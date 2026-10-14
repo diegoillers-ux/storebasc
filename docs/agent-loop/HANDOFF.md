@@ -1,51 +1,32 @@
-# Relevo — Sotorebasc
-Fecha: 2026-10-14 13:45 (America/Bogota).
-Agente: OpenCode (Muse Spark 1.3 Free), sesion ses_ec4464bbeffeXpsQ1pqFeKtYAd.
-Tarea: BOOT-001 — comprobar continuidad entre agentes.
-Rama de trabajo: chore/portable-agent-loop.
-HEAD: 03badc0e74e50ff8b97c5e793b6e4ded2b28ef71.
-Base de integracion: main en 3172d4a58afcdbfb7fcad0119103e277e81f3fa7 (origin/main).
-Remoto: origin https://github.com/diegoillers-ux/storebasc.git.
+# Relevo — Storebasc
 
-## Referencias leidas
-- AGENTS.md
-- docs/PROJECT-STATE.md
-- docs/WORKFLOW.md
-- docs/architecture.md
-- docs/ROADMAP.md
-- docs/agent-loop/LOOP.md
-- docs/agent-loop/QUEUE.json
-- docs/agent-loop/HANDOFF.md (version anterior de Codex)
-- docs/agent-loop/tasks/BOOT-001.md
-- docs/agent-loop/tasks/SB-002.md (solo registro, sin autorizar)
-- .opencode/commands/continuar.md
+Fecha: 2026-10-14 · Zona horaria: America/Bogota.
+Tarea: BOOT-001 — instalar y comprobar continuidad entre agentes.
+Rama de la PR: `chore/portable-agent-loop`.
+HEAD de entrada: `be0460cfcd871c00ab83eb8e425b116bf232848b`.
+HEAD de base sincronizada: `1dee8fa` (`chore/consolidate-baseline-20261013`, PR #2). La base directa de integración de esta PR es esa rama, no `main`.
+HEAD candidato sincronizado localmente: `02efa3ebd8877a53c3d0e620b20fc0ffee3c0467`; el HEAD que finalmente se revise y publique queda enlazado en la PR, porque este archivo forma parte de ese mismo commit.
+PR: https://github.com/diegoillers-ux/storebasc/pull/3
 
-## Resultado
-BOOT-001 PASS como comprobacion de continuidad. El checkout ofrece entrada comun suficiente sin historial del chat.
-No se modifico codigo, credenciales ni configuracion de producto. Solo HANDOFF.md y QUEUE.json.
-La base documentada sigue vigente: 03badc0 contiene a d74e821 de la rama de consolidacion.
+## Tarea y alcance
 
-## Archivos modificados
-- docs/agent-loop/HANDOFF.md (este relevo)
-- docs/agent-loop/QUEUE.json (BOOT-001 -> ready_for_review)
+BOOT-001 instala el comando `/continuar`, las instrucciones portables y el agente revisor de solo lectura. La ficha actualizada enumera todos los archivos permitidos. No cambia código de producto, servicios ni credenciales.
 
-## Comprobaciones (2026-10-14, checkout limpio)
-- `git remote -v` -> origin https://github.com/diegoillers-ux/storebasc.git (fetch/push). PASS
-- `git branch --show-current` -> chore/portable-agent-loop. PASS
-- `git rev-parse HEAD` -> 03badc0e74e50ff8b97c5e793b6e4ded2b28ef71. PASS
-- `git status --short` -> vacio (sin cambios pendientes). PASS
-- `git diff --check` -> vacio (sin errores de espacios). PASS
-- `.opencode/commands/continuar.md` -> existe, 9 lineas, describe este mismo ciclo. PASS
-- `git rev-parse origin/main` -> 3172d4a58afcdbfb7fcad0119103e277e81f3fa7. PASS
-- QUEUE.json: BOOT-001 authorized=true, sin dependencias; SB-002 proposed/authorized=false depende de BOOT-001. Sin otra tarea ejecutable. PASS
-- No se compilo ni se llamo a servicios externos, segun alcance de BOOT-001.
+## Referencias revisadas
 
-## Fallos heredados (no de esta tarea)
-- Deuda de producto segun docs/PROJECT-STATE.md y docs/verification/2026-10-13.md: ESLint con errores, disponibilidad/pagos/inventario pendientes, despliegue de pruebas por recuperar. No se reejecutaron aqui por estar fuera del alcance BOOT-001.
+- `AGENTS.md`
+- `docs/PROJECT-STATE.md`, `docs/WORKFLOW.md`, `docs/architecture.md` y `docs/ROADMAP.md`
+- `docs/agent-loop/LOOP.md`, `QUEUE.json`, `REVIEW.md`, `TASK-TEMPLATE.md` y las fichas BOOT-001/SB-002
+- `.opencode/commands/continuar.md` y `.opencode/agents/reviewer.md`
 
-## Siguiente paso exacto
-Revision independiente del diff de BOOT-001 (solo HANDOFF + QUEUE) y luego decision de Diego.
-Si se acepta, Diego debe marcar BOOT-001 accepted y autorizar SB-002 con instruccion directa; sin eso SB-002 no es ejecutable.
+## Revisión y estado
 
-## Decision requerida
-Diego: aceptar o no BOOT-001 (solo el puede marcar accepted) y decidir si autoriza SB-002. No se integra ni se despliega nada en este ciclo.
+La primera revisión independiente devolvió `CHANGES_REQUESTED`: corregir la base que HANDOFF declara, alinear el alcance de BOOT-001 con los archivos instalados y evitar que el lint heredado bloquee tareas documentales. Se corrigieron alcance y base; la rama ya incluye la política de lint por archivos modificados, publicada en PR #2. Ahora se solicita una nueva revisión del diff sincronizado. BOOT-001 permanece `reviewing`; SB-002 sigue propuesta, `authorized=false`.
+
+## Verificación actual
+
+En el HEAD remoto anterior de la PR #3, `types-and-regressions` y `build-and-smoke` pasaron, y `lint` falló porque analizaba todo el repositorio y encontraba deuda previa. La rama se sincronizó localmente con la PR #2 publicada en `1dee8fa`; su CI ahora comprueba todos los archivos JS/TS modificados y mantiene `npm run lint` como auditoría completa visible. La verificación de PR #2 pasa: pruebas unitarias 6/6, typecheck, build, smoke Chromium 4/4 y lint de archivos tocados con 0 errores/1 advertencia; el lint global conserva 53 errores y 66 advertencias. Los checks de CI de la PR #3 y la revisión independiente del diff sincronizado siguen pendientes.
+
+## Siguiente paso
+
+Publicar esta rama con avance normal, comprobar sus tres checks de CI y completar la revisión independiente. Si ambos pasan, mover BOOT-001 a `ready_for_review`; Diego decide si acepta. No iniciar SB-002, integrar ni desplegar.

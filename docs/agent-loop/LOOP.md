@@ -36,6 +36,7 @@ proposed → ready → running → reviewing → ready_for_review → accepted.
 - authorized=false + proposed significa que no se puede ejecutar.
 - Solo Diego autoriza tareas, cambia su alcance o marca accepted.
 - ready_for_review significa revisión independiente aprobada y todos los checks de CI configurados pasan; si no hay CI en ese repositorio, deben pasar los comandos de validación de la ficha ejecutados sobre el HEAD revisado y se debe declarar que no existe CI. La PR queda lista para la decisión de Diego; no significa aceptada ni integrada.
+- Si el repositorio mantiene deuda de lint anterior a la tarea, CI debe comprobar todos los archivos de código cambiados en la PR y conservar la ejecución completa `npm run lint` como evidencia de deuda. Un cambio documental no queda bloqueado por errores en código sin modificar; el equipo no puede ocultar fallos en archivos incluidos por la PR.
 - No iniciar una tarea dependiente hasta que la anterior esté accepted.
 
 ## Entrega
