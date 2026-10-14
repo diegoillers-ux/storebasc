@@ -11,7 +11,7 @@ Editar únicamente docs/agent-loop/HANDOFF.md y el estado BOOT-001 en QUEUE.json
 - Registrar tareas futuras como propuestas, sin autorizarlas.
 - Entregar el diff exacto de esta tarea, la ficha y evidencia a un revisor independiente de solo lectura.
 - Corregir hallazgos dentro del alcance, hasta tres rondas.
-- Terminar en ready_for_review solo si el revisor aprueba y los checks requeridos del HEAD actual pasan; acceso, evidencia o revisión faltante queda BLOCKED/needs_decision.
+- Terminar en ready_for_review solo si el revisor aprueba y los checks CI configurados del HEAD actual pasan. Si no existe CI, deben pasar todos los comandos de validación de la ficha en ese HEAD y se debe declarar la ausencia de CI; acceso, evidencia o revisión faltante queda BLOCKED/needs_decision.
 ## Validación
 git status --short; git branch --show-current; git rev-parse HEAD; git diff --check.
 No compilar ni llamar servicios externos durante esta comprobación de continuidad.

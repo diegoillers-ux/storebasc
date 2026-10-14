@@ -23,7 +23,7 @@ Mantener continuidad entre Codex, OpenCode y otros agentes con una cola por proy
 ## Implementar y revisar
 1. El agente implementador trabaja dentro del alcance, ejecuta las comprobaciones de la ficha y revisa su diff.
 2. Mantiene una PR de borrador para la tarea autorizada. Comprueba que la base y el diff no incluyan trabajo ajeno. No crea PR duplicadas.
-3. Antes de cerrar, prepara el diff exacto respecto de la base de esa PR, criterios de aceptación y resultados de CI. Pásalos a un agente revisor en un contexto separado. El implementador no puede aprobar su propio trabajo.
+3. Antes de cerrar, prepara el diff exacto respecto de la base de esa PR, criterios de aceptación y resultados de CI o, si no existe, de los comandos de validación de la ficha. Pásalos a un agente revisor en un contexto separado. El implementador no puede aprobar su propio trabajo.
 4. El revisor sigue docs/agent-loop/REVIEW.md y no tiene permisos para escribir, usar shell, llamar herramientas externas, cambiar PR o lanzar otros agentes.
 5. Si devuelve CHANGES_REQUESTED, el implementador corrige dentro del alcance y solicita otra revisión. Máximo tres rondas de corrección/revisión. Si no se resuelve, marca blocked y guarda el motivo.
 6. Si no existe revisor separado, la tarea se pausa en needs_decision. Una autolectura, una sesión ChatGPT iniciada manualmente o un check de CI no se presentan como revisión automática independiente.
@@ -35,12 +35,12 @@ proposed → ready → running → reviewing → ready_for_review → accepted.
 - running puede pasar a blocked o needs_decision.
 - authorized=false + proposed significa que no se puede ejecutar.
 - Solo Diego autoriza tareas, cambia su alcance o marca accepted.
-- ready_for_review significa revisión independiente aprobada y CI requerido en verde. La PR queda lista para la decisión de Diego; no significa aceptada ni integrada.
+- ready_for_review significa revisión independiente aprobada y todos los checks de CI configurados pasan; si no hay CI en ese repositorio, deben pasar los comandos de validación de la ficha ejecutados sobre el HEAD revisado y se debe declarar que no existe CI. La PR queda lista para la decisión de Diego; no significa aceptada ni integrada.
 - No iniciar una tarea dependiente hasta que la anterior esté accepted.
 
 ## Entrega
 Al terminar o bloquearse, actualiza HANDOFF.md y QUEUE.json con tarea, resultado, rama, base de integración, HEAD final, archivos, revisión, checks, fallos, siguiente paso y decisión requerida.
-Con revisión aprobada y CI en verde, la PR puede pasar de borrador a lista para revisión humana. No integrar ni desplegar.
+Con revisión aprobada y todos los checks de CI configurados pasan; si no hay CI, pasan los comandos de validación de la ficha sobre el HEAD revisado y se declara su ausencia, la PR puede pasar de borrador a lista para revisión humana. No integrar ni desplegar.
 Commits y publicación de la rama/PR pertenecen a la tarea autorizada cuando las herramientas lo permiten. Añade archivos específicos, nunca incluyas cambios ajenos.
 Si falta acceso a GitHub, no declares la PR ni el relevo entre estaciones publicados.
 
