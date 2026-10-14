@@ -7,7 +7,7 @@
   "tasks": [
     {
       "id": "BOOT-001",
-      "status": "ready_for_review",
+      "status": "reviewing",
       "authorized": true,
       "depends_on": [],
       "file": "docs/agent-loop/tasks/BOOT-001.md"

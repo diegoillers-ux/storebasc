@@ -39,3 +39,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Lee explícitamente docs/agent-loop/LOOP.md, docs/agent-loop/QUEUE.json y docs/agent-loop/HANDOFF.md para el trabajo por tareas.
 La cola controla autorización y estado; docs/WORKFLOW.md sigue siendo la guía general de entrega. La instalación de continuidad autoriza solo BOOT-001; no implica iniciar remediaciones de producto.
 Nombre visible indicado por Diego: Sotorebasc; identificador GitHub existente: storebasc. No renombrar código, marca Ananda ni repositorio automáticamente.
+
+## Revisión independiente
+Antes de cerrar una tarea, sigue docs/agent-loop/LOOP.md y REVIEW.md. El implementador debe pasar el diff completo, ficha y CI a un revisor separado de solo lectura. No autoaprobarse ni dejar la tarea ready_for_review si falta revisión o CI.

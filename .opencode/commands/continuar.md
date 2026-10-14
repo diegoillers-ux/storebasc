@@ -1,9 +1,7 @@
 ---
-description: Continuar una tarea autorizada y guardar el relevo
+description: Ejecutar una tarea autorizada con revisión independiente antes de entregarla
 ---
-Lee mediante tus herramientas AGENTS.md, docs/agent-loop/LOOP.md, docs/agent-loop/QUEUE.json y docs/agent-loop/HANDOFF.md.
-Verifica remoto, rama, HEAD y cambios pendientes. Aplica el ciclo documentado a una sola tarea autorizada y lista.
-Resuelve las decisiones técnicas rutinarias, comprueba, corrige dentro de sus límites y deja una entrega revisable.
-No cambies authorized ni autoaceptes tareas; no integres ni despliegues. Si no hay tarea ejecutable, explica el bloqueo concreto y termina.
-Guarda el relevo antes de terminar. Conserva el modelo y los permisos configurados en esta sesión.
-Responde en español con: resultado, comprobaciones y siguiente paso o decisión.
+Lee mediante herramientas AGENTS.md, docs/agent-loop/LOOP.md, docs/agent-loop/REVIEW.md, docs/agent-loop/QUEUE.json, docs/agent-loop/HANDOFF.md y la ficha de la tarea. Verifica remoto, rama, HEAD, base directa de la PR y cambios pendientes. Si hay una tarea en reviewing sin veredicto, reanuda solo su revisión; si no, ejecuta una sola tarea autorizada y lista.
+Conserva la PR en borrador durante implementación y revisión. Reúne el diff completo contra la base real, la ficha y CI del HEAD actual. Usa el subagente reviewer con contexto separado y solo lectura; pásale esos datos. Si devuelve CHANGES_REQUESTED, corrige dentro del alcance y repite, hasta tres rondas. Si no existe el revisor, falta evidencia o continúan hallazgos al tercer intento, detente con BLOCKED/needs_decision; no te autoapruebes.
+Solo con APPROVE del revisor y CI requerido en verde marca ready_for_review y deja la PR lista para Diego. No cambies autorizaciones, no marques accepted, no integres ni despliegues. Guarda HANDOFF y QUEUE con la base real, HEAD final, archivos, rondas, hallazgos y checks. Conserva el modelo y permisos configurados para el agente principal.
+Responde en español: resultado, revisor y veredicto, comprobaciones y decisión pendiente.
