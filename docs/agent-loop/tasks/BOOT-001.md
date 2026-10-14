@@ -3,15 +3,17 @@
 Comprobar que este checkout ofrece una entrada común y suficiente para continuar sin el historial del chat.
 ## Alcance
 Leer instrucciones, cola, relevo y estructura; ejecutar solo inspección Git y comprobación de espacios (git diff --check).
-Editar únicamente docs/agent-loop/HANDOFF.md y el estado BOOT-001 en QUEUE.json. No modificar código, credenciales ni configuraciones de producto.
+Editar únicamente docs/agent-loop/HANDOFF.md y el estado BOOT-001 en QUEUE.json. No modificar código, credenciales ni configuración del producto.
 ## Aceptación
-- Confirmar remoto, rama y HEAD, distinguiendo base de integración y rama de trabajo.
-- Leer AGENTS.md y las referencias explícitas; citar sus rutas en el relevo.
+- Confirmar remoto, rama, HEAD inicial y final, y base directa de integración de la PR.
+- Leer las instrucciones y referencias explícitas; citar sus rutas en el relevo.
 - Confirmar que /continuar tiene un archivo .opencode/commands/continuar.md.
-- Registrar las tareas futuras propuestas sin autorizarlas.
-- Terminar en ready_for_review con evidencia concreta; acceso o archivo faltante queda BLOCKED.
+- Registrar tareas futuras como propuestas, sin autorizarlas.
+- Entregar el diff exacto de esta tarea, la ficha y evidencia a un revisor independiente de solo lectura.
+- Corregir hallazgos dentro del alcance, hasta tres rondas.
+- Terminar en ready_for_review solo si el revisor aprueba y los checks requeridos del HEAD actual pasan; acceso, evidencia o revisión faltante queda BLOCKED/needs_decision.
 ## Validación
 git status --short; git branch --show-current; git rev-parse HEAD; git diff --check.
 No compilar ni llamar servicios externos durante esta comprobación de continuidad.
 ## Entrega
-HANDOFF.md actualizado y cola coherente. No exigir otro agente o servicio para esta comprobación.
+HANDOFF.md y QUEUE.json coherentes con la base real, HEAD final, cambios permitidos, veredicto del revisor y resultados de checks. No afirmar que hubo revisión si no se ejecutó.
