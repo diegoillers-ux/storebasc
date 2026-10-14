@@ -34,3 +34,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - No desactivar reglas para presentar checks verdes. Registrar errores heredados y pruebas bloqueadas.
 - Documentar comandos, resultados, commit/árbol verificado, cambios pendientes y siguiente acción en la tarea/PR.
 - Instrucciones Markdown no arrancan agentes: la ejecución depende del arnés, permisos, terminal y acceso al repositorio.
+
+## Ciclo entre agentes (Codex, OpenCode y otros)
+Lee explícitamente docs/agent-loop/LOOP.md, docs/agent-loop/QUEUE.json y docs/agent-loop/HANDOFF.md para el trabajo por tareas.
+La cola controla autorización y estado; docs/WORKFLOW.md sigue siendo la guía general de entrega. La instalación de continuidad autoriza solo BOOT-001; no implica iniciar remediaciones de producto.
+Nombre visible indicado por Diego: Sotorebasc; identificador GitHub existente: storebasc. No renombrar código, marca Ananda ni repositorio automáticamente.
