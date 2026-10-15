@@ -1,29 +1,32 @@
 # Relevo — Sotorebasc
-Fecha: 2026-10-14 19:22 (America/Bogota).
+Fecha: 2026-10-14 19:27 (America/Bogota).
 Agente: OpenCode (Muse Spark 1.3 Free).
-Tarea: SB-002 running (oleada any completa; pendiente revisión independiente y PR lista).
-Rama: fix/sb-002-lote-2 (base main aca6158). PR #4 en borrador vs main.
+Tarea: SB-002 ready_for_review (revisión aprobada + CI verde). Sin mergear.
+Rama: fix/sb-002-lote-2 @ 6e406e0 (+ este commit). Base: main @ aca6158.
+PR #4: de borrador a lista para revisión humana (solo Diego integra).
 
-## Resultado
-Oleada no-explicit-any completa con patrón Record<string,unknown> + guards (precedente bookings.ts):
-- Repos: admin-users, ai-assets, orders, products, services, payments (mapXFromDb + payloads + providerData tipado).
-- API [id]: products, services (updateData tipado con Partial/Omit + type imports).
-- Auth: next-auth.d.ts aumenta User/JWT con role/isAdmin opcionales (aditivo, sin cambio de conducta); auth.config sin `as any`; auth.ts y middleware usan tipos.
-- Pasarela: mercadopago body tipado con PreferenceRequest propio del SDK v3 (import type profundo; typecheck lo valida); webhook hace cast de frontera `(event.raw ?? null)`.
-- Páginas/hooks: pedidos (Order['status']), configuracion (WeeklyAvailability[keyof]), login/register/verify-otp (catch unknown + narrowing de redirect), useRaffles (guards + meta tipada), schedule (estado tipado + serviceName).
-- Typecheck atajó 3 regresiones mías (webhook providerData x2, schedule serviceName); corregidas. Intentos usados en clase any: 2 de 3.
+## Trabajo total SB-002 (lint 74E/73W -> 0E/60W)
+- Lote 1-2: entidades JSX (10), reorden showNotice/fetch/efecto (7 admin), patrón rAF en 12 efectos (precedente main), imports sin usar (10).
+- Oleada any (31): mappers Record<string,unknown> + guards, payloads Record, auth User/JWT aumentados (aditivo), mercadopago body: PreferenceRequest del SDK, webhook cast de frontera, catch unknown con narrowing, updateData tipados.
+- Typecheck atajó 3 regresiones propias (webhook x2, schedule serviceName); corregidas. 3 intentos usados como máximo por clase, sin agotar.
 
-## Comprobaciones sobre esta versión (Node 24, npm ci limpio)
-- npm run lint: 0 errores, 60 warnings (partida: main 53E/66W). `--fix` aplicado (1 warning menos: directiva eslint-disable sin uso).
-- npm run typecheck: PASS. npm test: 6/6 PASS. npm run build: PASS. npm run test:e2e: 4/4 PASS en Chromium local.
-- Warnings explicados (60): ~45 no-unused-vars (imports lucide y tipos sin usar heredados de UI V2; limpieza separada, no bloquean); ~7 exhaustive-deps (fetch excluidas a propósito para semántica montar-una-vez); 4 no-img-element (migración a next/image es decisión de producto); resto menores (postcss default, location-assign preexistente).
-- git diff --check: vacío. Pagos: solo tipos; lógica de Mercado Pago/manual intacta (E2E real de pasarela pertenece a P1, fuera de SB-002).
+## Revisión independiente (ronda 1, subagente explore, contexto separado, solo lectura)
+Veredicto: APPROVE (sin P0/P1/P2; 4x P3 no bloqueantes). Caveat: arnés sin perfiles de permiso; separación por contexto + instrucción (declara no escribir/ejecutar).
+P3 registrados para seguimiento (no bloquean, fuera de alcance cerrar aquí):
+1. admin-users.ts:18 validar role contra unión (fila corrupta sin role).
+2. auth.ts:56 AdminRole sin 'CLIENT' (tipo miente en sesión cliente; sin escalada, se usa isAdmin).
+3. useRaffles.ts:39 y products.ts:42 guards de elementos de arreglo incompletos.
+4. orders.ts:58 delivery objeto se serializa a JSON visible como texto (presentación atípica).
+Verificado por el revisor: guards preservan semántica, webhook intacto, sin as any ni eslint-disable en src, sin secretos/Wompi, rAF no rompe checkout/pagos, base main correcta.
 
-## Archivos del commit
-21 src + HANDOFF.md (22 archivos). QUEUE sin cambios (SB-002 running, BOOT-001 accepted).
+## Comprobaciones finales misma versión (6e406e0 + este relevo docs)
+- Local: lint 0E/60W (warnings explicados en relevo anterior), typecheck PASS, test 6/6, build PASS, e2e Chromium 4/4.
+- CI run 38659727952: lint SUCCESS, types-and-regressions SUCCESS, build-and-smoke SUCCESS.
+- git diff --check vacío. Lógica de pagos intacta (E2E pasarela = P1 futuro, fuera de SB-002).
 
-## Siguiente paso exacto
-1. Push y CI de PR #4 (draft). 2. Revisión independiente ronda 1 (diff base..HEAD + ficha + CI). 3. Corregir hasta 3 rondas si aplica. 4. Con APPROVE + CI verde: ready_for_review + PR lista para Diego. Sin mergear.
+## Archivos
+34 src + QUEUE.json (ready_for_review) + HANDOFF.md (este relevo). Rama anterior fix/sb-002-lint queda abandonada (lotes portados aquí).
 
-## Decisión requerida
-Ninguna hasta el veredicto del revisor.
+## Decisión pendiente (solo Diego)
+Aceptar SB-002 e integrar PR #4 (merge), o pedir cambios. No despliego nada.
+Siguiente tarea sugerida: P0 Entorno recuperado o P1 pagos/pedidos fiables (E2E pasarela) según ROADMAP.

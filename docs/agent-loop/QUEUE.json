@@ -14,7 +14,7 @@
     },
     {
       "id": "SB-002",
-      "status": "running",
+      "status": "ready_for_review",
       "authorized": true,
       "depends_on": [
         "BOOT-001"
