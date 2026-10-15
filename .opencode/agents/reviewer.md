@@ -1,5 +1,5 @@
 ---
-description: Revisión independiente de una tarea de software, solo lectura
+description: Revisión independiente para zonas de riesgo, solo lectura
 mode: subagent
 permissions:
   - action: "*"
