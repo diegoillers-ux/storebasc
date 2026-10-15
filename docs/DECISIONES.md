@@ -24,5 +24,8 @@ archivo histórico queda sin vigencia.
 - **Flujo**: modelo híbrido — autovalidación obligatoria por defecto; revisor
   independiente solo en zonas de riesgo. Aplicación directa a `main` para esta
   limpieza; en adelante ramas cortas + PR borrador, sin merge sin orden.
+- **Norma A (2026-10-15)**: protección de `main` intacta; por tarea autorizada,
+  la IA mergea en verde (3 checks PASS) sin esperar clics. El propietario solo
+  entra ante rojo, decisión o hallazgo relevante. Sin auto-merge nativo.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.
