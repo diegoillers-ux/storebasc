@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { productRepository } from '@/lib/supabase/repositories/products';
+import { productRepository, type Product } from '@/lib/supabase/repositories/products';
 
 export async function PUT(
   req: NextRequest,
@@ -19,7 +19,7 @@ export async function PUT(
     }
 
     const { name, slug, price, stock, sku, category, imageUrl, active, featured, description } = body;
-    const updateData: any = {};
+    const updateData: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>> = {};
     if (name !== undefined) updateData.name = name;
     if (slug !== undefined) updateData.slug = slug;
     if (price !== undefined) updateData.price = Number(price);

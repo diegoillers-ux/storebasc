@@ -9,7 +9,7 @@ export default function CheckoutSchedulePage() {
   const router = useRouter()
   const serviceId = params?.serviceId as string
 
-  const [checkoutData, setCheckoutData] = useState<any>(null)
+  const [checkoutData, setCheckoutData] = useState<{ serviceId?: string; serviceName?: string; [key: string]: unknown } | null>(null)
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

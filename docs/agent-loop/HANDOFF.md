@@ -1,31 +1,29 @@
 # Relevo — Sotorebasc
-Fecha: 2026-10-14 18:45 (America/Bogota).
+Fecha: 2026-10-14 19:22 (America/Bogota).
 Agente: OpenCode (Muse Spark 1.3 Free).
-Tarea: SB-002 running (lote 3 parcial cerrado; clases de hooks eliminadas).
+Tarea: SB-002 running (oleada any completa; pendiente revisión independiente y PR lista).
 Rama: fix/sb-002-lote-2 (base main aca6158). PR #4 en borrador vs main.
 
-## Resultado del lanzamiento
-Patrón requestAnimationFrame (precedente aceptado en main: product/page.tsx, pay/page.tsx) aplicado a los 12 sitios set-state-in-effect + reorden showNotice/fetch/efecto:
-- 7 admin api-fetch (agenda, catalogo, configuracion, contenido, pagos, pedidos, rifas): efecto movido bajo fetch + llamada envuelta en rAF con cleanup.
-- 5 sessionStorage (Step1ClientForm, schedule, product/pay, raffle/pay, CartContext): lectura+set dentro del callback rAF.
-- Intento 1 reveló 6 immutability (llamada antes de declarar); intento 2 reubicó efectos (2 de 3 usados). Sin cambios de comportamiento: mismo fetch único al montar, mismo UX de carga, cleanup con cancelAnimationFrame. Lógica de pagos/pasarela intacta.
-- Lint: 43E/61W -> 31E/61W (-12). Clases react-hooks/* en errores: eliminadas. Restan 31 no-explicit-any + 0 hooks.
+## Resultado
+Oleada no-explicit-any completa con patrón Record<string,unknown> + guards (precedente bookings.ts):
+- Repos: admin-users, ai-assets, orders, products, services, payments (mapXFromDb + payloads + providerData tipado).
+- API [id]: products, services (updateData tipado con Partial/Omit + type imports).
+- Auth: next-auth.d.ts aumenta User/JWT con role/isAdmin opcionales (aditivo, sin cambio de conducta); auth.config sin `as any`; auth.ts y middleware usan tipos.
+- Pasarela: mercadopago body tipado con PreferenceRequest propio del SDK v3 (import type profundo; typecheck lo valida); webhook hace cast de frontera `(event.raw ?? null)`.
+- Páginas/hooks: pedidos (Order['status']), configuracion (WeeklyAvailability[keyof]), login/register/verify-otp (catch unknown + narrowing de redirect), useRaffles (guards + meta tipada), schedule (estado tipado + serviceName).
+- Typecheck atajó 3 regresiones mías (webhook providerData x2, schedule serviceName); corregidas. Intentos usados en clase any: 2 de 3.
 
-## Comprobaciones
-- npm run lint 31E/61W (FAIL esperado, falta oleada any). typecheck PASS. npm test 6/6 PASS. git diff --check vacío.
-- Grep: 1 solo requestAnimationFrame por archivo (sin efectos duplicados).
-
-## Mapa restante (31 errores, todos no-explicit-any)
-Repos (14): admin-users 13,68; ai-assets 7,48; orders 48,150,153; payments 18,25,99; products 30,113,213; services 20,93. Patrón: Record<string,unknown> + guards (precedente bookings.ts).
-API/páginas (8): products/[id]:22, services/[id]:22, schedule:12, login:79, register:145, verify-otp:62, pedidos:120,122, configuracion:178.
-Auth/pasarela (6): auth.config:89,102; auth:14,15; mercadopago:34; middleware:10; useRaffles:30 (5+1).
-Advertidos: 61 warnings (mayoría no-unused-vars + exhaustive-deps); se explican al cerrar.
+## Comprobaciones sobre esta versión (Node 24, npm ci limpio)
+- npm run lint: 0 errores, 60 warnings (partida: main 53E/66W). `--fix` aplicado (1 warning menos: directiva eslint-disable sin uso).
+- npm run typecheck: PASS. npm test: 6/6 PASS. npm run build: PASS. npm run test:e2e: 4/4 PASS en Chromium local.
+- Warnings explicados (60): ~45 no-unused-vars (imports lucide y tipos sin usar heredados de UI V2; limpieza separada, no bloquean); ~7 exhaustive-deps (fetch excluidas a propósito para semántica montar-una-vez); 4 no-img-element (migración a next/image es decisión de producto); resto menores (postcss default, location-assign preexistente).
+- git diff --check: vacío. Pagos: solo tipos; lógica de Mercado Pago/manual intacta (E2E real de pasarela pertenece a P1, fuera de SB-002).
 
 ## Archivos del commit
-12 src + HANDOFF.md. QUEUE sin cambios (SB-002 running, BOOT-001 accepted).
+21 src + HANDOFF.md (22 archivos). QUEUE sin cambios (SB-002 running, BOOT-001 accepted).
 
 ## Siguiente paso exacto
-Oleada any por archivo con patrón Record<string,unknown>, orden: repos no-pago -> api/páginas -> auth -> payments repo + mercadopago + middleware al final (zona pasarela, typecheck por archivo). Luego build+e2e, revisión independiente (ronda 1, subagente) y PR #4 lista.
+1. Push y CI de PR #4 (draft). 2. Revisión independiente ronda 1 (diff base..HEAD + ficha + CI). 3. Corregir hasta 3 rondas si aplica. 4. Con APPROVE + CI verde: ready_for_review + PR lista para Diego. Sin mergear.
 
 ## Decisión requerida
-Ninguna. Revisión independiente solo al cerrar SB-002.
+Ninguna hasta el veredicto del revisor.

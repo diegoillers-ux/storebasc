@@ -59,8 +59,10 @@ export default async function VerifyOtpPage({
                   redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Código+OTP+incorrecto,+expirado+o+demasiados+intentos.+Verifica+e+inténtalo+de+nuevo.`);
                 }
               }
-            } catch (dbErr: any) {
-              if (dbErr?.digest?.startsWith('NEXT_REDIRECT') || dbErr?.name === 'RedirectError' || dbErr?.message === 'NEXT_REDIRECT') {
+            } catch (dbErr: unknown) {
+              const redirectErr = dbErr as { digest?: unknown; name?: unknown; message?: unknown } | null | undefined;
+              const digest = typeof redirectErr?.digest === 'string' ? redirectErr.digest : undefined;
+              if (digest?.startsWith('NEXT_REDIRECT') || redirectErr?.name === 'RedirectError' || redirectErr?.message === 'NEXT_REDIRECT') {
                 throw dbErr;
               }
               console.log('[VerifyOTP] Note:', dbErr);

@@ -45,21 +45,21 @@ export interface OrderEvent {
   createdAt: Date;
 }
 
-function mapOrderFromDb(row: any): Order {
+function mapOrderFromDb(row: Record<string, unknown>): Order {
   return {
-    id: row.id,
-    customerId: row.customer_id,
-    adminId: row.admin_id || null,
-    status: row.status as OrderStatus,
-    subtotal: Number(row.subtotal || 0),
-    shipping: Number(row.shipping || 0),
-    total: Number(row.total || 0),
-    currency: row.currency || 'COP',
-    delivery: typeof row.delivery === 'string' ? row.delivery : JSON.stringify(row.delivery || 'shipping'),
-    address: row.address || null,
-    notes: row.notes || null,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    id: typeof row.id === 'string' ? row.id : undefined,
+    customerId: String(row.customer_id ?? ''),
+    adminId: typeof row.admin_id === 'string' ? row.admin_id : null,
+    status: String(row.status) as OrderStatus,
+    subtotal: Number(row.subtotal ?? 0),
+    shipping: Number(row.shipping ?? 0),
+    total: Number(row.total ?? 0),
+    currency: typeof row.currency === 'string' ? row.currency : 'COP',
+    delivery: typeof row.delivery === 'string' ? row.delivery : JSON.stringify(row.delivery ?? 'shipping'),
+    address: typeof row.address === 'string' ? row.address : null,
+    notes: typeof row.notes === 'string' ? row.notes : null,
+    createdAt: new Date(String(row.created_at)),
+    updatedAt: new Date(String(row.updated_at)),
   };
 }
 
@@ -147,16 +147,16 @@ export const orderRepository = {
   async listItems(orderId: string): Promise<OrderItem[]> {
     const order = await this.getById(orderId);
     if (!order) return [];
-    const rawItems = (order as any).items || [];
+    const rawItems: unknown = (order as unknown as { items?: unknown }).items;
     if (!Array.isArray(rawItems)) return [];
 
-    return rawItems.map((it: any, index: number) => ({
+    return rawItems.map((it: Record<string, unknown>, index: number) => ({
       id: `item_${index}`,
       orderId,
-      productId: it.productId,
-      quantity: it.quantity,
-      unitPrice: it.unitPrice,
-      total: it.total,
+      productId: String(it.productId ?? ''),
+      quantity: Number(it.quantity ?? 0),
+      unitPrice: Number(it.unitPrice ?? 0),
+      total: Number(it.total ?? 0),
     }));
   },
 

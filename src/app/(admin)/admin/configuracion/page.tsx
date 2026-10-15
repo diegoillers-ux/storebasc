@@ -177,7 +177,7 @@ export default function ConfigurationPage() {
 
   // ─── Disponibilidad CRUD ───
 
-  const handleWeeklyHourChange = (index: number, field: keyof WeeklyAvailability, value: any) => {
+  const handleWeeklyHourChange = (index: number, field: keyof WeeklyAvailability, value: WeeklyAvailability[keyof WeeklyAvailability]) => {
     const updated = [...weeklyHours];
     updated[index] = { ...updated[index], [field]: value };
     setWeeklyHours(updated);

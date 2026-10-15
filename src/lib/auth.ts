@@ -11,8 +11,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user, profile }) {
       if (user) {
-        token.role = (user as any).role || null;
-        token.isAdmin = (user as any).isAdmin ?? false;
+        token.role = user.role || null;
+        token.isAdmin = user.isAdmin ?? false;
         token.email = user.email || token.email;
       }
 

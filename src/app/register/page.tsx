@@ -142,8 +142,10 @@ export default async function RegisterPage({
 
               // 6. Redirigir a la pantalla de verificación (SIN exponer el código OTP en la URL)
               redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
-            } catch (err: any) {
-              if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
+            } catch (err: unknown) {
+              const redirectErr = err as { digest?: unknown; name?: unknown; message?: unknown } | null | undefined;
+              const digest = typeof redirectErr?.digest === 'string' ? redirectErr.digest : undefined;
+              if (digest?.startsWith('NEXT_REDIRECT') || redirectErr?.name === 'RedirectError' || redirectErr?.message === 'NEXT_REDIRECT') {
                 throw err;
               }
               redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);

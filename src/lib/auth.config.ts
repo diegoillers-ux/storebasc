@@ -86,7 +86,7 @@ export const authConfig: NextAuthConfig = {
               id: customers[0].id || `client-${verifiedEmail}`,
               name: customers[0].name,
               email: verifiedEmail,
-              role: 'CLIENT' as any,
+              role: 'CLIENT',
               isAdmin: false,
             };
           }
@@ -99,7 +99,7 @@ export const authConfig: NextAuthConfig = {
           id: `user-${verifiedEmail}`,
           name: data.user.user_metadata?.name || verifiedEmail.split('@')[0],
           email: verifiedEmail,
-          role: 'CLIENT' as any,
+          role: 'CLIENT',
           isAdmin: false,
         };
       },

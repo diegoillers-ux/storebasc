@@ -20,7 +20,7 @@ type DemoStore = {
 };
 
 declare global {
-    // eslint-disable-next-line no-var
+     
     var __codebasicstor_demo_store__: DemoStore | undefined;
 }
 

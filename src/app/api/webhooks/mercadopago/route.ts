@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         status: isApproved ? 'APPROVED' : 'REJECTED',
         reference: providerRef,
         receiptUrl: null,
-        providerData: event.raw,
+        providerData: (event.raw ?? null) as Record<string, unknown> | null,
         verifiedAt: isApproved ? new Date() : null,
         verifiedBy: 'mercadopago-webhook',
       })
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         status: isApproved ? 'APPROVED' : 'REJECTED',
         reference: providerRef,
         receiptUrl: null,
-        providerData: event.raw,
+        providerData: (event.raw ?? null) as Record<string, unknown> | null,
         verifiedAt: isApproved ? new Date() : null,
         verifiedBy: 'mercadopago-webhook',
       })

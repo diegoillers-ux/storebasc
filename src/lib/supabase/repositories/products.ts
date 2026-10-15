@@ -27,23 +27,23 @@ export interface StockMovement {
   createdAt: Date;
 }
 
-function mapProductFromDb(row: any): Product {
+function mapProductFromDb(row: Record<string, unknown>): Product {
   return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description || null,
-    price: Number(row.price || 0),
-    currency: row.currency || 'COP',
-    stock: Number(row.stock || 0),
-    sku: row.sku || null,
-    category: row.category || null,
-    imageUrl: row.image_url || null,
+    id: typeof row.id === 'string' ? row.id : undefined,
+    name: String(row.name ?? ''),
+    slug: String(row.slug ?? ''),
+    description: typeof row.description === 'string' ? row.description : null,
+    price: Number(row.price ?? 0),
+    currency: typeof row.currency === 'string' ? row.currency : 'COP',
+    stock: Number(row.stock ?? 0),
+    sku: typeof row.sku === 'string' ? row.sku : null,
+    category: typeof row.category === 'string' ? row.category : null,
+    imageUrl: typeof row.image_url === 'string' ? row.image_url : null,
     images: Array.isArray(row.images) ? row.images : [],
     active: Boolean(row.active),
     featured: Boolean(row.featured),
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    createdAt: new Date(String(row.created_at)),
+    updatedAt: new Date(String(row.updated_at)),
   };
 }
 
@@ -110,7 +110,7 @@ export const productRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.description !== undefined) payload.description = data.description;
@@ -210,13 +210,13 @@ export const productRepository = {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map((m: any) => ({
-      id: m.id,
-      productId: m.product_id,
-      change: m.change,
-      reason: m.reason,
-      orderId: m.order_id || null,
-      createdAt: new Date(m.created_at),
+    return data.map((m: Record<string, unknown>) => ({
+      id: typeof m.id === 'string' ? m.id : undefined,
+      productId: String(m.product_id ?? ''),
+      change: Number(m.change ?? 0),
+      reason: String(m.reason ?? ''),
+      orderId: typeof m.order_id === 'string' ? m.order_id : null,
+      createdAt: new Date(String(m.created_at)),
     }));
   },
 };

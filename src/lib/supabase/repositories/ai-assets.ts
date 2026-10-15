@@ -4,7 +4,7 @@ export interface AiAsset {
   id?: string;
   type: string;
   content: string;
-  metadata?: any;
+  metadata?: Record<string, unknown> | null;
   createdAt?: Date;
 }
 
@@ -45,12 +45,12 @@ export const aiAssetRepository = {
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
-      id: d.id,
-      type: d.type,
-      content: d.content,
-      metadata: d.metadata,
-      createdAt: new Date(d.created_at),
+    return data.map((d: Record<string, unknown>) => ({
+      id: typeof d.id === 'string' ? d.id : undefined,
+      type: String(d.type ?? ''),
+      content: String(d.content ?? ''),
+      metadata: (d.metadata ?? null) as Record<string, unknown> | null,
+      createdAt: new Date(String(d.created_at)),
     }));
   },
 };

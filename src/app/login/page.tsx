@@ -76,8 +76,10 @@ export default async function LoginPage({
                 password,
                 redirectTo: '/admin',
               });
-            } catch (err: any) {
-              if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
+            } catch (err: unknown) {
+              const redirectErr = err as { digest?: unknown; name?: unknown; message?: unknown } | null | undefined;
+              const digest = typeof redirectErr?.digest === 'string' ? redirectErr.digest : undefined;
+              if (digest?.startsWith('NEXT_REDIRECT') || redirectErr?.name === 'RedirectError' || redirectErr?.message === 'NEXT_REDIRECT') {
                 throw err;
               }
               const { redirect } = await import('next/navigation');

@@ -17,22 +17,22 @@ export interface Service {
   updatedAt: Date;
 }
 
-function mapServiceFromDb(row: any): Service {
+function mapServiceFromDb(row: Record<string, unknown>): Service {
   return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description || null,
-    duration: Number(row.duration || 60),
-    price: Number(row.price || 0),
-    currency: row.currency || 'COP',
-    modality: row.modality || 'whatsapp',
-    preparation: row.preparation || null,
+    id: typeof row.id === 'string' ? row.id : undefined,
+    name: String(row.name ?? ''),
+    slug: String(row.slug ?? ''),
+    description: typeof row.description === 'string' ? row.description : null,
+    duration: Number(row.duration ?? 60),
+    price: Number(row.price ?? 0),
+    currency: typeof row.currency === 'string' ? row.currency : 'COP',
+    modality: typeof row.modality === 'string' ? row.modality : 'whatsapp',
+    preparation: typeof row.preparation === 'string' ? row.preparation : null,
     active: Boolean(row.active),
     featured: Boolean(row.featured),
-    imageUrl: row.image_url || null,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    imageUrl: typeof row.image_url === 'string' ? row.image_url : null,
+    createdAt: new Date(String(row.created_at)),
+    updatedAt: new Date(String(row.updated_at)),
   };
 }
 
@@ -90,7 +90,7 @@ export const serviceRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Service, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.description !== undefined) payload.description = data.description;

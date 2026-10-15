@@ -1,5 +1,6 @@
 import type { PaymentProvider, CreatePaymentInput, PaymentSession, PaymentEvent, WebhookOptions } from './index'
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'
+import type { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes'
 import crypto from 'crypto'
 
 export class MercadoPagoProvider implements PaymentProvider {
@@ -31,7 +32,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     const failureUrl = `${baseUrl}${separator}type=${targetType}&status=failure&ref=${input.referenceId}`
     const pendingUrl = `${baseUrl}${separator}type=${targetType}&status=pending&ref=${input.referenceId}`
 
-    const body: any = {
+    const body: PreferenceRequest = {
       items: [
         {
           id: input.referenceId,

@@ -27,16 +27,19 @@ export function useRaffles() {
           .eq('type', 'raffle');
 
         if (!error && data && isMounted) {
-          const mapped: RaffleData[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.metadata?.title || 'Rifa Especial',
-            description: d.content || '',
-            price: d.metadata?.price || '$10.000 COP',
-            priceNumber: d.metadata?.priceNumber || 10000,
-            totalNumbers: d.metadata?.totalNumbers || 100,
-            soldNumbers: d.metadata?.soldNumbers || [],
-            active: d.metadata?.active ?? true,
-          }));
+          const mapped: RaffleData[] = data.map((d: Record<string, unknown>) => {
+            const meta = (d.metadata ?? {}) as Record<string, unknown>;
+            return {
+              id: typeof d.id === 'string' ? d.id : '',
+              title: typeof meta.title === 'string' ? meta.title : 'Rifa Especial',
+              description: typeof d.content === 'string' ? d.content : '',
+              price: typeof meta.price === 'string' ? meta.price : '$10.000 COP',
+              priceNumber: typeof meta.priceNumber === 'number' ? meta.priceNumber : 10000,
+              totalNumbers: typeof meta.totalNumbers === 'number' ? meta.totalNumbers : 100,
+              soldNumbers: Array.isArray(meta.soldNumbers) ? (meta.soldNumbers as number[]) : [],
+              active: typeof meta.active === 'boolean' ? meta.active : true,
+            };
+          });
           setRaffles(mapped);
         }
       } catch (error) {

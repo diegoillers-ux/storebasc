@@ -120,9 +120,9 @@ export default function PedidosPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
+        setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus as Order['status'] } : o));
         if (selectedOrder?.id === id) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus as any });
+          setSelectedOrder({ ...selectedOrder, status: newStatus as Order['status'] });
         }
         showNotice('success', 'Estado actualizado', `Pedido marcado como ${newStatus}.`);
       } else {
