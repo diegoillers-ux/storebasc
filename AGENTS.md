@@ -8,37 +8,39 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Storebasc — protocolo del proyecto
+# Storebasc / anandacore — instrucciones para agentes
 
-## Inicio de una sesión
-1. Lee `docs/PROJECT-STATE.md` y `docs/WORKFLOW.md`.
-2. Comprueba rama, HEAD, estado de Git y diferencias con `main`. No sobrescribas cambios ajenos.
-3. Lee la tarea en `docs/tasks/` y solo los módulos/documentos que requiera.
-4. Consulta `docs/architecture.md` para estructura y `docs/ROADMAP.md` para prioridad.
+## Identidad
 
-## Trabajo y límites
-- `main` es la base de integración; trabaja en ramas cortas y entrega mediante PR.
-- El usuario autorizó consolidar `V2`; conservar `main` y `V2` hasta revisar la PR.
-- No fusionar, desplegar, borrar ramas, alterar datos remotos ni activar pagos reales sin instrucción del usuario.
-- Mercado Pago y transferencia manual son las opciones vigentes. No reintroducir Wompi.
-- No inventar ventas, métricas, stock, estados de prueba ni integraciones operativas.
-- No commitear secretos, `.env.local`, archivos temporales o resultados generados.
-- `NEXT_PUBLIC_DEMO_MODE=true` permite bypass administrativo: usar únicamente en entornos aislados. Nunca en producción.
-- Mantener las reglas de Next.js del bloque administrado superior.
-- `docs/archive/` y `ENTREGA-CLIENTE/` son evidencia histórica, no instrucciones vigentes. No actualizar PDFs históricos como si fueran entregas actuales.
+- **Storebasc**: núcleo/plantilla SaaS reutilizable (este repositorio).
+- **anandacore**: proyecto final para el cliente; estandariza lina/ananda/nexocelestial. Estandarización solo en docs por ahora.
+- Repo GitHub: `storebasc`. Un solo repo hasta la versión madura; sin segundo repo ni ramas de larga vida.
+
+## Fuente de verdad
+
+1. Las instrucciones del propietario en el chat prevalecen sobre cualquier `.md`.
+2. Después: `docs/ESTADO.md` y `docs/DECISIONES.md`.
+3. El archivo (`docs/archivo/`, `docs/archive/`) es historial, no guía.
+
+## Entrada
+
+1. Lee `docs/ESTADO.md` y `docs/DECISIONES.md`.
+2. Comprueba rama, HEAD, `git status` y diferencia con `main`. No toques cambios ajenos.
+3. Lee la ficha de la tarea (`docs/TAREA-MODELO.md`) y solo los docs que pida.
+4. Consulta `docs/ARQUITECTURA.md` y `docs/RUTA.md` según el caso.
+
+## Límites
+
+- `main` es la base; trabaja en ramas cortas y entrega en PR borrador. No integres, despliegues, borres ramas ni alteres remotos sin orden explícita.
+- Mercado Pago + transferencia manual vigentes. No reintroducir Wompi.
+- No inventar ventas, métricas, stock ni integraciones operativas.
+- No commitear secretos, `.env*` (salvo `.env.example`), ni temporales. Contenido de secretos nunca se lee ni se muestra.
+- `NEXT_PUBLIC_DEMO_MODE=true` solo en entornos aislados. Nunca en producción.
+- Solo el propietario autoriza tareas y decide integraciones. Una revisión de IA no es aprobación formal.
 
 ## Verificación y relevo
-- Instalar con `npm ci`; usar Node 24 (ver `.node-version`).
-- Ejecutar `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` y pruebas pertinentes.
-- Para smoke en navegador: instalar Chromium y ejecutar `npm run test:e2e` después del build.
-- No desactivar reglas para presentar checks verdes. Registrar errores heredados y pruebas bloqueadas.
-- Documentar comandos, resultados, commit/árbol verificado, cambios pendientes y siguiente acción en la tarea/PR.
-- Instrucciones Markdown no arrancan agentes: la ejecución depende del arnés, permisos, terminal y acceso al repositorio.
 
-## Ciclo entre agentes (Codex, OpenCode y otros)
-Lee explícitamente docs/agent-loop/LOOP.md, docs/agent-loop/QUEUE.json y docs/agent-loop/HANDOFF.md para el trabajo por tareas.
-La cola controla autorización y estado; docs/WORKFLOW.md sigue siendo la guía general de entrega. La instalación de continuidad autoriza solo BOOT-001; no implica iniciar remediaciones de producto.
-Identidad (decisión 2026-10-15): Storebasc es el núcleo/plantilla SaaS reutilizable; anandacore es el nombre del proyecto final para el cliente (estandariza lina/ananda/nexocelestial). Identificador GitHub existente: storebasc. No renombrar código ni repositorio automáticamente. La referencia externa workspace-hub no se usa: el flujo de cada proyecto vive en su propio repo.
-
-## Revisión independiente
-Antes de cerrar una tarea, sigue docs/agent-loop/LOOP.md y REVIEW.md. El implementador debe pasar el diff completo, ficha y CI a un revisor separado de solo lectura. No autoaprobarse ni dejar la tarea ready_for_review si falta revisión o CI.
+- Node 24 (`npm ci`), luego `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`; smoke con `npm run test:e2e` si aplica.
+- Zonas de riesgo (pagos, auth/roles, datos/migraciones, entornos/secretos, integraciones externas): revisión independiente obligatoria con `.opencode/agents/reviewer.md`. Resto: autovalidación con checklist ciego.
+- No silenciar reglas para poner checks verdes. Declara PASS/FAIL/BLOCKED por comprobación, con evidencia y HEAD.
+- Documenta en la ficha: rama, HEAD, cambios, resultados, bloqueos y siguiente paso. Las instrucciones Markdown no arrancan agentes por sí solas.
