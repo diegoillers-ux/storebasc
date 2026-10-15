@@ -35,6 +35,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Mercado Pago + transferencia manual vigentes. No reintroducir Wompi.
 - No inventar ventas, métricas, stock ni integraciones operativas.
 - No commitear secretos, `.env*` (salvo `.env.example`), ni temporales. Contenido de secretos nunca se lee ni se muestra.
+- Claves locales (`.env` + credenciales ignoradas) y MCP
+  (`.agents/mcp_config.json`: mercadopago/mercadolibre) ya disponibles:
+  úsalos sin preguntar; nunca los muestres ni commitees.
 - `NEXT_PUBLIC_DEMO_MODE=true` solo en entornos aislados. Nunca en producción.
 - Solo el propietario autoriza tareas y decide integraciones. Una revisión de IA no es aprobación formal.
 

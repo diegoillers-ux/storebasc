@@ -27,5 +27,8 @@ archivo histórico queda sin vigencia.
 - **Norma A (2026-10-15)**: protección de `main` intacta; por tarea autorizada,
   la IA mergea en verde (3 checks PASS) sin esperar clics. El propietario solo
   entra ante rojo, decisión o hallazgo relevante. Sin auto-merge nativo.
+- **Sesión 2026-10-15**: ramas `chore/*` mergeadas y borradas (local+remoto);
+  `V2` se conserva como respaldo. MCP mercadopago/mercadolibre configurado y
+  claves locales disponibles: el agente las usa sin preguntar.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.

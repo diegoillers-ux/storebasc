@@ -13,6 +13,15 @@ Nombres desde `.env.example`; valores remotos no inspeccionados.
 | Cron | `CRON_SECRET` | Ejecución remota: sin probar |
 | App/negocio | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_DEMO_MODE` | Dominio 200, commit/entorno: desconocidos |
 
+## Recursos locales ya disponibles (no preguntar, usar)
+
+- `.env` presente e ignorado; 3 archivos de credenciales del proveedor
+  presentes e ignorados (nombres verificados, contenido jamás leído).
+- MCP configurado en `.agents/mcp_config.json`: servidores `mercadopago` y
+  `mercadolibre` (solo URLs, sin secretos en el repo).
+- El agente usa estos recursos sin pedirlos al propietario; nunca los muestra,
+  versiona ni transmite fuera de las llamadas necesarias.
+
 ## Reglas
 
 - Local/sandbox: credenciales de prueba; nunca pagos reales por defecto.
