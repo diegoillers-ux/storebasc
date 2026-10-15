@@ -17,7 +17,8 @@ export interface Service {
   updatedAt: Date;
 }
 
-function mapServiceFromDb(row: any): Service {
+function mapServiceFromDb(input: unknown): Service {
+  const row = input as { id: string; name: string; slug: string; description: string | null; duration: number | string; price: number | string; currency: string; modality: string; preparation: string | null; active: boolean; featured: boolean; image_url: string | null; created_at: string; updated_at: string };
   return {
     id: row.id,
     name: row.name,
@@ -90,7 +91,7 @@ export const serviceRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Service, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.description !== undefined) payload.description = data.description;

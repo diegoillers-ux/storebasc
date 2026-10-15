@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShoppingBag,
   Search,
@@ -63,11 +63,12 @@ export default function PedidosPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchData();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const resOrders = await fetch('/api/admin/orders');
@@ -86,12 +87,13 @@ export default function PedidosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchData);
+  }, [fetchData]);
+
+
 
   const fetchOrderItems = async (orderId: string) => {
     setLoadingItems(true);
@@ -108,7 +110,10 @@ export default function PedidosPage() {
     }
   };
 
-  const handleUpdateOrderStatus = async (id: string, newStatus: string) => {
+  const handleUpdateOrderStatus = async (id: string, rawStatus: string) => {
+    const validStatuses: Order['status'][] = ['NEW', 'PAYMENT_PENDING', 'PAYMENT_SUBMITTED', 'PAID', 'PREPARING', 'READY', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+    if (!validStatuses.includes(rawStatus as Order['status'])) return;
+    const newStatus = rawStatus as Order['status'];
     try {
       const res = await fetch(`/api/admin/orders/${id}`, {
         method: 'PUT',
@@ -117,9 +122,9 @@ export default function PedidosPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
+        setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
         if (selectedOrder?.id === id) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus as any });
+          setSelectedOrder({ ...selectedOrder, status: newStatus });
         }
         showNotice('success', 'Estado actualizado', `Pedido marcado como ${newStatus}.`);
       } else {

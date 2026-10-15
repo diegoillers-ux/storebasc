@@ -31,19 +31,21 @@ export default function Step1ClientForm({ service }: Step1ClientFormProps) {
 
   // Cargar datos previos si existen en sessionStorage
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem('ananda_checkout_data')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed.name) setName(parsed.name)
-        if (parsed.email) setEmail(parsed.email)
-        if (parsed.whatsapp) setWhatsapp(parsed.whatsapp)
-        if (parsed.birthdate) setBirthdate(parsed.birthdate)
-        if (parsed.context) setContext(parsed.context)
+    void Promise.resolve().then(() => {
+      try {
+        const stored = sessionStorage.getItem('ananda_checkout_data')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.name) setName(parsed.name)
+          if (parsed.email) setEmail(parsed.email)
+          if (parsed.whatsapp) setWhatsapp(parsed.whatsapp)
+          if (parsed.birthdate) setBirthdate(parsed.birthdate)
+          if (parsed.context) setContext(parsed.context)
+        }
+      } catch (e) {
+        console.error('Error reading checkout session data:', e)
       }
-    } catch (e) {
-      console.error('Error reading checkout session data:', e)
-    }
+    });
   }, [])
 
   const handleSubmit = (e: React.FormEvent) => {

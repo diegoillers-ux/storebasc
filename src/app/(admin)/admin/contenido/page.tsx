@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   Download,
@@ -69,11 +69,12 @@ export default function ContenidoIAPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchAssets();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/content/generate');
@@ -86,12 +87,13 @@ export default function ContenidoIAPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchAssets);
+  }, [fetchAssets]);
+
+
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,7 +291,7 @@ export default function ContenidoIAPage() {
               <div className="space-y-1">
                 <p className="text-[10px] text-gray-400 font-semibold uppercase leading-none">Prompt Optimizado</p>
                 <p className="text-xs font-semibold text-gray-800 leading-relaxed italic bg-white p-3.5 border border-gray-100 rounded-xl">
-                  "{generatedAsset.prompt}"
+                  &quot;{generatedAsset.prompt}&quot;
                 </p>
               </div>
 

@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+function isRedirectError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const value = error as { digest?: unknown; name?: unknown; message?: unknown };
+  return (typeof value.digest === 'string' && value.digest.startsWith('NEXT_REDIRECT')) || value.name === 'RedirectError' || value.message === 'NEXT_REDIRECT';
+}
+
 export default async function VerifyOtpPage({
   searchParams,
 }: {
@@ -59,8 +65,8 @@ export default async function VerifyOtpPage({
                   redirect(`/verify-otp?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&error=Código+OTP+incorrecto,+expirado+o+demasiados+intentos.+Verifica+e+inténtalo+de+nuevo.`);
                 }
               }
-            } catch (dbErr: any) {
-              if (dbErr?.digest?.startsWith('NEXT_REDIRECT') || dbErr?.name === 'RedirectError' || dbErr?.message === 'NEXT_REDIRECT') {
+            } catch (dbErr: unknown) {
+              if (isRedirectError(dbErr)) {
                 throw dbErr;
               }
               console.log('[VerifyOTP] Note:', dbErr);

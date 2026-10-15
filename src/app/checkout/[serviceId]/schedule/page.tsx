@@ -9,17 +9,19 @@ export default function CheckoutSchedulePage() {
   const router = useRouter()
   const serviceId = params?.serviceId as string
 
-  const [checkoutData, setCheckoutData] = useState<any>(null)
+  const [checkoutData, setCheckoutData] = useState<{ serviceName?: string; serviceId?: string; [key: string]: unknown } | null>(null)
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem('ananda_checkout_data')
-      if (stored) {
-        setCheckoutData(JSON.parse(stored))
+    void Promise.resolve().then(() => {
+      try {
+        const stored = sessionStorage.getItem('ananda_checkout_data')
+        if (stored) {
+          setCheckoutData(JSON.parse(stored))
+        }
+      } catch (e) {
+        console.error('Error reading checkout data:', e)
       }
-    } catch (e) {
-      console.error('Error reading checkout data:', e)
-    }
+    });
   }, [])
 
   const handleConfirmSchedule = (date: string, time: string) => {

@@ -1,25 +1,57 @@
 {
   "schema_version": 1,
   "updated": "2026-10-14",
+  "owner_decision": {
+    "by": "Diego",
+    "at": "2026-10-14T21:29:46-05:00",
+    "reference": "Telegram DM: \"Hazlo, autorizado.\"",
+    "scope": "Aceptar BOOT-001 y autorizar la ejecución de SB-002 según su ficha vigente."
+  },
   "max_tasks_per_launch": 1,
   "max_repair_attempts": 3,
   "target_minutes": 45,
   "tasks": [
     {
       "id": "BOOT-001",
-      "status": "ready_for_review",
+      "status": "accepted",
       "authorized": true,
       "depends_on": [],
-      "file": "docs/agent-loop/tasks/BOOT-001.md"
+      "file": "docs/agent-loop/tasks/BOOT-001.md",
+      "acceptance": {
+        "by": "Diego",
+        "at": "2026-10-14T21:29:46-05:00",
+        "reference": "Telegram DM: \"Hazlo, autorizado.\""
+      }
     },
     {
       "id": "SB-002",
-      "status": "proposed",
-      "authorized": false,
+      "status": "ready_for_review",
+      "authorized": true,
       "depends_on": [
         "BOOT-001"
       ],
-      "file": "docs/agent-loop/tasks/SB-002.md"
+      "file": "docs/agent-loop/tasks/SB-002.md",
+      "authorization": {
+        "by": "Diego",
+        "at": "2026-10-14T21:29:46-05:00",
+        "reference": "Telegram DM: \"Hazlo, autorizado.\"",
+        "scope": "Ejecutar SB-002 según docs/agent-loop/tasks/SB-002.md; no incluye integración, despliegue, credenciales, Supabase ni pagos reales."
+      },
+      "execution": {
+        "branch": "fix/sb-002-global-lint",
+        "base": "main",
+        "head_start": "aca6158177875f28807e069cd13ec26292b4e7d1",
+        "started_at": "2026-10-14T21:29:46-05:00"
+      },
+      "review": {
+        "round": 2,
+        "verdict": "APPROVE",
+        "reviewer": "Revisor independiente de solo lectura",
+        "base": "aca6158177875f28807e069cd13ec26292b4e7d1",
+        "head_reviewed": "Árbol de trabajo de fix/sb-002-global-lint antes del commit de entrega",
+        "artifact": "Revisión independiente de ronda 2, 2026-10-14: aprobada; lint 0 errores y test 6/6 verificados con Node 24.22.0.",
+        "limitations": "El revisor no reejecutó typecheck, build ni E2E; revisó la evidencia registrada."
+      }
     }
   ]
 }

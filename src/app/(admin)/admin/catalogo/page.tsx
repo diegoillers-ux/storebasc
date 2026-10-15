@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Package,
   Plus,
@@ -48,11 +48,12 @@ export default function CatalogoPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchProducts();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/products');
@@ -65,12 +66,13 @@ export default function CatalogoPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchProducts);
+  }, [fetchProducts]);
+
+
 
   // ─── Producto CRUD ───
 

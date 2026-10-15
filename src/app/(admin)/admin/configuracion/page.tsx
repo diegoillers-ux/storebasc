@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   Clock,
@@ -59,11 +59,12 @@ export default function ConfigurationPage() {
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
   // Cargar datos al montar
-  useEffect(() => {
-    fetchData();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const resServices = await fetch('/api/admin/services');
@@ -86,12 +87,13 @@ export default function ConfigurationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchData);
+  }, [fetchData]);
+
+
 
   // ─── Servicios CRUD ───
 
@@ -175,7 +177,7 @@ export default function ConfigurationPage() {
 
   // ─── Disponibilidad CRUD ───
 
-  const handleWeeklyHourChange = (index: number, field: keyof WeeklyAvailability, value: any) => {
+  const handleWeeklyHourChange = (index: number, field: keyof WeeklyAvailability, value: string | number | boolean) => {
     const updated = [...weeklyHours];
     updated[index] = { ...updated[index], [field]: value };
     setWeeklyHours(updated);

@@ -15,14 +15,15 @@ export interface Payment {
   status: PaymentStatus;
   reference: string | null;
   receiptUrl: string | null;
-  providerData: any | null;
+  providerData: unknown | null;
   verifiedAt: Date | null;
   verifiedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-function mapPaymentFromDb(row: any): Payment {
+function mapPaymentFromDb(input: unknown): Payment {
+  const row = input as { id: string; customer_id: string | null; booking_id: string | null; order_id: string | null; method: string; provider: string | null; amount: number | string; currency: string; status: string; reference: string | null; voucher_url: string | null; receipt_url: string | null; provider_data: unknown; verified_at: string | null; verified_by: string | null; created_at: string; updated_at: string | null };
   return {
     id: row.id,
     customerId: row.customer_id || '',
@@ -96,7 +97,7 @@ export const paymentRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.customerId !== undefined) payload.customer_id = data.customerId;
     if (data.status !== undefined) payload.status = data.status;
     if (data.provider !== undefined) payload.provider = data.provider;

@@ -7,7 +7,8 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth?.user;
-  const isAdmin = !!(req.auth?.user as any)?.isAdmin;
+  const authUser = req.auth?.user as { isAdmin?: boolean } | null | undefined;
+  const isAdmin = Boolean(authUser?.isAdmin);
   const isOnAdmin = req.nextUrl.pathname.startsWith('/admin');
   
   // Permitir paso directo si está activo el modo demo

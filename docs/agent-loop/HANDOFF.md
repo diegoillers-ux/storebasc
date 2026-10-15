@@ -1,32 +1,42 @@
 # Relevo — Storebasc
 
 Fecha: 2026-10-14 · Zona horaria: America/Bogota.
-Tarea: BOOT-001 — instalar y comprobar continuidad entre agentes.
-Rama de la PR: `chore/portable-agent-loop`.
-HEAD de entrada: `be0460cfcd871c00ab83eb8e425b116bf232848b`.
-HEAD de base sincronizada: `1dee8fa` (`chore/consolidate-baseline-20261013`, PR #2). La base directa de integración de esta PR es esa rama, no `main`.
-HEAD revisado y publicado: `83db4baf5134b8f13eab9f27f9b20aae1c5d7e9f`.
-PR: https://github.com/diegoillers-ux/storebasc/pull/3
+Tarea activa: SB-002 — resolver lint de la consolidación.
+Rama: `fix/sb-002-global-lint` desde `main`.
+HEAD de inicio y árbol validado: `aca6158177875f28807e069cd13ec26292b4e7d1`.
+Base de integración: `main` en el mismo SHA de inicio.
 
-## Tarea y alcance
+## Decisión registrada
 
-BOOT-001 instala el comando `/continuar`, las instrucciones portables y el agente revisor de solo lectura. La ficha actualizada enumera todos los archivos permitidos. No cambia código de producto, servicios ni credenciales.
+Diego indicó en Telegram: «Hazlo, autorizado.» el 2026-10-14 21:29:46 -05:00. La decisión:
 
-## Referencias revisadas
+- acepta BOOT-001, cuya PR #3 fue integrada con sus checks y revisión independiente registrados;
+- autoriza SB-002 exactamente con el alcance de `docs/agent-loop/tasks/SB-002.md`;
+- no autoriza integración, despliegue, cambios de credenciales, Supabase ni pagos reales.
 
-- `AGENTS.md`
-- `docs/PROJECT-STATE.md`, `docs/WORKFLOW.md`, `docs/architecture.md` y `docs/ROADMAP.md`
-- `docs/agent-loop/LOOP.md`, `QUEUE.json`, `REVIEW.md`, `TASK-TEMPLATE.md` y las fichas BOOT-001/SB-002
-- `.opencode/commands/continuar.md` y `.opencode/agents/reviewer.md`
+La cola refleja BOOT-001 como `accepted` y SB-002 como `reviewing` (ronda 2 pendiente).
 
-## Revisión y estado
+## Objetivo y cambios
 
-La primera revisión independiente devolvió `CHANGES_REQUESTED`: corregir la base que HANDOFF declara, alinear el alcance de BOOT-001 con los archivos instalados y evitar que el lint heredado bloquee tareas documentales. Se corrigieron los hallazgos. El revisor independiente aprobó el diff publicado `83db4baf` y confirmó resuelto el bloqueo de lint. SB-002 sigue propuesta, `authorized=false`.
+SB-002 elimina los errores de `npm run lint` sin desactivar ni rebajar reglas. El diff corrige `any` explícitos mediante tipos concretos o `unknown` con narrowing, dependencias/orden de hooks, estados inicializados desde `sessionStorage` y escapes JSX. No modifica configuración ESLint, secretos, servicios remotos ni código de despliegue.
 
-## Verificación actual
+## Validación reproducida
 
-En el HEAD remoto anterior de la PR #3, `types-and-regressions` y `build-and-smoke` pasaron, y `lint` falló por deuda previa. La rama se sincronizó con la PR #2 publicada en `1dee8fa`; CI ahora comprueba los archivos JS/TS modificados y mantiene `npm run lint` como auditoría completa visible. Los checks de PR #2 pasaron en [run 38647619176](https://github.com/diegoillers-ux/storebasc/actions/runs/38647619176); la verificación local incluye 6 pruebas unitarias, typecheck, build, 4 smoke tests Chromium y lint de archivos tocados con 0 errores/1 advertencia. El lint global conserva 53 errores y 66 advertencias. Los tres checks de PR #3 pasaron en [run 38647744196](https://github.com/diegoillers-ux/storebasc/actions/runs/38647744196). La revisión independiente de solo lectura aprobó `83db4baf`; no publicó una revisión formal en GitHub.
+El host no tenía Node 24 instalado. Se descargó en caché temporal y se verificó SHA-256 de Node `v24.22.0` para ejecutar las validaciones sin cambiar la instalación del host. Todos los comandos se ejecutaron el 2026-10-14 sobre el árbol actual de esta rama:
 
-## Siguiente paso
+- `npm run lint`: PASS — 0 errores, 59 advertencias. Las advertencias restantes son imports/parámetros no usados, `<img>`, la directiva obsoleta preexistente en `src/lib/demoStore.ts` y `postcss.config.mjs`; no se añadieron `eslint-disable` para ocultar errores.
+- `npm run typecheck`: PASS.
+- `npm test`: PASS — 6/6.
+- `npm run build`: PASS. Durante generación estática se registraron los manejos esperados por falta de `NEXT_PUBLIC_SUPABASE_URL` o `SUPABASE_SERVICE_ROLE_KEY` para catálogo y servicios; no acredita integración Supabase.
+- `npm run test:e2e`: PASS — 4/4 smoke tests Chromium.
+- `git diff --check`: PASS.
 
-BOOT-001 está lista para decisión del dueño del producto. PR #3 sigue en borrador hasta que Diego decida si quiere presentarla para revisión humana. No iniciar SB-002, integrar ni desplegar.
+Chromium de Playwright fue descargado a la caché local porque no estaba disponible. No se usaron credenciales ni servicios remotos.
+
+## Revisión independiente
+
+La primera revisión independiente de solo lectura devolvió `CHANGES_REQUESTED` porque el relevo no registraba validaciones y estas se habían ejecutado inicialmente con Node 26. Se corrigió el relevo, se reprodujeron los cinco controles con Node 24 y la segunda revisión independiente devolvió `APPROVE`: no encontró hallazgos P0–P3, ni secretos, supresiones ESLint/TypeScript o cambios fuera de alcance. Verificó directamente lint (0 errores), tests (6/6), `git diff --check`, la versión y checksum de Node 24.22.0. No reejecutó typecheck, build ni E2E; esos resultados son evidencia del implementador reproducida sobre el mismo árbol.
+
+## Estado y siguiente paso
+
+SB-002 queda `ready_for_review`. Falta crear el commit de entrega, publicar la rama y abrir la PR contra `main`; no integrar ni desplegar.

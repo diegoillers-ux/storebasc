@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -64,11 +64,12 @@ export default function AgendaPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchData();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const resBookings = await fetch('/api/admin/bookings');
@@ -87,12 +88,13 @@ export default function AgendaPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchData);
+  }, [fetchData]);
+
+
 
   // Crear Reserva
   const handleCreateBooking = async (e: React.FormEvent) => {

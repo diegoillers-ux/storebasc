@@ -27,73 +27,75 @@ export default function RafflePayPage() {
     const [reservationCode, setReservationCode] = useState('');
 
     useEffect(() => {
-        const savedOrder = sessionStorage.getItem('raffle_order');
-        if (!savedOrder) {
-            router.push('/');
-            return;
-        }
-
-        const parsedOrder = JSON.parse(savedOrder) as RaffleOrder;
-        setOrder(parsedOrder);
-
-        const ensurePendingSale = async () => {
-            if (parsedOrder.eventId && parsedOrder.reservationCode) {
-                setReservationCode(parsedOrder.reservationCode);
-                setInitializing(false);
+        void Promise.resolve().then(() => {
+            const savedOrder = sessionStorage.getItem('raffle_order');
+            if (!savedOrder) {
+                router.push('/');
                 return;
             }
 
-            try {
-                const response = await fetch('/api/calendar/create-pending', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: `RIFA: ${parsedOrder.raffleTitle} - ${parsedOrder.name}`,
-                        description: [
-                            `Compra del numero ${parsedOrder.selectedNumber} para ${parsedOrder.raffleTitle}.`,
-                            `Email: ${parsedOrder.email}`,
-                            `WhatsApp: ${parsedOrder.whatsapp}`,
-                        ].join('\n'),
-                        metadata: {
-                            saleType: 'raffle',
-                            itemId: parsedOrder.raffleId,
-                            itemTitle: parsedOrder.raffleTitle,
-                            amountLabel: parsedOrder.price,
-                            amountNumber: parsedOrder.priceNumber,
-                            clientName: parsedOrder.name,
-                            clientEmail: parsedOrder.email,
-                            clientPhone: parsedOrder.whatsapp,
-                            selectedNumber: parsedOrder.selectedNumber,
-                            requiresScheduling: false,
-                            scheduledDateLabel: 'Compra de rifa sin agenda',
-                        },
-                    }),
-                });
+            const parsedOrder = JSON.parse(savedOrder) as RaffleOrder;
+            setOrder(parsedOrder);
 
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data?.error || 'No se pudo preparar la compra.');
+            const ensurePendingSale = async () => {
+                if (parsedOrder.eventId && parsedOrder.reservationCode) {
+                    setReservationCode(parsedOrder.reservationCode);
+                    setInitializing(false);
+                    return;
                 }
 
-                const nextOrder = {
-                    ...parsedOrder,
-                    eventId: data.eventId,
-                    reservationCode: data.reservationCode,
-                };
+                try {
+                    const response = await fetch('/api/calendar/create-pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: `RIFA: ${parsedOrder.raffleTitle} - ${parsedOrder.name}`,
+                            description: [
+                                `Compra del numero ${parsedOrder.selectedNumber} para ${parsedOrder.raffleTitle}.`,
+                                `Email: ${parsedOrder.email}`,
+                                `WhatsApp: ${parsedOrder.whatsapp}`,
+                            ].join('\n'),
+                            metadata: {
+                                saleType: 'raffle',
+                                itemId: parsedOrder.raffleId,
+                                itemTitle: parsedOrder.raffleTitle,
+                                amountLabel: parsedOrder.price,
+                                amountNumber: parsedOrder.priceNumber,
+                                clientName: parsedOrder.name,
+                                clientEmail: parsedOrder.email,
+                                clientPhone: parsedOrder.whatsapp,
+                                selectedNumber: parsedOrder.selectedNumber,
+                                requiresScheduling: false,
+                                scheduledDateLabel: 'Compra de rifa sin agenda',
+                            },
+                        }),
+                    });
 
-                sessionStorage.setItem('raffle_order', JSON.stringify(nextOrder));
-                setOrder(nextOrder);
-                setReservationCode(data.reservationCode || '');
-            } catch (error) {
-                console.error(error);
-                alert('No se pudo preparar tu compra de rifa. Intenta de nuevo.');
-                router.push(`/checkout/raffle?raffleId=${parsedOrder.raffleId}&number=${parsedOrder.selectedNumber}`);
-            } finally {
-                setInitializing(false);
-            }
-        };
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data?.error || 'No se pudo preparar la compra.');
+                    }
 
-        void ensurePendingSale();
+                    const nextOrder = {
+                        ...parsedOrder,
+                        eventId: data.eventId,
+                        reservationCode: data.reservationCode,
+                    };
+
+                    sessionStorage.setItem('raffle_order', JSON.stringify(nextOrder));
+                    setOrder(nextOrder);
+                    setReservationCode(data.reservationCode || '');
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo preparar tu compra de rifa. Intenta de nuevo.');
+                    router.push(`/checkout/raffle?raffleId=${parsedOrder.raffleId}&number=${parsedOrder.selectedNumber}`);
+                } finally {
+                    setInitializing(false);
+                }
+            };
+
+            void ensurePendingSale();
+        });
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -172,9 +174,9 @@ export default function RafflePayPage() {
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.formGroup}>
                         <label className={styles.label}>Subir Comprobante</label>
-                        <input 
-                            required 
-                            type="file" 
+                        <input
+                            required
+                            type="file"
                             accept=".jpg,.jpeg,.png,.pdf"
                             onChange={e => setFile(e.target.files?.[0] || null)}
                             style={{ padding: '0.5rem' }}
@@ -182,7 +184,7 @@ export default function RafflePayPage() {
                     </div>
                     <div className={styles.formGroup}>
                         <label className={styles.label}>Nota adicional</label>
-                        <textarea 
+                        <textarea
                             placeholder="Ej: Pago realizado desde la cuenta de..."
                             value={note}
                             onChange={e => setNote(e.target.value)}

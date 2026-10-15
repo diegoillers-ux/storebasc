@@ -27,16 +27,19 @@ export function useRaffles() {
           .eq('type', 'raffle');
 
         if (!error && data && isMounted) {
-          const mapped: RaffleData[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.metadata?.title || 'Rifa Especial',
-            description: d.content || '',
-            price: d.metadata?.price || '$10.000 COP',
-            priceNumber: d.metadata?.priceNumber || 10000,
-            totalNumbers: d.metadata?.totalNumbers || 100,
-            soldNumbers: d.metadata?.soldNumbers || [],
-            active: d.metadata?.active ?? true,
-          }));
+          const mapped: RaffleData[] = data.map((d: { id: string; metadata: unknown; content: string }) => {
+            const metadata = typeof d.metadata === 'object' && d.metadata !== null ? d.metadata as Record<string, unknown> : {};
+            return {
+              id: d.id,
+              title: typeof metadata.title === 'string' ? metadata.title : 'Rifa Especial',
+              description: d.content || '',
+              price: typeof metadata.price === 'string' ? metadata.price : '$10.000 COP',
+              priceNumber: typeof metadata.priceNumber === 'number' ? metadata.priceNumber : 10000,
+              totalNumbers: typeof metadata.totalNumbers === 'number' ? metadata.totalNumbers : 100,
+              soldNumbers: Array.isArray(metadata.soldNumbers) ? metadata.soldNumbers.filter((n): n is number => typeof n === 'number') : [],
+              active: typeof metadata.active === 'boolean' ? metadata.active : true,
+            };
+          });
           setRaffles(mapped);
         }
       } catch (error) {

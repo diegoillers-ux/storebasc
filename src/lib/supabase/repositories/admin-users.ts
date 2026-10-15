@@ -10,7 +10,8 @@ export interface AdminUser {
   updatedAt: Date;
 }
 
-function mapAdminUserFromDb(row: any): AdminUser {
+function mapAdminUserFromDb(input: unknown): AdminUser {
+  const row = input as { id: string; email: string; name: string; role: AdminUser['role']; active: boolean; created_at: string; updated_at: string };
   return {
     id: row.id,
     email: row.email,
@@ -65,7 +66,7 @@ export const adminUserRepository = {
   },
 
   async update(id: string, data: Partial<Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.email !== undefined) payload.email = data.email.toLowerCase().trim();
     if (data.name !== undefined) payload.name = data.name;
     if (data.role !== undefined) payload.role = data.role;

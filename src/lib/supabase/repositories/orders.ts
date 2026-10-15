@@ -45,7 +45,8 @@ export interface OrderEvent {
   createdAt: Date;
 }
 
-function mapOrderFromDb(row: any): Order {
+function mapOrderFromDb(input: unknown): Order {
+  const row = input as { id: string; customer_id: string; admin_id: string | null; status: string; subtotal: number | string; shipping: number | string; total: number | string; currency: string; delivery: unknown; address: string | null; notes: string | null; created_at: string; updated_at: string };
   return {
     id: row.id,
     customerId: row.customer_id,
@@ -147,10 +148,10 @@ export const orderRepository = {
   async listItems(orderId: string): Promise<OrderItem[]> {
     const order = await this.getById(orderId);
     if (!order) return [];
-    const rawItems = (order as any).items || [];
+    const rawItems = (order as Order & { items?: unknown }).items || [];
     if (!Array.isArray(rawItems)) return [];
 
-    return rawItems.map((it: any, index: number) => ({
+    return rawItems.map((it: { productId: string; quantity: number; unitPrice: number; total: number }, index: number) => ({
       id: `item_${index}`,
       orderId,
       productId: it.productId,

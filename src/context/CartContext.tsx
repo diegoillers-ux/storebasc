@@ -36,15 +36,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Cargar carrito desde sessionStorage al montar
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(CART_STORAGE_KEY)
-      if (stored) {
-        setItems(JSON.parse(stored))
+    void Promise.resolve().then(() => {
+      try {
+        const stored = sessionStorage.getItem(CART_STORAGE_KEY)
+        if (stored) {
+          setItems(JSON.parse(stored))
+        }
+      } catch (e) {
+        console.error('Error loading cart from sessionStorage', e)
       }
-    } catch (e) {
-      console.error('Error loading cart from sessionStorage', e)
-    }
-    setIsMounted(true)
+      setIsMounted(true)
+    });
   }, [])
 
   // Sincronizar sessionStorage cada vez que el carrito cambia

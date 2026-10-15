@@ -1,6 +1,12 @@
 import { signIn } from '@/lib/auth';
 import Link from 'next/link';
 
+function isRedirectError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const value = error as { digest?: unknown; name?: unknown; message?: unknown };
+  return (typeof value.digest === 'string' && value.digest.startsWith('NEXT_REDIRECT')) || value.name === 'RedirectError' || value.message === 'NEXT_REDIRECT';
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -76,8 +82,8 @@ export default async function LoginPage({
                 password,
                 redirectTo: '/admin',
               });
-            } catch (err: any) {
-              if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.name === 'RedirectError' || err?.message === 'NEXT_REDIRECT') {
+            } catch (err: unknown) {
+              if (isRedirectError(err)) {
                 throw err;
               }
               const { redirect } = await import('next/navigation');

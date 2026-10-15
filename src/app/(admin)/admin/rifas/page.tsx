@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Award,
   Plus,
@@ -59,11 +59,12 @@ export default function RifasPage() {
 
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; title: string; message?: string } | null>(null);
 
-  useEffect(() => {
-    fetchRifas();
+  const showNotice = useCallback((type: 'success' | 'error', title: string, message?: string) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert(null), 5000);
   }, []);
 
-  const fetchRifas = async () => {
+  const fetchRifas = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/rifas');
@@ -76,12 +77,13 @@ export default function RifasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotice]);
 
-  const showNotice = (type: 'success' | 'error', title: string, message?: string) => {
-    setAlert({ type, title, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
+  useEffect(() => {
+    void Promise.resolve().then(fetchRifas);
+  }, [fetchRifas]);
+
+
 
   const fetchTickets = async (rifaId: string) => {
     setLoadingTickets(true);

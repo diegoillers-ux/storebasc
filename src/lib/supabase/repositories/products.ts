@@ -27,7 +27,8 @@ export interface StockMovement {
   createdAt: Date;
 }
 
-function mapProductFromDb(row: any): Product {
+function mapProductFromDb(input: unknown): Product {
+  const row = input as { id: string; name: string; slug: string; description: string | null; price: number | string; currency: string; stock: number | string; sku: string | null; category: string | null; image_url: string | null; images: unknown; active: boolean; featured: boolean; created_at: string; updated_at: string };
   return {
     id: row.id,
     name: row.name,
@@ -110,7 +111,7 @@ export const productRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.description !== undefined) payload.description = data.description;
@@ -210,7 +211,7 @@ export const productRepository = {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map((m: any) => ({
+    return data.map((m: { id: string; product_id: string; change: number; reason: string; order_id: string | null; created_at: string }) => ({
       id: m.id,
       productId: m.product_id,
       change: m.change,

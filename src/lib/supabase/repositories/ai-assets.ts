@@ -4,7 +4,7 @@ export interface AiAsset {
   id?: string;
   type: string;
   content: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt?: Date;
 }
 
@@ -45,7 +45,7 @@ export const aiAssetRepository = {
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
+    return data.map((d: { id: string; type: string; content: string; metadata: Record<string, unknown>; created_at: string }) => ({
       id: d.id,
       type: d.type,
       content: d.content,

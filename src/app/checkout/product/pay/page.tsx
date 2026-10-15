@@ -28,74 +28,76 @@ export default function ProductPayPage() {
     const [reservationCode, setReservationCode] = useState('');
 
     useEffect(() => {
-        const savedOrder = sessionStorage.getItem('product_order');
-        if (!savedOrder) {
-            router.push('/');
-            return;
-        }
-
-        const parsedOrder = JSON.parse(savedOrder) as ProductOrder;
-        setOrder(parsedOrder);
-
-        const ensurePendingSale = async () => {
-            if (parsedOrder.eventId && parsedOrder.reservationCode) {
-                setReservationCode(parsedOrder.reservationCode);
-                setInitializing(false);
+        void Promise.resolve().then(() => {
+            const savedOrder = sessionStorage.getItem('product_order');
+            if (!savedOrder) {
+                router.push('/');
                 return;
             }
 
-            try {
-                const response = await fetch('/api/calendar/create-pending', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: `PRODUCTO: ${parsedOrder.productTitle} - ${parsedOrder.name}`,
-                        description: [
-                            `Pedido manual para ${parsedOrder.productTitle}.`,
-                            `Email: ${parsedOrder.email}`,
-                            `WhatsApp: ${parsedOrder.whatsapp}`,
-                            `Entrega: ${parsedOrder.address}`,
-                            `Nota: ${parsedOrder.note || 'Sin nota adicional'}`,
-                        ].join('\n'),
-                        metadata: {
-                            saleType: 'product',
-                            itemId: parsedOrder.productId,
-                            itemTitle: parsedOrder.productTitle,
-                            amountLabel: parsedOrder.price,
-                            amountNumber: parsedOrder.priceNumber,
-                            clientName: parsedOrder.name,
-                            clientEmail: parsedOrder.email,
-                            clientPhone: parsedOrder.whatsapp,
-                            requiresScheduling: false,
-                            scheduledDateLabel: 'Pedido de producto sin agenda',
-                        },
-                    }),
-                });
+            const parsedOrder = JSON.parse(savedOrder) as ProductOrder;
+            setOrder(parsedOrder);
 
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data?.error || 'No se pudo preparar el pedido.');
+            const ensurePendingSale = async () => {
+                if (parsedOrder.eventId && parsedOrder.reservationCode) {
+                    setReservationCode(parsedOrder.reservationCode);
+                    setInitializing(false);
+                    return;
                 }
 
-                const nextOrder = {
-                    ...parsedOrder,
-                    eventId: data.eventId,
-                    reservationCode: data.reservationCode,
-                };
+                try {
+                    const response = await fetch('/api/calendar/create-pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: `PRODUCTO: ${parsedOrder.productTitle} - ${parsedOrder.name}`,
+                            description: [
+                                `Pedido manual para ${parsedOrder.productTitle}.`,
+                                `Email: ${parsedOrder.email}`,
+                                `WhatsApp: ${parsedOrder.whatsapp}`,
+                                `Entrega: ${parsedOrder.address}`,
+                                `Nota: ${parsedOrder.note || 'Sin nota adicional'}`,
+                            ].join('\n'),
+                            metadata: {
+                                saleType: 'product',
+                                itemId: parsedOrder.productId,
+                                itemTitle: parsedOrder.productTitle,
+                                amountLabel: parsedOrder.price,
+                                amountNumber: parsedOrder.priceNumber,
+                                clientName: parsedOrder.name,
+                                clientEmail: parsedOrder.email,
+                                clientPhone: parsedOrder.whatsapp,
+                                requiresScheduling: false,
+                                scheduledDateLabel: 'Pedido de producto sin agenda',
+                            },
+                        }),
+                    });
 
-                sessionStorage.setItem('product_order', JSON.stringify(nextOrder));
-                setOrder(nextOrder);
-                setReservationCode(data.reservationCode || '');
-            } catch (error) {
-                console.error(error);
-                alert('No se pudo preparar tu pedido. Intenta nuevamente.');
-                router.push(`/checkout/product?productId=${parsedOrder.productId}`);
-            } finally {
-                setInitializing(false);
-            }
-        };
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data?.error || 'No se pudo preparar el pedido.');
+                    }
 
-        void ensurePendingSale();
+                    const nextOrder = {
+                        ...parsedOrder,
+                        eventId: data.eventId,
+                        reservationCode: data.reservationCode,
+                    };
+
+                    sessionStorage.setItem('product_order', JSON.stringify(nextOrder));
+                    setOrder(nextOrder);
+                    setReservationCode(data.reservationCode || '');
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo preparar tu pedido. Intenta nuevamente.');
+                    router.push(`/checkout/product?productId=${parsedOrder.productId}`);
+                } finally {
+                    setInitializing(false);
+                }
+            };
+
+            void ensurePendingSale();
+        });
     }, [router]);
 
     const handleFinish = async () => {
