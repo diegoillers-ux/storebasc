@@ -17,6 +17,8 @@ archivo histórico queda sin vigencia.
 - **SB-002 (lint)**: en espera, sin autorización.
 - **Accesos**: el propietario comparte accesos Vercel/Supabase (ideal: lectura).
 - **PR #7** (higiene SB-003, revisión APPROVE) integrada en `a701f27`.
+- **PR #8** (limpieza documental + flujo híbrido) integrada en `ca62fbf`.
+  Higiene cerrada: `docs/` mínimos vigentes + archivo + `TAREA-MODELO.md`.
 - **Limpieza documental**: archivar todo `.md` vigente a `docs/archivo/2026-10/`;
   `ENTREGA-CLIENTE/` sellado hasta avanzar el desarrollo.
 - **Flujo**: modelo híbrido — autovalidación obligatoria por defecto; revisor
