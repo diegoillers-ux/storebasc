@@ -6,6 +6,20 @@
   "target_minutes": 45,
   "tasks": [
     {
+      "id": "SB-AUTO-001",
+      "status": "reviewing",
+      "authorized": true,
+      "authorization": {
+        "by": "diegoillers-ux",
+        "at": "2026-10-14T19:41:36-05:00",
+        "timestamp_kind": "recorded_at",
+        "reference": "Owner instruction to prepare the delegated-merge pilot; scope in SB-AUTO-001.md",
+        "scope": "Shadow policy, evaluator, read-only workflow, tests and documentation; no approval or merge"
+      },
+      "depends_on": [],
+      "file": "docs/agent-loop/tasks/SB-AUTO-001.md"
+    },
+    {
       "id": "BOOT-001",
       "status": "ready_for_review",
       "authorized": true,

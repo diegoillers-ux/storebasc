@@ -42,3 +42,6 @@ Nombre visible indicado por Diego: Sotorebasc; identificador GitHub existente: s
 
 ## Revisión independiente
 Antes de cerrar una tarea, sigue docs/agent-loop/LOOP.md y REVIEW.md. El implementador debe pasar el diff completo, ficha y CI a un revisor separado de solo lectura. No autoaprobarse ni dejar la tarea ready_for_review si falta revisión o CI.
+
+## Piloto de integración delegada
+SB-AUTO-001 está autorizada únicamente para preparar el modo sombra descrito en docs/agent-loop/DELEGATED-MERGE.md. El evaluador no concede aprobación ni merge; su salida y un job verde no cambian autorización o aceptación. Los cambios en política, CI y agentes requieren revisión y decisión del dueño. Lee la ficha y cola antes de trabajar; no iniciar SB-002.

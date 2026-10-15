@@ -1,0 +1,83 @@
+name: Delegated merge shadow
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to inspect without approving or merging
+        required: true
+        type: string
+  workflow_run:
+    workflows: [Storebasc checks]
+    types: [completed]
+  check_run:
+    types: [completed]
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  actions: read
+jobs:
+  policy-tests:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -B -m unittest discover -s ops/tests -v
+  shadow-report:
+    if: >-
+      github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0]) ||
+      (github.event_name == 'check_run' && github.event.check_run.app.id != 15368 && github.event.check_run.pull_requests[0])
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Reports always use protected default-branch code, never PR code or artifacts.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect and report with read-only permissions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.check_run.pull_requests[0].number }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+          runner = Path('ops/delegated_merge.py')
+          number = os.environ.get('PR_NUMBER', '')
+          if not re.fullmatch(r'[1-9][0-9]*', number):
+              raise SystemExit('Invalid PR number')
+          if not runner.is_file():
+              # Initial PR cannot bootstrap its own trusted policy.
+              report = {'mode': 'shadow', 'merge_enabled': False, 'decision': 'HOLD',
+                        'missing_evidence': ['Bootstrap: runner not yet installed on protected main.']}
+              Path('shadow-report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+          else:
+              subprocess.run([sys.executable, '-B', str(runner), '--pr', number,
+                              '--output', 'shadow-report.json'], check=True)
+          report = Path('shadow-report.json').read_text(encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+              output.write('## Delegated merge simulation\nNo approval or merge was performed.\n\n```json\n' + report + '\n```\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: delegated-merge-shadow-${{ github.run_id }}
+          path: shadow-report.json
+          retention-days: 14

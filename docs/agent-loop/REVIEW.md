@@ -5,6 +5,7 @@ Esta revisión busca errores importantes dentro de una tarea autorizada. No redi
 - Un agente escritor implementa y prepara el diff.
 - Un revisor distinto recibe contexto nuevo, la ficha de tarea, el diff completo contra la base real de la PR y los resultados de CI o, si no existe, de los comandos de validación de la ficha.
 - El revisor solo lee. No modifica archivos, ejecuta comandos, llama servicios, comenta/aprueba en GitHub, cambia el estado de la PR ni integra.
+  Para revisar SB-AUTO-001 puede usar el conector GitHub solo para leer archivos, diff e instrucciones del repositorio de esta tarea y checks de su PR fijados a base/HEAD. No consulta otros repositorios ni cambia servicios. El arnés debe mantener esas restricciones; si no dispone de esas lecturas, recibe el paquete completo como texto. Esta excepción no modifica los permisos de .opencode/agents/reviewer.md.
 - Si no se puede proporcionar el diff completo o no se puede usar un contexto revisor separado, el resultado es BLOCKED. El escritor no se autoaprueba.
 - La revisión iniciada manualmente por Diego en ChatGPT puede servir como otra revisión, pero no cuenta como ejecución automática del revisor de este flujo.
 

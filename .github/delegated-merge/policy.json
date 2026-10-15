@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "storebasc-docs-shadow-v1",
+  "mode": "shadow",
+  "repository": "diegoillers-ux/storebasc",
+  "base_branch": "main",
+  "max_files": 5,
+  "max_changed_lines": 200,
+  "allowed_paths": ["README.md", "docs/help/**", "docs/user-guide/**"],
+  "allowed_extensions": [".md", ".txt"],
+  "denied_paths": ["**/AGENTS.md", "AGENTS.md", "**/CLAUDE.md", "CLAUDE.md", ".github/**", ".opencode/**", ".agents/**", "ops/**", "scripts/**", "docs/agent-loop/**", "docs/tasks/**", "docs/archive/**", "ENTREGA-CLIENTE/**"],
+  "queue_path": "docs/agent-loop/QUEUE.json",
+  "required_checks": [
+    {"name": "lint", "app_id": 15368},
+    {"name": "types-and-regressions", "app_id": 15368},
+    {"name": "build-and-smoke", "app_id": 15368}
+  ],
+  "review": {"check_name": "delegated-review", "app_id": null, "max_rounds": 3},
+  "activation": "Separate reviewed policy change, trusted reviewer application and enforced required gate; this pilot cannot merge."
+}
