@@ -1,12 +1,16 @@
 # Estado actual — punto de partida Storebasc
 
-**Fecha:** 2026-10-14. **Estado:** PR #2 actualizada y pendiente de revisión final; operación productiva no acreditada.
+**Fecha:** 2026-10-15. **Estado:** PR #2 y PR #3 integradas en `main` (`aca6158`); operación productiva no acreditada. Higiene en curso en `chore/higiene-identidad-20261015` (sin integrar).
 
 ## Base elegida
 
-`main` apunta a `3172d4a58afcdbfb7fcad0119103e277e81f3fa7`; `V2` a `3fd49aa1f61202058d22ec057f225ac629f0b108`. V2 es descendiente directo con un commit adicional. Se conserva su contenido funcional en la PR `chore/consolidate-baseline-20261013` contra main.
+`main` (y `origin/main`) apuntan a `aca6158177875f28807e069cd13ec26292b4e7d1` (merge de PR #2 del 2026-10-14; incluye el contenido de PR #3). `V2` sigue en `3fd49aa1f61202058d22ec057f225ac629f0b108` como ancestro histórico de `main`.
 
-Las ramas originales se conservan; main no cambia hasta integrar la PR. No se borró historia ni se aplicó force push. Después de integrar, usar el commit de integración como punto de partida, no el nombre V2.
+No se borró historia ni se aplicó force push. El punto de partida es el commit de integración `aca6158`, no el nombre V2 ni los SHAs de ramas ya integradas.
+
+## Identidad (decisión del propietario, 2026-10-15)
+
+Storebasc es el núcleo/plantilla SaaS reutilizable; anandacore es el nombre del proyecto final para el cliente y estandariza las variantes lina/ananda/nexocelestial. La separación en dos proyectos (base + personalizaciones) se hará cuando el proyecto alcance una versión madura que sirva como base sólida; hasta entonces se trabaja en este repositorio sin crear un segundo repo ni ramas de larga vida. La referencia externa workspace-hub no se usa.
 
 ## Qué aporta V2
 
@@ -32,9 +36,9 @@ Las ramas originales se conservan; main no cambia hasta integrar la PR. No se bo
 
 ## Lo comprobado
 
-Instalación, tipos, compilación, cuatro regresiones, cuatro rutas Chromium de smoke y ESLint de los archivos modificados pasan. `npm run lint` completo conserva 53 errores y 66 advertencias. CI analiza los archivos de código cambiados por cada PR, manteniendo la deuda restante visible y sin silenciar reglas. Detalle vigente: [verification/2026-10-14.md](verification/2026-10-14.md); inventario inicial: [verification/2026-10-13.md](verification/2026-10-13.md).
+Instalación (histórica 2026-10-14), tipos, compilación, seis pruebas, cuatro rutas Chromium de smoke y ESLint de los archivos modificados pasan (reverificado 2026-10-15 sobre `aca6158`). `npm run lint` completo conserva 53 errores y 66 advertencias. CI analiza los archivos de código cambiados por cada PR, manteniendo la deuda restante visible y sin silenciar reglas. Detalle vigente: [verification/2026-10-14.md](verification/2026-10-14.md); inventario inicial: [verification/2026-10-13.md](verification/2026-10-13.md).
 
-El dominio conocido responde **404 DEPLOYMENT_NOT_FOUND**. No se inspeccionaron equipos/proyectos en Vercel ni el estado remoto de Supabase; no inferir su disponibilidad desde documentación o correos anteriores.
+El dominio conocido respondía **404 DEPLOYMENT_NOT_FOUND** el 2026-10-14; el 2026-10-15 responde **HTTP 200** con título Ananda (64 KB HTML, sin `DEPLOYMENT_NOT_FOUND`). Qué commit y entorno se desplegó sigue desconocido. No se inspeccionaron equipos/proyectos en Vercel ni el estado remoto de Supabase; no inferir disponibilidad de servicios desde el 200.
 
 ## Bloqueos y deuda prioritaria
 

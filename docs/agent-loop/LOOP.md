@@ -11,7 +11,7 @@ Mantener continuidad entre Codex, OpenCode y otros agentes con una cola por proy
 - docs/agent-loop/HANDOFF.md: última sesión, rama, HEAD, cambios y decisión pendiente.
 - docs/agent-loop/REVIEW.md: método y formato de la revisión independiente.
 - Issues/PR: conversación y diff. No conceden autorización por sí mismas.
-- workspace-hub: prioridades generales; no reemplaza las colas de cada proyecto.
+- Referencia externa workspace-hub: no se usa (decisión 2026-10-15); cada proyecto lleva su cola y relevo en su propio repo.
 
 ## Antes de empezar
 1. Lee AGENTS.md, este protocolo, REVIEW.md, QUEUE.json, HANDOFF.md y la ficha de la tarea. Lee las instrucciones específicas del módulo.
