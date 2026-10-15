@@ -7,7 +7,7 @@
   "tasks": [
     {
       "id": "SB-AUTO-001",
-      "status": "reviewing",
+      "status": "ready_for_review",
       "authorized": true,
       "authorization": {
         "by": "diegoillers-ux",
