@@ -10,6 +10,7 @@
   "allowed_extensions": [".md", ".txt"],
   "denied_paths": ["**/AGENTS.md", "AGENTS.md", "**/CLAUDE.md", "CLAUDE.md", ".github/**", ".opencode/**", ".agents/**", "ops/**", "scripts/**", "docs/agent-loop/**", "docs/tasks/**", "docs/archive/**", "ENTREGA-CLIENTE/**"],
   "queue_path": "docs/agent-loop/QUEUE.json",
+  "ci_workflow_path": ".github/workflows/ci.yml",
   "required_checks": [
     {"name": "lint", "app_id": 15368},
     {"name": "types-and-regressions", "app_id": 15368},

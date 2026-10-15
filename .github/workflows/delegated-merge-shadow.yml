@@ -55,6 +55,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          from datetime import datetime, timezone
           import os
           from pathlib import Path
           import re
@@ -66,7 +67,20 @@ jobs:
               raise SystemExit('Invalid PR number')
           if not runner.is_file():
               # Initial PR cannot bootstrap its own trusted policy.
-              report = {'mode': 'shadow', 'merge_enabled': False, 'decision': 'HOLD',
+              repository = os.environ['GITHUB_REPOSITORY']
+              def api(path):
+                  return json.loads(subprocess.run(['gh', 'api', '--method', 'GET', path],
+                                    check=True, capture_output=True, text=True).stdout)
+              pr = api('repos/' + repository + '/pulls/' + number)
+              current_base = api('repos/' + repository + '/branches/' + pr['base']['ref'])['commit']['sha']
+              source = subprocess.run(['git', 'rev-parse', 'HEAD'], check=True,
+                                      capture_output=True, text=True).stdout.strip()
+              report = {'schema_version': 1, 'mode': 'shadow', 'merge_enabled': False, 'decision': 'HOLD',
+                        'repository': repository, 'pr': int(number), 'head': pr['head']['sha'],
+                        'base': pr['base']['sha'], 'current_base_sha': current_base,
+                        'source_revision': source, 'policy_id': None, 'policy_available': False,
+                        'observed_at': datetime.now(timezone.utc).isoformat(),
+                        'manual_reasons': [], 'collection_limits': [],
                         'missing_evidence': ['Bootstrap: runner not yet installed on protected main.']}
               Path('shadow-report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
           else:

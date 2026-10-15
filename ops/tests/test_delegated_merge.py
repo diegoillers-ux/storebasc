@@ -1,10 +1,12 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -40,7 +42,8 @@ class DelegationTests(unittest.TestCase):
                 {"context": check["name"], "app_id": check["app_id"]} for check in self.policy["required_checks"]]},
                 "enforce_admins": {"enabled": True}, "required_conversation_resolution": {"enabled": True}},
             "integration_sha": merge, "integration_parents": [b, h],
-            "checks": [{"id": index, "name": check["name"], "app_id": check["app_id"], "head_sha": merge,
+            "checks": [{"id": index, "name": check["name"], "app_id": check["app_id"], "head_sha": h,
+                        "integration_verified": True,
                         "status": "completed", "conclusion": "success"} for index, check in enumerate(self.policy["required_checks"], 1)],
             "review_check": {"id": 10, "name": "delegated-review", "app_id": 424242, "head_sha": h,
                              "status": "completed", "conclusion": "success", "report": {
@@ -129,6 +132,80 @@ class DelegationTests(unittest.TestCase):
         check = dict(self.snapshot["checks"][0], id=1000, conclusion="failure")
         self.snapshot["checks"].append(check)
         self.assertEqual(self.decision()["decision"], "HOLD")
+
+    def test_head_checks_without_exact_integration_proof_block(self):
+        for change in [{"integration_verified": False}, {"head_sha": "c" * 40}]:
+            original = copy.deepcopy(self.snapshot)
+            self.snapshot["checks"][0].update(change)
+            with self.subTest(change=change):
+                self.assertEqual(self.decision()["decision"], "HOLD")
+            self.snapshot = original
+
+    def test_actions_provenance_binds_check_job_run_workflow_and_checkout(self):
+        repo = self.policy["repository"]
+        prefix = "repos/" + repo
+        pr = self.snapshot["pr"]
+        check = {"id": 123, "name": "lint", "check_suite": {"id": 456},
+                 "details_url": "https://github.com/" + repo + "/actions/runs/789/job/123"}
+        run = {"event": "pull_request", "path": self.policy["ci_workflow_path"],
+               "repository": {"full_name": repo}, "head_repository": {"full_name": repo},
+               "head_sha": pr["head"]["sha"], "check_suite_id": 456,
+               "pull_requests": [{"number": 99, "head": pr["head"], "base": pr["base"]}]}
+        job = {"run_id": 789, "head_sha": pr["head"]["sha"], "name": "lint", "status": "completed",
+               "conclusion": "success", "check_run_url": "https://api.github.com/" + prefix + "/check-runs/123"}
+        log = "2026-10-15T00:00:00Z ##[group]Run actions/checkout@v4\n" \
+              "2026-10-15T00:00:00Z [command]/usr/bin/git log -1 --format=%H\n" \
+              "2026-10-15T00:00:00Z " + "c" * 40 + "\n"
+        for target, field, value in [(None, None, None), ("run", "event", "push"),
+                                     ("run", "path", ".github/workflows/other.yml"),
+                                     ("run", "pull_requests", []), ("run", "check_suite_id", 999),
+                                     ("run", "head_repository", {"full_name": "other/repo"}),
+                                     ("job", "check_run_url", "wrong check"),
+                                     ("job", "run_id", 999), ("job", "head_sha", "d" * 40),
+                                     ("workflow", None, None), ("log", None, None)]:
+            candidate_run, candidate_job = copy.deepcopy(run), copy.deepcopy(job)
+            workflow, candidate_log = {"sha": "same-blob"}, log
+            if target in {"run", "job"}:
+                (candidate_run if target == "run" else candidate_job)[field] = value
+            elif target == "workflow":
+                workflow = {"sha": "changed-blob"}
+            elif target == "log":
+                candidate_log = log.replace("c" * 40, "d" * 40)
+            with self.subTest(target=target, field=field), \
+                    patch.object(gate, "api", side_effect=[candidate_run, candidate_job, {"sha": "same-blob"}, workflow]), \
+                    patch.object(gate, "api_text", return_value=candidate_log):
+                self.assertEqual(gate.integration_evidence(self.policy, pr, check, "c" * 40), target is None)
+
+    def test_checkout_parser_does_not_accept_later_project_echo(self):
+        prefix = "2026-10-15T00:00:00Z "
+        log = prefix + "##[group]Run actions/checkout@v4\n" + prefix + "##[group]Run npm ci\n" \
+              + prefix + "[command]/usr/bin/git log -1 --format=%H\n" + prefix + "c" * 40
+        self.assertIsNone(gate.checkout_revision(log))
+
+    def test_bootstrap_keeps_traceable_hold_without_policy(self):
+        workflow = (ROOT.parent / ".github/workflows/delegated-merge-shadow.yml").read_text(encoding="utf-8")
+        source = textwrap.dedent(workflow.split("python - <<'PY'\n", 1)[1].split("          PY\n", 1)[0])
+        responses = [subprocess.CompletedProcess([], 0, json.dumps(self.snapshot["pr"])),
+                     subprocess.CompletedProcess([], 0, json.dumps({"commit": {"sha": "b" * 40}})),
+                     subprocess.CompletedProcess([], 0, "b" * 40 + "\n")]
+        previous = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as scratch:
+                os.chdir(scratch)
+                with patch.dict(os.environ, {"PR_NUMBER": "99", "GITHUB_REPOSITORY": self.policy["repository"],
+                                             "GITHUB_STEP_SUMMARY": str(Path(scratch) / "summary.md")}), \
+                        patch.object(subprocess, "run", side_effect=responses) as calls:
+                    exec(compile(source, "shadow-bootstrap", "exec"), {})
+                report = json.loads(Path("shadow-report.json").read_text(encoding="utf-8"))
+                for field, expected in {"repository": self.policy["repository"], "pr": 99, "head": "a" * 40,
+                                        "base": "b" * 40, "schema_version": 1, "decision": "HOLD",
+                                        "policy_id": None, "policy_available": False, "merge_enabled": False}.items():
+                    self.assertEqual(report[field], expected)
+                self.assertTrue(report["observed_at"])
+                self.assertEqual(calls.call_args_list[0].args[0][2:4], ["--method", "GET"])
+                os.chdir(previous)
+        finally:
+            os.chdir(previous)
 
     def test_stale_base_integration_or_policy_blocks(self):
         for field, value in [("current_base_sha", "d" * 40), ("policy_base_sha", "d" * 40),

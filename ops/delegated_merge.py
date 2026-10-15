@@ -126,7 +126,7 @@ def decide(policy, snapshot):
     if any(review.get("state") == "CHANGES_REQUESTED" for review in snapshot.get("latest_reviews", [])):
         hold.append("An outstanding formal review requests changes.")
 
-    # Validate checks on the exact test merge, including both parents, rather than a previous push.
+    # GitHub attaches PR checks to HEAD; the trusted job must have tested the exact merge.
     merge_sha = snapshot.get("integration_sha")
     if not isinstance(merge_sha, str) or not SHA.fullmatch(merge_sha) or snapshot.get("integration_parents") != [base_sha, head_sha]:
         hold.append("Current integration commit is not proven against head and base.")
@@ -137,12 +137,13 @@ def decide(policy, snapshot):
             hold.append("Missing configured check: " + name)
             continue
         latest = max(matching, key=lambda check: check.get("id", 0))
-        if latest.get("head_sha") != merge_sha or latest.get("status") != "completed" or latest.get("conclusion") != "success":
+        if (latest.get("head_sha") != head_sha or latest.get("status") != "completed"
+                or latest.get("conclusion") != "success" or latest.get("integration_verified") is not True):
             hold.append("Configured check is not successful on current integration: " + name)
 
     issuer = policy.get("review", {}).get("app_id")
     review_check = snapshot.get("review_check", {})
-    if type(issuer) is not int or issuer in {item["app_id"] for item in policy["required_checks"]}:
+    if type(issuer) is not int or issuer <= 0 or issuer in {item["app_id"] for item in policy["required_checks"]}:
         hold.append("Independent reviewer application is not configured.")
     if (review_check.get("app_id") != issuer or review_check.get("name") != policy["review"]["check_name"]
             or review_check.get("head_sha") != head_sha or review_check.get("status") != "completed"
@@ -176,10 +177,14 @@ def decide(policy, snapshot):
             "missing_evidence": sorted(set(hold)), "observed_at": snapshot.get("observed_at")}
 
 
-def api(path):
+def api_text(path):
     result = subprocess.run(["gh", "api", "--method", "GET", path], check=True, capture_output=True,
                             text=True, encoding="utf-8")
-    return json.loads(result.stdout)
+    return result.stdout
+
+
+def api(path):
+    return json.loads(api_text(path))
 
 
 def pages(path, key=None):
@@ -195,6 +200,56 @@ def pages(path, key=None):
 
 def normalize_check(check):
     return {key: check.get(key) for key in ("id", "name", "head_sha", "status", "conclusion")} | {"app_id": check.get("app", {}).get("id")}
+
+
+def checkout_revision(log):
+    """Read the first checkout action's own git-log output, before any project steps."""
+    lines = log.lstrip("\ufeff").splitlines()
+    in_checkout = False
+    for index, line in enumerate(lines):
+        message = line.partition("Z ")[2]
+        if message == "##[group]Run actions/checkout@v4":
+            in_checkout = True
+        if in_checkout and re.fullmatch(r"\[command\].*/git log -1 --format=%H", message):
+            value = lines[index + 1].partition("Z ")[2] if index + 1 < len(lines) else ""
+            return value if SHA.fullmatch(value) else None
+        if in_checkout and message.startswith("##[group]Run "):
+            if message != "##[group]Run actions/checkout@v4":
+                return None
+    return None
+
+
+def integration_evidence(policy, pr, check, merge_sha):
+    """Bind a native Actions check to its trusted workflow, PR/run/job and checkout."""
+    if not isinstance(merge_sha, str) or not SHA.fullmatch(merge_sha):
+        return False
+    repo = policy["repository"]
+    prefix = "repos/" + repo
+    match = re.fullmatch(r"https://github.com/" + re.escape(repo) + r"/actions/runs/([0-9]+)/job/([0-9]+)",
+                         check.get("details_url", ""))
+    if not match:
+        return False
+    run_id, job_id = map(int, match.groups())
+    run = api(prefix + "/actions/runs/" + str(run_id))
+    job = api(prefix + "/actions/jobs/" + str(job_id))
+    linked = [item for item in run.get("pull_requests", []) if item.get("number") == pr["number"]
+              and item.get("head", {}).get("sha") == pr["head"]["sha"]
+              and item.get("base", {}).get("sha") == pr["base"]["sha"]]
+    if (run.get("event") != "pull_request" or run.get("path") != policy["ci_workflow_path"]
+            or run.get("repository", {}).get("full_name") != repo
+            or run.get("head_repository", {}).get("full_name") != repo
+            or run.get("head_sha") != pr["head"]["sha"] or len(linked) != 1
+            or run.get("check_suite_id") != check.get("check_suite", {}).get("id")
+            or job.get("run_id") != run_id or job.get("head_sha") != pr["head"]["sha"]
+            or job.get("check_run_url") != "https://api.github.com/" + prefix + "/check-runs/" + str(check["id"])
+            or job.get("name") != check["name"] or job.get("status") != "completed"
+            or job.get("conclusion") != "success"):
+        return False
+    base_workflow = api(prefix + "/contents/" + policy["ci_workflow_path"] + "?ref=" + pr["base"]["sha"])
+    head_workflow = api(prefix + "/contents/" + policy["ci_workflow_path"] + "?ref=" + pr["head"]["sha"])
+    if not base_workflow.get("sha") or base_workflow["sha"] != head_workflow.get("sha"):
+        return False
+    return checkout_revision(api_text(prefix + "/actions/jobs/" + str(job_id) + "/logs")) == merge_sha
 
 
 def unresolved_threads(repo, number):
@@ -280,12 +335,22 @@ def collect(policy, number):
             commit = api(prefix + "/git/commits/" + merge_sha)
             snapshot["integration_sha"] = merge_sha
             snapshot["integration_parents"] = [parent["sha"] for parent in commit["parents"]]
-            snapshot["checks"] = [normalize_check(check) for check in pages(prefix + "/commits/" + merge_sha + "/check-runs", "check_runs")]
         except (subprocess.CalledProcessError, KeyError):
-            errors.append("Integration checks unavailable.")
+            errors.append("Integration commit unavailable.")
     try:
         reviewer = policy["review"]
         checks = pages(prefix + "/commits/" + head["sha"] + "/check-runs", "check_runs")
+        required = {(item["name"], item["app_id"]) for item in policy["required_checks"]}
+        for check in checks:
+            if (check["name"], check.get("app", {}).get("id")) in required:
+                normalized = normalize_check(check)
+                normalized["integration_verified"] = False
+                if check.get("status") == "completed" and check.get("conclusion") == "success":
+                    try:
+                        normalized["integration_verified"] = integration_evidence(policy, pr, check, merge_sha)
+                    except (subprocess.CalledProcessError, KeyError, TypeError, ValueError):
+                        errors.append("CI workflow/run/checkout provenance unavailable: " + check["name"])
+                snapshot["checks"].append(normalized)
         matching = [check for check in checks if check["name"] == reviewer["check_name"] and check.get("app", {}).get("id") == reviewer["app_id"]]
         if matching:
             check = max(matching, key=lambda item: item["id"])
@@ -306,6 +371,7 @@ def collect(policy, number):
     final_base = api(prefix + "/branches/" + policy["base_branch"])["commit"]["sha"]
     snapshot["snapshot_stable"] = (final_pr["head"]["sha"] == head["sha"]
                                    and final_pr["base"]["sha"] == base["sha"]
+                                   and final_pr.get("merge_commit_sha") == merge_sha
                                    and all(final_pr.get(key) == pr.get(key) for key in ("state", "draft", "mergeable"))
                                    and final_base == snapshot["current_base_sha"])
     snapshot["collection_limits"] = errors
