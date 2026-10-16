@@ -1,52 +1,50 @@
 # Estado verificable — Storebasc / anandacore
 
-**Fecha:** 2026-10-16. **Base:** `main = origin/main = d2714b0` (merge PR #16;
-incluye PR #2, #3, #7–#15; #9–#15 solo docs; **#16 fix #1 demo fail-closed**).
+**Fecha:** 2026-10-16. **Base:** `main = origin/main = 413f9fa` (merge PR #23;
+incluye #18 rifas fuera, #19 docs, #20 disponibilidad, #21 guardia `ends_at`,
+#22 pagos, #23 e2e sandbox).
 `V2` queda como ancestro histórico (`3fd49aa`).
-Árbol versionado limpio; 3 archivos con apariencia de secretos en raíz,
-ignorados por `.gitignore` (contenido nunca leído).
+Árbol versionado limpio; secretos solo locales e ignorados (contenido jamás
+mostrado ni versionado).
 
-## Verificado el 2026-10-16 sobre `d2714b0`
+## Verificado el 2026-10-16 sobre `413f9fa`
 
 | Comprobación | Resultado |
 |---|---|
-| `npm test` | PASS 8/8 (incluye 2 de `demoMode` fail-closed, PR #16) |
+| `npm test` | PASS 21/21 (8 base + 9 solapes/Bogotá + 4 webhook) |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS (no acredita servicios) |
-| `npm run test:e2e` (Chromium) | PASS 4/4 (portada, tienda, servicios, login; sin pagos ni reservas) |
-| `npm run lint` | FAIL heredado: 53 errores, 66 advertencias (deuda, sin silenciar) |
+| `npm run test:e2e` (Chromium) | PASS 4/4 smoke + 3/3 sandbox MP (preferencia real, 200 permanente, HMAC→500) |
+| Sandbox MP de veras | Pago APRO → webhook 200 → reserva CONFIRMED + pago APPROVED (luego cancelada) |
+| Supabase remoto | `weekly` + `blocked_slots` + guardia antisolape aplicadas; `adjust_product_stock` probada |
+| `npm run lint` | FAIL heredado: 43 errores, 55 advertencias (deuda, sin silenciar; bajó de 53/66) |
 | Dominio conocido | HTTP 200 con contenido Ananda; **qué commit/entorno, desconocido** |
 
 ## Qué existe (código, no operación)
 
 Tienda/servicios públicos (intentan Supabase, fallback a ejemplos); checkout de
-servicio/producto; reservas y disponibilidad (Google Calendar + Supabase);
-Mercado Pago + pago manual con comprobante privado (`proof.ts`: 2 MB, JPG/PNG/PDF);
-admin (agenda, clientes, catálogo, pagos, pedidos, configuración) más
-**parciales**: `/admin/contenido` (UI existe, GET vacío, POST `501`)
-y `/admin/reportes` + panel `/admin` (UI estática `—`/`Sin datos suficientes`);
-cron de limpieza (2 jobs); enlaces WhatsApp; correo SMTP. IA contenido: UI
-existe, pero POST sin backend (`501`; GET `[]`).
-Dashboard y reportes muestran placeholders (`—`). Modo demo con bypass administrativo, **fail-closed en producción**
-(`isDemoMode()` falso con `NODE_ENV=production`, PR #16): solo aislado.
+servicio/producto (sin rifas: eliminadas PR #18); reservas con solapes
+cubiertos y guardia antisolape en BD (`bookings_no_overlap_active` + trigger
+`ends_at`); horas por día persistidas (`weekly`) y bloqueos reales
+(`blocked_slots`); Mercado Pago (preferencia + webhook idempotente 200/500 +
+stock atómico vía RPC) + pago manual con comprobante privado; admin (agenda,
+clientes, catálogo, pagos, pedidos, configuración) más **parciales**:
+`/admin/contenido` (GET vacío, POST `501`) y `/admin/reportes` + panel
+(UI estática); cron de limpieza (2 jobs); enlaces WhatsApp; correo SMTP.
+Modo demo con bypass administrativo, **fail-closed en producción** (PR #16).
 
 ## No comprobado / desconocido
 
-Supabase remoto (esquema, RLS, roles), Google Calendar real, Mercado Pago
-sandbox/prod, Blob privado, SMTP real, cron remoto, env/entorno desplegado en
-Vercel, rotación de credenciales expuestas según reporte anterior.
+Google Calendar real (credencial local inválida: `DECODER unsupported`;
+el webhook lo tolera y confirma igual), Blob privado, SMTP real, cron remoto,
+env/entorno desplegado en Vercel, Mercado Pago producción, rotación de
+credenciales expuestas según reporte anterior.
 
 ## Deuda prioritaria
 
-1. Accesos de lectura Vercel y verificación remota (Supabase: CLI autenticado
-   con token local; 3 migraciones de disponibilidad aplicadas el 2026-10-16).
-2. Lint 53/66 (tarea en espera, sin autorización).
-3. Disponibilidad (restos): UI de bloqueos, e2e de calendario. Listo en BD:
-   guardia antisolape `bookings_no_overlap_active` + trigger `ends_at`
-   (probada con 23P01), columna `weekly`, tabla `blocked_slots`.
-4. Pagos/pedidos: E2E manual y parciales. Listo el 2026-10-16: sandbox aprueba
-   de veras (pago APRO → webhook 200 → reserva CONFIRMED + pago APPROVED),
-   idempotencia, stock atómico; calendario Google no sincronizó (credencial
-   local inválida: DECODER unsupported).
-5. Auth/roles/RLS: bypass demo ya cerrado en prod (#16); quedan roles de mínimo
-   privilegio (#2) y confirmar RLS (#5).
+1. Auth/roles/RLS: roles de mínimo privilegio (#2) y confirmar RLS (#5).
+2. Pagos: E2E manual y regla de parciales (sin definir).
+3. Lint 43/55 (sin autorización para la deuda restante).
+4. Disponibilidad (restos): UI de bloqueos, e2e de calendario.
+5. Verificación remota restante: Vercel (lectura), Blob, SMTP, cron.
+6. SEO/estructural, cuando la base operativa esté beta sólida.
