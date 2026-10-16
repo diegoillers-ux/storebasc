@@ -1,4 +1,5 @@
 import type { PaymentProvider, CreatePaymentInput, PaymentSession, PaymentEvent, WebhookOptions } from './index'
+import { WebhookValidationError } from './webhook'
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'
 import crypto from 'crypto'
 
@@ -90,11 +91,11 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
 
     if (!paymentId) {
-      throw new Error('ID de pago no provisto en la notificación de Mercado Pago')
+      throw new WebhookValidationError('ID de pago no provisto en la notificación de Mercado Pago')
     }
 
     if (!this.webhookSecret && process.env.NODE_ENV === 'production') {
-      throw new Error('MERCADOPAGO_WEBHOOK_SECRET es obligatorio en producción: webhook rechazado.')
+      throw new WebhookValidationError('MERCADOPAGO_WEBHOOK_SECRET es obligatorio en producción: webhook rechazado.')
     }
 
     if (this.webhookSecret) {
@@ -131,7 +132,7 @@ export class MercadoPagoProvider implements PaymentProvider {
   private validateSignature(paymentId: string, xSignature?: string, xRequestId?: string, dataId?: string) {
     if (!this.webhookSecret) return
     if (!xSignature) {
-      throw new Error('Firma x-signature requerida pero no provista')
+      throw new WebhookValidationError('Firma x-signature requerida pero no provista')
     }
 
     let ts = ''
@@ -146,7 +147,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
 
     if (!ts || !v1) {
-      throw new Error('Formato de firma x-signature inválido')
+      throw new WebhookValidationError('Formato de firma x-signature inválido')
     }
 
     const cleanDataId = (dataId || paymentId).toLowerCase()
@@ -162,7 +163,7 @@ export class MercadoPagoProvider implements PaymentProvider {
       const altManifest = `id:${paymentId};request-timestamp:${ts};`
       const altHmac = crypto.createHmac('sha256', this.webhookSecret).update(altManifest).digest('hex')
       if (altHmac !== v1) {
-        throw new Error('Firma de Webhook de Mercado Pago no válida (HMAC mismatch)')
+        throw new WebhookValidationError('Firma de Webhook de Mercado Pago no válida (HMAC mismatch)')
       }
     }
   }

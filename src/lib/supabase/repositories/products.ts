@@ -164,18 +164,21 @@ export const productRepository = {
   },
 
   async adjustStock(id: string, change: number, reason: string, orderId: string | null = null): Promise<Product> {
+    // Descuento atómico vía RPC (misma transacción: bloqueo + piso + kárdex).
+    // Sin esto, dos aprobaciones concurrentes podían sobrevender.
+    const { data, error } = await getAdminSupabase().rpc('adjust_product_stock', {
+      p_product_id: id,
+      p_change: change,
+      p_reason: reason,
+      p_order_id: orderId,
+    });
+
+    if (error) throw new Error(`Failed to adjust stock for ${id}: ${error.message}`);
+    if (typeof data !== 'number') throw new Error(`Respuesta inesperada al ajustar stock de ${id}`);
+
     const product = await this.getById(id);
-    if (!product) throw new Error(`Producto ${id} no encontrado`);
-
-    const newStock = product.stock + change;
-    if (newStock < 0) {
-      throw new Error(`Stock insuficiente para el producto ${product.name}`);
-    }
-
-    await this.update(id, { stock: newStock });
-    await this.addStockMovement(id, { change, reason, orderId });
-
-    return (await this.getById(id))!;
+    if (!product) throw new Error(`Producto ${id} no encontrado tras ajuste`);
+    return product;
   },
 
   async addStockMovement(productId: string, movement: Omit<StockMovement, 'id' | 'productId' | 'createdAt'>): Promise<StockMovement> {

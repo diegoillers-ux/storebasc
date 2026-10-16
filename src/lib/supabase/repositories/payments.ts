@@ -90,7 +90,13 @@ export const paymentRepository = {
       .select('*')
       .single();
 
-    if (error) throw new Error(`Failed to create payment in Supabase: ${error.message}`);
+    if (error) {
+      const thrown = new Error(`Failed to create payment in Supabase: ${error.message}`) as Error & {
+        code?: string;
+      };
+      thrown.code = error.code;
+      throw thrown;
+    }
 
     return mapPaymentFromDb(data);
   },
