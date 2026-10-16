@@ -1,11 +1,12 @@
 # Estado verificable — Storebasc / anandacore
 
-**Fecha:** 2026-10-15. **Base:** `main = origin/main = a701f27` (merge PR #7;
-incluye PR #2 y #3). `V2` queda como ancestro histórico (`3fd49aa`).
+**Fecha:** 2026-10-16. **Base:** `main = origin/main = 26ca7f3` (merge PR #11;
+incluye PR #2, #3, #7, #8, #9, #10; #9–#11 solo docs). `V2` queda como ancestro
+histórico (`3fd49aa`).
 Árbol versionado limpio; 3 archivos con apariencia de secretos en raíz,
 ignorados por `.gitignore` (contenido nunca leído).
 
-## Verificado el 2026-10-15 sobre `aca6158`
+## Verificado el 2026-10-16 sobre `26ca7f3`
 
 | Comprobación | Resultado |
 |---|---|
