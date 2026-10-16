@@ -19,15 +19,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Fuente de verdad
 
 1. Las instrucciones del propietario en el chat prevalecen sobre cualquier `.md`.
-2. Después: `docs/ESTADO.md` y `docs/DECISIONES.md`.
+2. Después: `docs/STATE.md` (estado vivo, una pantalla) y `docs/DECISIONES.md` (constancia del propietario).
 3. El archivo (`docs/archivo/`, `docs/archive/`) es historial, no guía.
 
 ## Entrada
 
-1. Lee `docs/ESTADO.md` y `docs/DECISIONES.md`.
-2. Comprueba rama, HEAD, `git status` y diferencia con `main`. No toques cambios ajenos.
-3. Lee la ficha de la tarea (`docs/TAREA-MODELO.md`) y solo los docs que pida.
-4. Consulta `docs/ARQUITECTURA.md` y `docs/RUTA.md` según el caso.
+Dos caminos, según el trabajo:
+
+- **Orientación y cierre (`/status`, `/wrap`)**: lee solo `docs/STATE.md` y el estado de git. No cargues más contexto del necesario.
+- **Tarea autorizada (`/continuar`)**: lee `AGENTS.md`, `docs/STATE.md` y la ficha de la tarea. Consulta `docs/DECISIONES.md` solo si la tarea toca identidad, alcance o una decisión previa.
+
+En ambos: comprueba rama, HEAD, `git status` y diferencia con `main`; no toques cambios ajenos. Consulta `docs/ARQUITECTURA.md` y `docs/RUTA.md` según el caso.
 
 ## Límites
 

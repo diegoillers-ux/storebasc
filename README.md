@@ -35,7 +35,7 @@ npm run test:e2e
 | Archivo | Uso |
 |---|---|
 | `AGENTS.md` | Entrada para agentes |
-| `docs/ESTADO.md` | Estado verificable actual |
+| `docs/STATE.md` | Estado vivo (una pantalla) |
 | `docs/DECISIONES.md` | Decisiones del propietario |
 | `docs/ARQUITECTURA.md` | Estructura técnica y límites |
 | `docs/ENTORNOS.md` | Integraciones y secretos |
