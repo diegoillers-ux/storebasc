@@ -44,6 +44,9 @@ Vercel, rotación de credenciales expuestas según reporte anterior.
 3. Disponibilidad (restos): UI de bloqueos, e2e de calendario. Listo en BD:
    guardia antisolape `bookings_no_overlap_active` + trigger `ends_at`
    (probada con 23P01), columna `weekly`, tabla `blocked_slots`.
-4. Pagos/pedidos: idempotencia, stock, E2E manual y sandbox.
+4. Pagos/pedidos: E2E manual y parciales. Listo el 2026-10-16: sandbox aprueba
+   de veras (pago APRO → webhook 200 → reserva CONFIRMED + pago APPROVED),
+   idempotencia, stock atómico; calendario Google no sincronizó (credencial
+   local inválida: DECODER unsupported).
 5. Auth/roles/RLS: bypass demo ya cerrado en prod (#16); quedan roles de mínimo
    privilegio (#2) y confirmar RLS (#5).
