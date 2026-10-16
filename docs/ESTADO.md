@@ -38,9 +38,12 @@ Vercel, rotación de credenciales expuestas según reporte anterior.
 
 ## Deuda prioritaria
 
-1. Accesos de lectura Vercel/Supabase y verificación remota.
+1. Accesos de lectura Vercel y verificación remota (Supabase: CLI autenticado
+   con token local; 3 migraciones de disponibilidad aplicadas el 2026-10-16).
 2. Lint 53/66 (tarea en espera, sin autorización).
-3. Disponibilidad: horas/bloqueos no persistidos, solapes, reserva no atómica.
+3. Disponibilidad (restos): UI de bloqueos, e2e de calendario. Listo en BD:
+   guardia antisolape `bookings_no_overlap_active` + trigger `ends_at`
+   (probada con 23P01), columna `weekly`, tabla `blocked_slots`.
 4. Pagos/pedidos: idempotencia, stock, E2E manual y sandbox.
 5. Auth/roles/RLS: bypass demo ya cerrado en prod (#16); quedan roles de mínimo
    privilegio (#2) y confirmar RLS (#5).
