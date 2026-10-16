@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isDemoMode } from '@/lib/demoMode'
 import { MercadoPagoProvider } from '@/lib/payments/mercadopago'
-import { paymentRepository } from '@/lib/supabase/repositories/payments'
+import { classifyWebhookError, type WebhookOutcome } from '@/lib/payments/webhook'
+import { paymentRepository, type Payment } from '@/lib/supabase/repositories/payments'
 import { bookingRepository } from '@/lib/supabase/repositories/bookings'
 import { orderRepository } from '@/lib/supabase/repositories/orders'
 import { customerRepository } from '@/lib/supabase/repositories/customers'
@@ -11,6 +12,24 @@ import { GoogleCalendarProvider } from '@/lib/calendar/google'
 import { sendApprovedSaleEmail } from '@/lib/mailer'
 
 const calendarProvider = new GoogleCalendarProvider()
+
+type PaymentCreateInput = Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>
+
+/**
+ * Inserción idempotente: una entrega duplicada concurrente choca con la
+ * referencia UNIQUE (23505) y se responde como ya recibida en vez de 400
+ * (que provocaría reintentos inútiles del proveedor).
+ */
+async function createPaymentIdempotent(payload: PaymentCreateInput): Promise<unknown> {
+  try {
+    return await paymentRepository.create(payload)
+  } catch (err: unknown) {
+    if (classifyWebhookError(err) === 'idempotent' && payload.reference) {
+      return paymentRepository.getByReference(payload.reference)
+    }
+    throw err
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +78,7 @@ export async function POST(req: NextRequest) {
       const amountOk = expectedAmount <= 0 || event.amount >= expectedAmount
       const isApproved = event.status === 'approved' && amountOk
 
-      await paymentRepository.create({
+      await createPaymentIdempotent({
         customerId: booking.customerId,
         bookingId: booking.id,
         orderId: null,
@@ -136,7 +155,7 @@ export async function POST(req: NextRequest) {
       const amountOk = expectedTotal <= 0 || event.amount >= expectedTotal
       const isApproved = event.status === 'approved' && amountOk
 
-      await paymentRepository.create({
+      await createPaymentIdempotent({
         customerId: order.customerId,
         bookingId: null,
         orderId: order.id,
@@ -191,6 +210,12 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     const details = error instanceof Error ? error.message : 'Unknown error'
     console.error('Mercado Pago webhook error:', error)
-    return NextResponse.json({ error: 'Webhook processing error', details }, { status: 400 })
+    // Permanente (firma/payload): 200 para frenar reintentos inútiles.
+    // Transitorio (BD/API): 500 para que el proveedor reintente.
+    const outcome: WebhookOutcome = classifyWebhookError(error)
+    if (outcome !== 'transient') {
+      return NextResponse.json({ received: false, reason: outcome, details })
+    }
+    return NextResponse.json({ error: 'Webhook processing error', details }, { status: 500 })
   }
 }

@@ -161,8 +161,11 @@ export async function POST(req: NextRequest) {
       for (const item of orderItems) {
         try {
           await productRepository.adjustStock(item.productId, -item.quantity, 'venta', newOrder.id!)
-        } catch (err) {
-          console.warn(`No se pudo ajustar stock para producto ${item.productId}:`, err)
+        } catch {
+          // Sin stock real (carrera con otra venta): anular el pedido en vez
+          // de dejarlo creado sin movimiento de inventario.
+          await orderRepository.updateStatus(newOrder.id!, 'CANCELLED', null)
+          return NextResponse.json({ error: `Stock insuficiente para ${item.productId}. Pedido anulado.` }, { status: 400 })
         }
       }
     }

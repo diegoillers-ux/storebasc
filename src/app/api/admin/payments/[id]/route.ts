@@ -6,6 +6,7 @@ import { bookingRepository } from '@/lib/supabase/repositories/bookings';
 import { orderRepository } from '@/lib/supabase/repositories/orders';
 import { customerRepository } from '@/lib/supabase/repositories/customers';
 import { serviceRepository } from '@/lib/supabase/repositories/services';
+import { productRepository } from '@/lib/supabase/repositories/products';
 import { GoogleCalendarProvider } from '@/lib/calendar/google';
 import { sendApprovedSaleEmail } from '@/lib/mailer';
 import { getBookingConfirmationCustomerLink } from '@/lib/whatsapp';
@@ -34,6 +35,11 @@ export async function PUT(
     const payment = await paymentRepository.getById(id);
     if (!payment) {
       return NextResponse.json({ error: 'Pago no encontrado.' }, { status: 404 });
+    }
+
+    // Aprobar dos veces no duplica efectos: ya está en ese estado.
+    if (payment.status === status) {
+      return NextResponse.json({ success: true, message: 'Pago ya estaba en ese estado.' });
     }
 
     const updateData: Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>> = {
@@ -108,7 +114,21 @@ export async function PUT(
       if (payment.orderId) {
         const order = await orderRepository.getById(payment.orderId);
         if (order && order.status !== 'PAID') {
+          const wasPending = order.status === 'PAYMENT_PENDING' || (order.status as string) === 'PENDING';
           await orderRepository.updateStatus(payment.orderId, 'PAID', null);
+
+          // Igual que el webhook: si venía de diferir stock, descontarlo aquí.
+          // Sin esto, los pedidos manuales nunca movían inventario.
+          if (wasPending) {
+            const orderItems = await orderRepository.listItems(payment.orderId);
+            for (const item of orderItems) {
+              try {
+                await productRepository.adjustStock(item.productId, -item.quantity, 'venta', payment.orderId);
+              } catch (stockErr) {
+                console.warn(`Error ajustando stock en aprobación manual para ${item.productId}:`, stockErr);
+              }
+            }
+          }
         }
       }
     }

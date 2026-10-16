@@ -27,23 +27,29 @@ export interface StockMovement {
   createdAt: Date;
 }
 
-function mapProductFromDb(row: any): Product {
+type DbRow = Record<string, unknown>;
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function mapProductFromDb(row: DbRow): Product {
   return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description || null,
+    id: asString(row.id) || undefined,
+    name: asString(row.name),
+    slug: asString(row.slug),
+    description: typeof row.description === 'string' ? row.description : null,
     price: Number(row.price || 0),
-    currency: row.currency || 'COP',
+    currency: asString(row.currency, 'COP'),
     stock: Number(row.stock || 0),
-    sku: row.sku || null,
-    category: row.category || null,
-    imageUrl: row.image_url || null,
-    images: Array.isArray(row.images) ? row.images : [],
-    active: Boolean(row.active),
-    featured: Boolean(row.featured),
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
+    sku: typeof row.sku === 'string' ? row.sku : null,
+    category: typeof row.category === 'string' ? row.category : null,
+    imageUrl: typeof row.image_url === 'string' ? row.image_url : null,
+    images: Array.isArray(row.images) ? row.images.filter((i): i is string => typeof i === 'string') : [],
+    active: typeof row.active === 'boolean' ? row.active : false,
+    featured: typeof row.featured === 'boolean' ? row.featured : false,
+    createdAt: new Date(asString(row.created_at)),
+    updatedAt: new Date(asString(row.updated_at ?? row.created_at)),
   };
 }
 
@@ -110,7 +116,7 @@ export const productRepository = {
   },
 
   async update(id: string, data: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.name !== undefined) payload.name = data.name;
     if (data.slug !== undefined) payload.slug = data.slug;
     if (data.description !== undefined) payload.description = data.description;
@@ -164,18 +170,21 @@ export const productRepository = {
   },
 
   async adjustStock(id: string, change: number, reason: string, orderId: string | null = null): Promise<Product> {
+    // Descuento atómico vía RPC (misma transacción: bloqueo + piso + kárdex).
+    // Sin esto, dos aprobaciones concurrentes podían sobrevender.
+    const { data, error } = await getAdminSupabase().rpc('adjust_product_stock', {
+      p_product_id: id,
+      p_change: change,
+      p_reason: reason,
+      p_order_id: orderId,
+    });
+
+    if (error) throw new Error(`Failed to adjust stock for ${id}: ${error.message}`);
+    if (typeof data !== 'number') throw new Error(`Respuesta inesperada al ajustar stock de ${id}`);
+
     const product = await this.getById(id);
-    if (!product) throw new Error(`Producto ${id} no encontrado`);
-
-    const newStock = product.stock + change;
-    if (newStock < 0) {
-      throw new Error(`Stock insuficiente para el producto ${product.name}`);
-    }
-
-    await this.update(id, { stock: newStock });
-    await this.addStockMovement(id, { change, reason, orderId });
-
-    return (await this.getById(id))!;
+    if (!product) throw new Error(`Producto ${id} no encontrado tras ajuste`);
+    return product;
   },
 
   async addStockMovement(productId: string, movement: Omit<StockMovement, 'id' | 'productId' | 'createdAt'>): Promise<StockMovement> {
@@ -210,13 +219,13 @@ export const productRepository = {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map((m: any) => ({
-      id: m.id,
-      productId: m.product_id,
-      change: m.change,
-      reason: m.reason,
-      orderId: m.order_id || null,
-      createdAt: new Date(m.created_at),
+    return data.map((m: DbRow) => ({
+      id: asString(m.id) || undefined,
+      productId: asString(m.product_id),
+      change: Number(m.change || 0),
+      reason: asString(m.reason),
+      orderId: typeof m.order_id === 'string' ? m.order_id : null,
+      createdAt: new Date(asString(m.created_at)),
     }));
   },
 };

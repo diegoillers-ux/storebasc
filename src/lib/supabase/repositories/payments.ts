@@ -15,31 +15,37 @@ export interface Payment {
   status: PaymentStatus;
   reference: string | null;
   receiptUrl: string | null;
-  providerData: any | null;
+  providerData: unknown;
   verifiedAt: Date | null;
   verifiedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-function mapPaymentFromDb(row: any): Payment {
+type DbRow = Record<string, unknown>;
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function mapPaymentFromDb(row: DbRow): Payment {
   return {
-    id: row.id,
-    customerId: row.customer_id || '',
-    bookingId: row.booking_id || null,
-    orderId: row.order_id || null,
+    id: asString(row.id) || undefined,
+    customerId: asString(row.customer_id),
+    bookingId: typeof row.booking_id === 'string' ? row.booking_id : null,
+    orderId: typeof row.order_id === 'string' ? row.order_id : null,
     method: row.method as PaymentMethod,
-    provider: row.provider || null,
+    provider: typeof row.provider === 'string' ? row.provider : null,
     amount: Number(row.amount || 0),
-    currency: row.currency || 'COP',
+    currency: asString(row.currency, 'COP'),
     status: row.status as PaymentStatus,
-    reference: row.reference || null,
-    receiptUrl: row.voucher_url || row.receipt_url || null,
-    providerData: row.provider_data || null,
-    verifiedAt: row.verified_at ? new Date(row.verified_at) : null,
-    verifiedBy: row.verified_by || null,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at || row.created_at),
+    reference: typeof row.reference === 'string' ? row.reference : null,
+    receiptUrl: typeof row.voucher_url === 'string' ? row.voucher_url : typeof row.receipt_url === 'string' ? row.receipt_url : null,
+    providerData: row.provider_data ?? null,
+    verifiedAt: row.verified_at instanceof Date ? row.verified_at : typeof row.verified_at === 'string' ? new Date(row.verified_at) : null,
+    verifiedBy: typeof row.verified_by === 'string' ? row.verified_by : null,
+    createdAt: new Date(asString(row.created_at)),
+    updatedAt: new Date(asString(row.updated_at ?? row.created_at)),
   };
 }
 
@@ -90,13 +96,19 @@ export const paymentRepository = {
       .select('*')
       .single();
 
-    if (error) throw new Error(`Failed to create payment in Supabase: ${error.message}`);
+    if (error) {
+      const thrown = new Error(`Failed to create payment in Supabase: ${error.message}`) as Error & {
+        code?: string;
+      };
+      thrown.code = error.code;
+      throw thrown;
+    }
 
     return mapPaymentFromDb(data);
   },
 
   async update(id: string, data: Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
-    const payload: any = { updated_at: new Date().toISOString() };
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.customerId !== undefined) payload.customer_id = data.customerId;
     if (data.status !== undefined) payload.status = data.status;
     if (data.provider !== undefined) payload.provider = data.provider;
