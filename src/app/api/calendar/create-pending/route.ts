@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getGoogleCalendarClient } from '@/lib/googleCalendar';
+import { rangesOverlap } from '@/lib/calendar/overlaps';
 import { sendPendingSaleEmail } from '@/lib/mailer';
 import { getRequestIp, isRateLimited } from '@/lib/rateLimit';
 import { isDemoMode } from '@/lib/demoMode';
@@ -96,16 +97,27 @@ export async function POST(req: NextRequest) {
         }
 
         if (requiresScheduling) {
+            // Ventana ampliada hacia atrás: cubre eventos iniciados antes del
+            // rango que lo solapan; el filtro fino se hace en código.
+            const overlapWindowStart = new Date(new Date(normalizedStart).getTime() - 24 * 3_600_000).toISOString();
             const overlapCheck = await calendar.events.list({
                 calendarId,
-                timeMin: normalizedStart,
+                timeMin: overlapWindowStart,
                 timeMax: normalizedEnd,
                 singleEvents: true,
                 orderBy: 'startTime',
-                maxResults: 10,
+                maxResults: 50,
             });
 
-            const hasOverlap = (overlapCheck.data.items || []).some((existing) => existing.status !== 'cancelled');
+            const newStartMs = new Date(normalizedStart).getTime();
+            const newEndMs = new Date(normalizedEnd).getTime();
+            const hasOverlap = (overlapCheck.data.items || []).some((existing) => {
+                if (existing.status === 'cancelled') return false;
+                const evStart = new Date(existing.start?.dateTime || existing.start?.date || '').getTime();
+                const evEnd = new Date(existing.end?.dateTime || existing.end?.date || '').getTime();
+                if (Number.isNaN(evStart) || Number.isNaN(evEnd)) return true;
+                return rangesOverlap(newStartMs, newEndMs, evStart, evEnd);
+            });
             if (hasOverlap) {
                 return NextResponse.json({ error: 'Ese horario ya fue tomado. Elige otro.' }, { status: 409 });
             }
