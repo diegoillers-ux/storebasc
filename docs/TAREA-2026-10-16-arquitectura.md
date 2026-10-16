@@ -39,8 +39,10 @@ PASS, e2e 4/4 PASS, lint FAIL heredado 53/66).
 
 ## Relevo
 
-- Rama: `docs/corregir-arquitectura-20261016`. HEAD inicial: `26ca7f3`; HEAD
-  final: `71794a9` (solo `docs/ARQUITECTURA.md` + esta ficha).
+- Rama: `docs/corregir-arquitectura-20261016`. HEAD inicial: `26ca7f3`;
+  commit de contenido: `71794a9` (solo `docs/ARQUITECTURA.md` + esta ficha);
+  HEAD final de la rama: ver `git rev-parse` (solo ajustes de constancia
+  posteriores, sin cambios de alcance).
 - Archivos: `docs/ARQUITECTURA.md` (editado); esta ficha (nueva).
 - Revisión: fuera de zona de riesgo (solo docs) → autovalidación con checklist
   ciego. Sin reviewer.
