@@ -7,7 +7,8 @@ Cerrar el hallazgo #1 (severidad alta) de la auditoría de seguridad
 (SUPER_ADMIN) y datos de ejemplo si `NEXT_PUBLIC_DEMO_MODE=true`, incluso en
 producción. Al terminar, el propietario podrá comprobar que en producción
 (`NODE_ENV=production`) el modo demo queda desactivado aunque la variable esté
-mal configurada, sin tocar la operación normal de un entorno aislado de demo.
+mal configurada. En un entorno aislado servido con `NODE_ENV` distinto de
+`production` (p. ej. `next dev` local) el demo sigue operativo.
 
 ## Alcance
 
@@ -49,8 +50,8 @@ variable de opt-in explícita solo-servidor (fuera de alcance).
   `NEXT_PUBLIC_DEMO_MODE=true` — probado en `tests/demoMode.test.ts`.
 - [x] El bypass queda cerrado para todos los consumidores — verificado que
   middleware, `adminAuth` y el `jwt` de auth llaman al chokepoint.
-- [ ] Revisión independiente reviewer (zona de riesgo auth) — en curso.
-- [ ] Decisión del propietario (aceptar/merege del PR borrador).
+- [x] Revisión independiente reviewer (zona de riesgo auth) — APPROVE, 1 ronda.
+- [ ] Decisión del propietario (aceptar/merge del PR borrador).
 
 ## Validación
 
@@ -75,12 +76,19 @@ Deuda heredada visible; reglas no silenciadas. No se leyeron secretos ni `.env`
 - Archivos: `src/lib/demoMode.ts` (editado), `tests/demoMode.test.ts` (nuevo),
   `.env.example` (comentario), `docs/ENTORNOS.md` (nota), esta ficha (nueva).
 - Revisión: zona de riesgo (auth/roles) → reviewer independiente obligatorio,
-  contexto separado y solo lectura. Veredicto: pendiente.
+  contexto separado y solo lectura. Veredicto: **APPROVE**, 1 ronda, sin
+  cambios obligatorios. Observaciones P3 registradas abajo.
 - Fallos: lint 53/66 heredado.
 - Hallazgo residual (no tocado por alcance): `ADMIN_EMAILS` con correos reales
   en `.env.example:20` (hallazgo #6, baja).
+- Observación de revisión (no bloqueante): `docs/ESTADO.md:3` cita
+  `main = 26ca7f3`, pero `main` real es `776c429` (PR #15). Deriva documental
+  preexistente, fuera de alcance.
 - Decisión pendiente del propietario: aceptar el guard y mergear/descartar el
   PR borrador; autorizar (o no) el resto de fixes de la auditoría en ese orden.
+  Además confirmar cómo se aprovisiona el entorno demo aislado (dev local vs
+  preview Vercel): si es preview, se necesita una variable de opt-in
+  solo-servidor (fuera de alcance).
 - Siguiente paso: PR borrador; si se aprueba, push de rama + PR (sin merge sin
   orden).
 
@@ -89,3 +97,14 @@ Deuda heredada visible; reglas no silenciadas. No se leyeron secretos ni `.env`
 - Zona de riesgo: sí (auth/roles, bypass de autenticación) → reviewer
   independiente aplicado (contexto separado, solo lectura). `APPROVE` no
   autoriza merge ni deploy.
+- Veredicto global: **APPROVE** (sesión `ses_ebd9e6980ffe...`). Confirma:
+  (1) los 3 caminos del bypass pasan por el chokepoint y no hay lectura directa
+  de `NEXT_PUBLIC_DEMO_MODE` que lo esquive; (2) `NODE_ENV` es correcto en
+  server y edge de Next; (4) el test `withEnv` restaura el entorno y prueba el
+  fail-closed; (5) el `console.warn` acotado no filtra secretos ni llega al
+  navegador; (6) sin regresión operativa esperada.
+- Observaciones P3 (no bloqueantes): (a) preview Vercel corre con
+  `NODE_ENV=production` y pierde el demo — fail-closed deseable, requiere
+  confirmar aprovisionamiento del demo; (b) dependencia de que `NODE_ENV` esté
+  definido — residual, ya declarado; (c) el test no ejercita el inlineado de
+  build de Next (sí corre el guard en runtime) — cobertura, no defecto.
