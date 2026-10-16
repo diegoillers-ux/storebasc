@@ -9,12 +9,12 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 | Checkout | `src/app/checkout/`: servicio, producto, rifa, éxito |
 | Admin | `src/app/(admin)/admin/`: agenda, clientes, catálogo, pagos, pedidos, reportes, contenido, rifas, configuración |
 | API | `src/app/api/`: reservas, pedidos, calendario, pagos, webhooks MP, cron, admin |
-| Datos | `src/lib/supabase/repositories/`, `schema.sql`, migraciones |
-| Auth | Supabase Auth + NextAuth (`auth.ts`, `auth.config.ts`, `adminAuth.ts`, `middleware.ts`) |
+| Datos | `src/lib/supabase/`: `schema.sql`, `migrations/`, `repositories/` (+ `supabase/` vacía) |
+| Auth | Supabase Auth + NextAuth v5 beta (`src/lib/auth.ts`, `src/lib/auth.config.ts`, `src/lib/adminAuth.ts`, `src/middleware.ts`) |
 | Pagos | `src/lib/payments/`: Mercado Pago, manual, comprobantes (`@vercel/blob` privado, 2 MB, JPG/PNG/PDF) |
-| Calendario | `src/lib/calendar/`, `googleCalendar.ts` |
-| Notificaciones | Nodemailer (`mailer.ts`); enlaces WhatsApp (`whatsapp.ts`, sin envío) |
-| Demo | `demoMode.ts` (bypass admin), `demoStore.ts` (memoria), `data.ts` (ejemplos) |
+| Calendario | `src/lib/calendar/` + `src/lib/googleCalendar.ts` |
+| Notificaciones | Nodemailer (`src/lib/mailer.ts`); enlaces WhatsApp (`src/lib/whatsapp.ts`, sin envío) |
+| Demo | `src/lib/demoMode.ts` (bypass admin), `src/lib/demoStore.ts` (memoria), `src/lib/data.ts` (ejemplos) |
 
 ## Límites comprobados por lectura
 
@@ -25,6 +25,6 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 - Catálogos devuelven ejemplos sin Supabase. Rifas/IA: `501` sin backend.
   Dashboard/reportes: placeholders. Branding y defaults acoplados a Ananda:
   todavía no hay núcleo configurable.
-- Nodemailer 10 vs peer NextAuth (`^7 || ^8`): funciona hoy, resolver explícito.
-- `middleware` (convención obsoleta según Next) + CSP en `next.config.ts`;
-  cron en `vercel.json` (08:00/09:00). No aplicar esquema/seed sin revisar destino.
+- Nodemailer `^10.0.13` + NextAuth `^5.0.0-beta.32` (v5 beta): funciona hoy, resolver explícito.
+- `src/middleware.ts` (convención obsoleta según Next) + CSP en `next.config.ts`;
+  cron en `vercel.json` (`0 8 * * *`, `0 9 * * *`). No aplicar esquema/seed sin revisar destino.
