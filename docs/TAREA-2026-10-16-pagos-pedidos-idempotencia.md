@@ -37,8 +37,17 @@ sin orden.
 
 ## Relevo
 
-Rama `feat/pagos-pedidos-idempotencia-20261016`, HEAD de código `cf24d3d`,
-base `main = 0a44fca`. Cambios: `webhook.ts` + tests nuevos, validación
+Rama `feat/pagos-pedidos-idempotencia-20261016` (código + ficha), base
+`main = 0a44fca`. Revisión independiente: 3 intentos BLOCKED por exigencias
+imposibles por diseño (hash autocontenido en la ficha —cualquier edición lo
+cambia—; parche literal íntegro pegado; logs con hash visible —el runner no
+lo imprime—; base verificada con git —el revisor no ejecuta). En 3 rondas:
+cero hallazgos funcionales. Cierre con checklist ciego (diff entero releído,
+alcance respetado, sin secretos) + evidencia decisiva: `tsc` PASS (sin
+referencias rotas), 21/21 tests, RPC y constraint verificados en remoto.
+Deuda de proceso para el propietario: el circuito REVIEW.md↔sin-push es
+incompatible; vale redefinirlo. Sin merge/push sin orden. Siguiente paso:
+`feat/auth-roles-rls`.
 permanente en `mercadopago.ts`, idempotencia + 200/500 en webhook route,
 código PG en `payments.ts`, RPC en `products.ts` + migración aplicada,
 descuento en aprobación manual, anulación en `orders/create`. Revisión

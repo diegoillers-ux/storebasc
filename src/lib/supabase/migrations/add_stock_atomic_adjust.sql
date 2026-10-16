@@ -1,6 +1,6 @@
 -- ─────────────────────────────────────────────────────────────
 -- Migración: Descuento de stock atómico (`adjust_product_stock`)
--- PENDIENTE DE APLICAR (requiere acceso Supabase). Ver ficha
+-- APLICADA en remoto el 2026-10-16. Ver ficha
 -- docs/TAREA-2026-10-16-pagos-pedidos-idempotencia.md
 -- ─────────────────────────────────────────────────────────────
 -- `adjustStock` era leer-modificar-escribir (carrera → sobreventa).
