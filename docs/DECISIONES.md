@@ -35,5 +35,11 @@ archivo histórico queda sin vigencia.
   reviewer 1 ronda (PR #14, hallazgo alta: bypass demo sin fail-closed en prod).
   PR #9–#14 integrados; ramas cortas borradas (local+remoto); solo quedan `main`
   y `V2`. Próximo paso: validar core de negocio y alcance antes de abrir `feat/*`.
+- **Sesión 2026-10-16 (cont.)**: autorizado el fix #1 de la auditoría (demo
+  fail-closed en prod) en rama `feat/demo-fail-closed-prod`; reviewer
+  independiente APPROVE (1 ronda); 3 checks CI verdes; **PR #16 mergeado**
+  (`d2714b0`). Rama borrada (local+remoto); quedan solo `main` y `V2`.
+  `ESTADO.md` actualizado a `d2714b0` (PR de esta constancia). Pendientes de
+  autorización: hallazgos #2/#3/#5/#6/#7 y RUTA P1.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.

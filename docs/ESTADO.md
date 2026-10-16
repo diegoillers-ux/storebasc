@@ -1,16 +1,16 @@
 # Estado verificable — Storebasc / anandacore
 
-**Fecha:** 2026-10-16. **Base:** `main = origin/main = 26ca7f3` (merge PR #11;
-incluye PR #2, #3, #7, #8, #9, #10; #9–#11 solo docs). `V2` queda como ancestro
-histórico (`3fd49aa`).
+**Fecha:** 2026-10-16. **Base:** `main = origin/main = d2714b0` (merge PR #16;
+incluye PR #2, #3, #7–#15; #9–#15 solo docs; **#16 fix #1 demo fail-closed**).
+`V2` queda como ancestro histórico (`3fd49aa`).
 Árbol versionado limpio; 3 archivos con apariencia de secretos en raíz,
 ignorados por `.gitignore` (contenido nunca leído).
 
-## Verificado el 2026-10-16 sobre `26ca7f3`
+## Verificado el 2026-10-16 sobre `d2714b0`
 
 | Comprobación | Resultado |
 |---|---|
-| `npm test` | PASS 6/6 |
+| `npm test` | PASS 8/8 (incluye 2 de `demoMode` fail-closed, PR #16) |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS (no acredita servicios) |
 | `npm run test:e2e` (Chromium) | PASS 4/4 (portada, tienda, servicios, login; sin pagos ni reservas) |
@@ -24,7 +24,8 @@ servicio/producto/rifa; reservas y disponibilidad (Google Calendar + Supabase);
 Mercado Pago + pago manual con comprobante privado; admin (agenda, clientes,
 catálogo, pagos, pedidos, configuración); cron de limpieza; enlaces WhatsApp;
 correo SMTP. Rifas e IA devuelven `501` (sin backend). Dashboard muestra
-placeholders. Modo demo con bypass administrativo: solo aislado.
+placeholders. Modo demo con bypass administrativo, **fail-closed en producción**
+(`isDemoMode()` falso con `NODE_ENV=production`, PR #16): solo aislado.
 
 ## No comprobado / desconocido
 
@@ -38,4 +39,5 @@ Vercel, rotación de credenciales expuestas según reporte anterior.
 2. Lint 53/66 (tarea en espera, sin autorización).
 3. Disponibilidad: horas/bloqueos no persistidos, solapes, reserva no atómica.
 4. Pagos/pedidos: idempotencia, stock, E2E manual y sandbox.
-5. Auth/roles/RLS + bypass demo auditados en entorno aislado.
+5. Auth/roles/RLS: bypass demo ya cerrado en prod (#16); quedan roles de mínimo
+   privilegio (#2) y confirmar RLS (#5).
