@@ -45,5 +45,11 @@ archivo histórico queda sin vigencia.
   (borrado, sin rama parada; el historial git las conserva). Alcance: foco en
   core servicios/productos; orden: disponibilidad → pagos/pedidos → auth/roles;
   SEO cuando haya base operativa beta.
+- **Sesión 2026-10-16 (core)**: PR #18 (rifas fuera) al #23 (e2e sandbox)
+  mergeados. Dirección: foco servicios/productos; orden disponibilidad →
+  pagos → auth/roles; SEO en base beta. Sandbox MP verificado de veras
+  (TEST + secreto webhook local + comprador de prueba por API + pago APRO
+  automatizado con tarjeta oficial). Acceso Supabase por CLI con token local.
+  Pendientes: auth/roles/RLS, parciales, lint 43/55, Vercel, Google real.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.
