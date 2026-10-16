@@ -20,10 +20,11 @@ ignorados por `.gitignore` (contenido nunca leído).
 ## Qué existe (código, no operación)
 
 Tienda/servicios públicos con fallbacks de ejemplo; checkout de
-servicio/producto/rifa; reservas y disponibilidad (Google Calendar + Supabase);
+servicio/producto; reservas y disponibilidad (Google Calendar + Supabase);
 Mercado Pago + pago manual con comprobante privado; admin (agenda, clientes,
 catálogo, pagos, pedidos, configuración); cron de limpieza; enlaces WhatsApp;
-correo SMTP. Rifas e IA devuelven `501` (sin backend). Dashboard muestra
+correo SMTP. IA contenido devuelve `501` (sin backend; rifas eliminadas por
+decisión del propietario). Dashboard muestra
 placeholders. Modo demo con bypass administrativo, **fail-closed en producción**
 (`isDemoMode()` falso con `NODE_ENV=production`, PR #16): solo aislado.
 

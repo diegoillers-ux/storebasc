@@ -1,4 +1,4 @@
-export type SaleType = 'service' | 'product' | 'raffle';
+export type SaleType = 'service' | 'product';
 
 export type SaleMetadata = {
     saleType: SaleType;
@@ -102,13 +102,11 @@ export function inferSaleType(summary = '', metadata?: SaleMetadata | null): Sal
     if (metadata?.saleType) return metadata.saleType;
 
     const normalized = summary.toUpperCase();
-    if (normalized.includes('RIFA')) return 'raffle';
     if (normalized.includes('PRODUCTO')) return 'product';
     return 'service';
 }
 
 export function getSaleTypeLabel(type: SaleType) {
-    if (type === 'raffle') return 'Rifa';
     if (type === 'product') return 'Producto';
     return 'Servicio';
 }
