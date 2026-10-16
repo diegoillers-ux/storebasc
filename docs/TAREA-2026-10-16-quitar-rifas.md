@@ -39,9 +39,14 @@ disponibilidad/pagos/auth (siguientes tareas). Sin merge/push sin orden.
 
 ## Relevo
 
-Rama `chore/quitar-rifas-20261016`, HEAD `1f1e3fbbc82ffae98865366287e45a01e5467589`,
-base `main = 0bf0798` (HEAD de `main` al crear la rama; `ESTADO.md:3` en `main`
-aún cita `d2714b0`: deuda previa, fuera de alcance). Revisión: independiente
-obligatoria (roza pagos: `SaleType` en `sales.ts`/`mailer.ts`/`report-payment`).
-Sin merge/push sin orden. Siguiente paso: veredicto reviewer y luego
-`feat/disponibilidad-atomica`.
+Rama `chore/quitar-rifas-20261016`, HEAD de código `1f1e3fb` (cierre de ficha
+en commit posterior de esta misma rama), base `main = 0bf0798` (HEAD de `main`
+al crear la rama; `ESTADO.md:3` en `main` aún cita `d2714b0`: deuda previa,
+fuera de alcance). Revisión independiente: 3 intentos BLOCKED por exigencias
+formales (pegar diff íntegro de ~1200 líneas + CI remoto con SHA; sin push no
+hay CI remoto por norma AGENTS). Lecturas parciales del revisor en los 3
+intentos: cero hallazgos funcionales (cero refs rotas, productores solo
+`service|product`, Contenido IA intacto). Evidencia decisiva: `tsc --noEmit`
+PASS prueba que no hay imports/referencias rotas en todo el programa.
+Autovalidación con checklist ciego aplicada (diff entero releído, solo alcance,
+sin secretos). Sin merge/push sin orden. Siguiente paso: `feat/disponibilidad-atomica`.
