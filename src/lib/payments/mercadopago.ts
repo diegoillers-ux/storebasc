@@ -3,6 +3,23 @@ import { WebhookValidationError } from './webhook'
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago'
 import crypto from 'crypto'
 
+interface PreferenceItemBody {
+  id: string
+  title: string
+  quantity: number
+  unit_price: number
+  currency_id: string
+}
+
+interface PreferenceBody {
+  items: PreferenceItemBody[]
+  external_reference: string
+  notification_url: string
+  back_urls: { success: string; failure: string; pending: string }
+  auto_return?: string
+  payer?: { email: string; name?: string }
+}
+
 export class MercadoPagoProvider implements PaymentProvider {
   private accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? ''
   private webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? ''
@@ -32,7 +49,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     const failureUrl = `${baseUrl}${separator}type=${targetType}&status=failure&ref=${input.referenceId}`
     const pendingUrl = `${baseUrl}${separator}type=${targetType}&status=pending&ref=${input.referenceId}`
 
-    const body: any = {
+    const body: PreferenceBody = {
       items: [
         {
           id: input.referenceId,
