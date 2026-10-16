@@ -5,9 +5,9 @@ Nombres desde `.env.example`; valores remotos no inspeccionados.
 | Integración | Variables | Estado |
 |---|---|---|
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY` | Proyecto, esquema aplicado, RLS: desconocidos |
-| Auth | `AUTH_SECRET`, `AUTH_TRUST_HOST`, `ADMIN_EMAILS` | Login real, OTP, roles: sin probar |
+| Auth | `AUTH_SECRET`, `AUTH_TRUST_HOST`, `ADMIN_EMAILS` | Login real, OTP, roles: sin probar (`AUTH_*` los consume NextAuth, sin `process.env` directo en `src/`) |
 | Mercado Pago | `MERCADOPAGO_ACCESS_TOKEN`, `WEBHOOK_SECRET`, `NEXT_PUBLIC_PAYMENT_PROVIDER` | Sandbox/prod, firma, reintentos: sin probar |
-| Comprobantes | `BLOB_READ_WRITE_TOKEN` | Bucket y descarga autorizada: sin probar |
+| Comprobantes | `BLOB_READ_WRITE_TOKEN` | Bucket y descarga autorizada: sin probar (la lee el SDK `@vercel/blob` en `proof.ts`, sin `process.env` directo) |
 | Google Calendar | `NEXT_PUBLIC_CALENDAR_ID`, `GOOGLE_CLIENT_EMAIL/PRIVATE_KEY` | Cuenta y calendario: sin probar; rotación pendiente |
 | SMTP | `SMTP_*`, cuentas Nequi/Daviplata/Bancolombia, WhatsApp | Envío/recepción: sin probar |
 | Cron | `CRON_SECRET` | Ejecución remota: sin probar |
