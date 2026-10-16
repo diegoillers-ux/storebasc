@@ -6,8 +6,8 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 | Capa | Ubicación |
 |---|---|
 | Público | `src/app/(public)/`: portada, tienda, servicios |
-| Checkout | `src/app/checkout/`: servicio, producto, rifa, éxito |
-| Admin | `src/app/(admin)/admin/`: agenda, clientes, catálogo, pagos, pedidos, reportes, contenido, rifas, configuración |
+| Checkout | `src/app/checkout/`: servicio, producto, éxito |
+| Admin | `src/app/(admin)/admin/`: agenda, clientes, catálogo, pagos, pedidos, reportes, contenido, configuración |
 | API | `src/app/api/`: reservas, pedidos, calendario, pagos, webhooks MP, cron, admin |
 | Datos | `src/lib/supabase/`: `schema.sql`, `migrations/`, `repositories/` (+ `supabase/` vacía) |
 | Auth | Supabase Auth + NextAuth v5 beta (`src/lib/auth.ts`, `src/lib/auth.config.ts`, `src/lib/adminAuth.ts`, `src/middleware.ts`) |
@@ -22,7 +22,8 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
   puntuales no persistidos; `listActiveByDateRange` puede omitir solapes
   iniciados antes; creación sin transacción atómica; huso del proceso.
 - `requireAdminSession` exige admin, sin matriz de capacidades; demo omite todo.
-- Catálogos devuelven ejemplos sin Supabase. Rifas/IA: `501` sin backend.
+- Catálogos devuelven ejemplos sin Supabase. IA contenido: `501` sin backend
+  (rifas eliminadas por decisión del propietario, 2026-10-16).
   Dashboard/reportes: placeholders. Branding y defaults acoplados a Ananda:
   todavía no hay núcleo configurable.
 - Nodemailer `^10.0.13` + NextAuth `^5.0.0-beta.32` (v5 beta): funciona hoy, resolver explícito.

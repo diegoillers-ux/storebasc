@@ -89,7 +89,7 @@ export default function ReportesPage() {
           <div className="py-10 text-center">
             <p className="text-sm font-semibold text-gray-500">Sin datos suficientes</p>
             <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-              El desglose entre sesiones y lecturas, productos físicos y rifas se calculará automáticamente con las ventas aprobadas.
+              El desglose entre sesiones y lecturas y productos físicos se calculará automáticamente con las ventas aprobadas.
             </p>
           </div>
         </div>

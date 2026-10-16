@@ -99,28 +99,3 @@ export const products = [
 export const getProductById = (id: string) => {
     return products.find((p) => p.id === id);
 };
-
-export const raffles = [
-    {
-        id: 'rifa-luna-llena',
-        title: 'Sorteo Luna Llena',
-        description: 'Participa por una lectura completa de Tarot + Kit de purificación. Juega con los dos últimos dígitos de la Lotería de Bogotá.',
-        price: '$15.000 COP',
-        priceNumber: 15000,
-        totalNumbers: 100, // 00 to 99
-        soldNumbers: [13, 7, 21, 69, 44, 99], // Mock de números vendidos
-    },
-    {
-        id: 'rifa-astral',
-        title: 'Sorteo Astral Anual',
-        description: 'Gana un amuleto consagrado y carta astral personalizada. Juega con los tres últimos dígitos de la Lotería de Medellín.',
-        price: '$25.000 COP',
-        priceNumber: 25000,
-        totalNumbers: 1000,
-        soldNumbers: [111, 222, 333, 777],
-    }
-];
-
-export const getRaffleById = (id: string) => {
-    return raffles.find((r) => r.id === id);
-};

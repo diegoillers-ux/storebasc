@@ -10,4 +10,4 @@
 | P2 | Núcleo configurable | Segundo negocio desde el mismo código sin editar fuentes (solo en madurez) |
 | P3 | Plantilla extraída | Repo base separado a partir de versión madura |
 
-Rifas/IA solo con necesidad comercial. PWA y optimizaciones móviles canceladas.
+Rifas eliminadas del código por decisión del propietario (2026-10-16). IA solo con necesidad comercial. PWA y optimizaciones móviles canceladas.
