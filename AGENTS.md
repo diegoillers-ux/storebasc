@@ -31,7 +31,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Límites
 
-- `main` es la base; trabaja en ramas cortas y entrega en PR borrador. No integres, despliegues, borres ramas ni alteres remotos sin orden explícita.
+- `main` es la base; trabaja en ramas cortas y cierra con PR lista (no borrador) + auto-merge (`gh pr merge --auto --squash`): GitHub fusiona sola en verde y borra la rama (Norma A). No hagas merge a mano, no despliegues ni alteres remotos sin orden explícita.
 - Mercado Pago + transferencia manual vigentes. No reintroducir Wompi.
 - No inventar ventas, métricas, stock ni integraciones operativas.
 - No commitear secretos, `.env*` (salvo `.env.example`), ni temporales. Contenido de secretos nunca se lee ni se muestra.

@@ -51,5 +51,11 @@ archivo histórico queda sin vigencia.
   (TEST + secreto webhook local + comprador de prueba por API + pago APRO
   automatizado con tarjeta oficial). Acceso Supabase por CLI con token local.
   Pendientes: auth/roles/RLS, parciales, lint 43/55, Vercel, Google real.
+- **Flujo — auto-merge (2026-10-16)**: se activa auto-merge nativo y borrado
+  automático de ramas; las tareas autorizadas cierran con PR lista (no
+  borrador) y `gh pr merge --auto --squash`, de modo que GitHub fusiona en
+  verde (3 checks) sin clics. Sustituye «sin auto-merge nativo». Protección de
+  `main` intacta (3 checks obligatorios, sin force-push, sin borrado); se
+  retiran `strict` y resolución de conversaciones para eliminar bloqueos.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.
