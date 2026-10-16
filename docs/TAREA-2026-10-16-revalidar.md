@@ -45,8 +45,8 @@ Deuda heredada visible, reglas no silenciadas. No se leyeron secretos ni `.env`.
 
 ## Relevo
 
-- Rama: `chore/revalidar-head-20261016`. HEAD inicial: `26ca7f3`; HEAD final:
-  `eea3320` (mismo árbol + `docs/ESTADO.md` y esta ficha).
+- Rama: `chore/revalidar-head-20261016`. HEAD inicial: `26ca7f3`; HEAD final de
+  la rama: `fd27a02` (+ esta constancia; sin cambios de alcance posteriores).
 - Archivos: `docs/ESTADO.md` (editado); esta ficha (nueva).
 - Revisión: fuera de zona de riesgo (solo docs + checks) → autovalidación con
   checklist ciego (diff entero releído, solo `ESTADO.md` + ficha, sin código).
