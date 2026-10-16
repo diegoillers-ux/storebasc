@@ -55,3 +55,17 @@ y `NaN→false` en `google.ts` vs fail-closed en `create-pending` — futuro:
 paginar y unificar a ocupado. Siguiente paso del propietario: acceso
 Supabase para aplicar las 3 migraciones (limpiar solapes activos primero) y
 luego `feat/pagos-pedidos-idempotencia`. Sin merge/push sin orden.
+
+## Aplicación remota 2026-10-16 (misma rama de trabajo, post-merge)
+
+- Acceso: CLI Supabase con token local (`token supabase.txt`, sin mostrar).
+- Limpieza: 6 `PENDING_PAYMENT` de prueba (ago-2026) → `CANCELLED`;
+  precheck de solapes activos: 0.
+- `db push` no ve `src/lib/...` (solo `supabase/`): aplicadas con
+  `db query --linked -f`.
+- `weekly` + backfill: OK. `blocked_slots` + RLS: OK.
+- Guardia: primer intento falló (`42P17`: `timestamptz + interval` es STABLE,
+  no vale en índices). Rediseño: columna `ends_at` + trigger
+  `trg_bookings_ends_at` + `EXCLUDE` sobre columnas. Aplicada OK.
+- Prueba funcional: doble insert solapado en transacción → segundo falla con
+  `23P01` (el código que `bookings/create` mapea a 409); rollback deja 0 restos.
