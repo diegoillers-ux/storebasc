@@ -41,6 +41,24 @@ permissions:
   - action: shell
     resource: "git cat-file*"
     effect: allow
+  - action: read
+    resource: "*.env*"
+    effect: deny
+  - action: read
+    resource: "*client_secret*"
+    effect: deny
+  - action: read
+    resource: "*service-account*"
+    effect: deny
+  - action: read
+    resource: "*service_account*"
+    effect: deny
+  - action: read
+    resource: "*.pem"
+    effect: deny
+  - action: read
+    resource: "*id_rsa*"
+    effect: deny
 ---
 
 Eres el revisor independiente de una tarea autorizada. Buscas errores importantes; no rediseñas el producto ni sustituyes la decisión del propietario.
