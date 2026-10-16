@@ -117,18 +117,29 @@ export async function POST(req: NextRequest) {
       customerId = newCustomer.id!
     }
 
-    // 3. Crear Booking
-    const newBooking = await bookingRepository.create({
-      customerId,
-      serviceId: service.id || 'default-service',
-      adminId: null,
-      scheduledAt,
-      durationMinutes: Number(service.duration || 60),
-      status: 'PENDING_PAYMENT',
-      notes: customerData.context ? `Notas: ${customerData.context}` : null,
-      calendarEventId: null,
-      whatsappLink: null,
-    })
+    // 3. Crear Booking (la restricción de exclusión en BD convierte la
+    // carrera check-then-insert en 409 una vez aplicada la migración
+    // add_booking_overlap_guard.sql; mientras tanto rige el 409 previo).
+    let newBooking
+    try {
+      newBooking = await bookingRepository.create({
+        customerId,
+        serviceId: service.id || 'default-service',
+        adminId: null,
+        scheduledAt,
+        durationMinutes: Number(service.duration || 60),
+        status: 'PENDING_PAYMENT',
+        notes: customerData.context ? `Notas: ${customerData.context}` : null,
+        calendarEventId: null,
+        whatsappLink: null,
+      })
+    } catch (createError: unknown) {
+      const code = (createError as { code?: string })?.code
+      if (code === '23P01' || code === '23505') {
+        return NextResponse.json({ error: 'Ese horario ya fue tomado. Elige otro.' }, { status: 409 })
+      }
+      throw createError
+    }
 
     if (proofFile) {
       try {

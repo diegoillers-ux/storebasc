@@ -90,7 +90,13 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     calendar_event_id TEXT,
     whatsapp_link TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Guardia antisolape (migración add_booking_overlap_guard.sql, pendiente
+    -- de aplicar): dos reservas activas no pueden ocupar el mismo rango
+    EXCLUDE USING gist (
+      tstzrange(scheduled_at, scheduled_at + (duration_minutes || ' minutes')::interval) WITH &&
+    )
+    WHERE (status IN ('DRAFT', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'CONFIRMED', 'RESCHEDULED'))
 );
 
 -- 7. TABLA: orders (Pedidos E-Commerce de Productos)
@@ -134,7 +140,19 @@ CREATE TABLE IF NOT EXISTS public.availability_settings (
     id TEXT PRIMARY KEY DEFAULT 'default',
     work_days JSONB DEFAULT '[1,2,3,4,5,6]'::jsonb,
     time_slots JSONB DEFAULT '["09:00", "10:30", "14:00", "15:30", "17:00"]'::jsonb,
+    weekly JSONB DEFAULT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 9b. TABLA: blocked_slots (Bloqueos puntuales de agenda)
+CREATE TABLE IF NOT EXISTS public.blocked_slots (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    start_at TIMESTAMPTZ NOT NULL,
+    end_at TIMESTAMPTZ NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (end_at > start_at)
 );
 
 -- 10. TABLA: ai_assets (Recursos, Rifas y Copys de Inteligencia Artificial)
@@ -156,6 +174,8 @@ ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.availability_settings ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.blocked_slots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_assets ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de RLS predeterminadas
@@ -174,6 +194,8 @@ CREATE POLICY "Service Role Full Access Bookings" ON public.bookings TO service_
 CREATE POLICY "Service Role Full Access Orders" ON public.orders TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access Payments" ON public.payments TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access Availability" ON public.availability_settings TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Service Role Full Access Blocked Slots" ON public.blocked_slots TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "Service Role Full Access AI Assets" ON public.ai_assets TO service_role USING (true) WITH CHECK (true);
 
 -- STORAGE BUCKETS

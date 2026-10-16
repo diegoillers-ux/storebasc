@@ -2,6 +2,7 @@ import { getGoogleCalendarClient } from '../googleCalendar';
 import type { calendar_v3 } from 'googleapis';
 import { availabilityRepository } from '@/lib/supabase/repositories/availability';
 import { bookingRepository } from '@/lib/supabase/repositories/bookings';
+import { bogotaWallToUtc, getBogotaWallParts, getBogotaWeekday, rangesOverlap } from './overlaps';
 import type { CalendarProvider, AvailabilityInput, TimeSlot, CreateCalendarEventInput, UpdateCalendarEventInput } from './index';
 
 export class GoogleCalendarProvider implements CalendarProvider {
@@ -29,71 +30,78 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
       const googleBusyEvents = freebusyRes.data.calendars?.[this.calendarId]?.busy || [];
 
-      // 3. Generar franjas horarias (slots) de trabajo
+      // 3. Generar franjas horarias (slots) en hora muro de Bogotá
+      // (los Date del servidor suelen estar en UTC: setHours/getDay darían
+      // turnos desplazados, ver `overlaps.ts`).
       const slots: TimeSlot[] = [];
-      const currentDate = new Date(from);
+      const fromMs = from.getTime();
+      const toMs = to.getTime();
+      const startParts = getBogotaWallParts(from);
+      const endParts = getBogotaWallParts(to);
+      const cursor = new Date(Date.UTC(startParts.year, startParts.month - 1, startParts.day));
+      const lastDay = new Date(Date.UTC(endParts.year, endParts.month - 1, endParts.day));
 
-      while (currentDate <= to) {
-        const dayOfWeek = currentDate.getDay(); // 0 = Domingo, 6 = Sábado
-        
+      while (cursor <= lastDay) {
+        const wallYear = cursor.getUTCFullYear();
+        const wallMonth = cursor.getUTCMonth() + 1;
+        const wallDay = cursor.getUTCDate();
+        const dayOfWeek = getBogotaWeekday(bogotaWallToUtc(wallYear, wallMonth, wallDay, 12, 0));
+
         // Buscar si existe disponibilidad configurada para este día de la semana
         const dayConfig = weeklyAvails.find((av) => av.dayOfWeek === dayOfWeek && av.active);
-        
+
         if (dayConfig) {
           // Parsear inicio y fin (ej. "09:00" y "18:00")
           const [startHour, startMin] = dayConfig.startTime.split(':').map(Number);
           const [endHour, endMin] = dayConfig.endTime.split(':').map(Number);
 
-          const slotStart = new Date(currentDate);
-          slotStart.setHours(startHour, startMin, 0, 0);
-
-          const slotEndBoundary = new Date(currentDate);
-          slotEndBoundary.setHours(endHour, endMin, 0, 0);
+          let slotStart = bogotaWallToUtc(wallYear, wallMonth, wallDay, startHour, startMin);
+          const slotEndBoundary = bogotaWallToUtc(wallYear, wallMonth, wallDay, endHour, endMin);
 
           // Generar slots consecutivos de acuerdo a la duración del servicio
           while (slotStart.getTime() + durationMinutes * 60_000 <= slotEndBoundary.getTime()) {
             const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000);
-            
-            // Verificar si el slot está bloqueado
-            const isBlocked = blockedSlots.some((blocked) => {
-              const bStart = new Date(blocked.startAt).getTime();
-              const bEnd = new Date(blocked.endAt).getTime();
+
+            // Recortar a la ventana pedida
+            if (slotEnd.getTime() > fromMs && slotStart.getTime() < toMs) {
               const sStart = slotStart.getTime();
               const sEnd = slotEnd.getTime();
-              return sStart < bEnd && sEnd > bStart;
-            });
 
-            // Verificar si el slot está ocupado en Google Calendar
-            const isGoogleBusy = googleBusyEvents.some((busy) => {
-              const busyStart = new Date(busy.start || '').getTime();
-              const busyEnd = new Date(busy.end || '').getTime();
-              const sStart = slotStart.getTime();
-              const sEnd = slotEnd.getTime();
-              return sStart < busyEnd && sEnd > busyStart;
-            });
+              // Verificar si el slot está bloqueado
+              const isBlocked = blockedSlots.some((blocked) => {
+                const bStart = new Date(blocked.startAt).getTime();
+                const bEnd = new Date(blocked.endAt).getTime();
+                return rangesOverlap(sStart, sEnd, bStart, bEnd);
+              });
 
-            const isBookingBusy = activeBookings.some((booking) => {
-              const bookingStart = booking.scheduledAt.getTime();
-              const bookingEnd = bookingStart + booking.durationMinutes * 60_000;
-              const sStart = slotStart.getTime();
-              const sEnd = slotEnd.getTime();
-              return sStart < bookingEnd && sEnd > bookingStart;
-            });
+              // Verificar si el slot está ocupado en Google Calendar
+              const isGoogleBusy = googleBusyEvents.some((busy) => {
+                const busyStart = new Date(busy.start || '').getTime();
+                const busyEnd = new Date(busy.end || '').getTime();
+                return rangesOverlap(sStart, sEnd, busyStart, busyEnd);
+              });
 
-            // Si está libre en ambas fuentes, se marca disponible
-            slots.push({
-              start: new Date(slotStart),
-              end: new Date(slotEnd),
-              available: !isBlocked && !isGoogleBusy && !isBookingBusy,
-            });
+              const isBookingBusy = activeBookings.some((booking) => {
+                const bookingStart = booking.scheduledAt.getTime();
+                const bookingEnd = bookingStart + booking.durationMinutes * 60_000;
+                return rangesOverlap(sStart, sEnd, bookingStart, bookingEnd);
+              });
+
+              // Si está libre en ambas fuentes, se marca disponible
+              slots.push({
+                start: new Date(slotStart),
+                end: new Date(slotEnd),
+                available: !isBlocked && !isGoogleBusy && !isBookingBusy,
+              });
+            }
 
             // Avanzar al siguiente slot
-            slotStart.setTime(slotStart.getTime() + durationMinutes * 60_000);
+            slotStart = new Date(slotStart.getTime() + durationMinutes * 60_000);
           }
         }
 
         // Avanzar al siguiente día
-        currentDate.setDate(currentDate.getDate() + 1);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
 
       return slots;

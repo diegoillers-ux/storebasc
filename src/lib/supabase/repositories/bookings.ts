@@ -1,4 +1,8 @@
 import { getAdminSupabase } from '../server';
+import {
+  filterOverlappingBookings,
+  widenRangeStart,
+} from '@/lib/calendar/overlaps';
 
 export type BookingStatus =
   | 'DRAFT'
@@ -83,7 +87,13 @@ export const bookingRepository = {
       .select('*')
       .single();
 
-    if (error) throw new Error(`Failed to create booking in Supabase: ${error.message}`);
+    if (error) {
+      const thrown = new Error(`Failed to create booking in Supabase: ${error.message}`) as Error & {
+        code?: string;
+      };
+      thrown.code = error.code;
+      throw thrown;
+    }
 
     await this.addEvent(data.id, {
       type: 'STATUS_CHANGE',
@@ -163,7 +173,8 @@ export const bookingRepository = {
   },
 
   async listActiveByDateRange(start: Date, end: Date): Promise<Booking[]> {
-    const bookings = await this.listByDateRange(start, end);
+    // Ventana ampliada: cubre reservas iniciadas antes del rango que lo solapan.
+    const bookings = await this.listByDateRange(widenRangeStart(start), end);
     const activeStatuses: BookingStatus[] = [
       'DRAFT',
       'PENDING_PAYMENT',
@@ -174,12 +185,7 @@ export const bookingRepository = {
     const startTime = start.getTime();
     const endTime = end.getTime();
 
-    return bookings.filter((booking) => {
-      if (!activeStatuses.includes(booking.status)) return false;
-      const bookingStart = booking.scheduledAt.getTime();
-      const bookingEnd = bookingStart + booking.durationMinutes * 60_000;
-      return bookingStart < endTime && bookingEnd > startTime;
-    });
+    return filterOverlappingBookings(bookings, activeStatuses, startTime, endTime);
   },
 
   async addEvent(bookingId: string, event: Omit<BookingEvent, 'id' | 'bookingId' | 'createdAt'>): Promise<BookingEvent> {
