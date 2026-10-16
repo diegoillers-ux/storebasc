@@ -47,5 +47,11 @@ RUTA/ESTADO (los toca el PR #19 pendiente). Sin merge/push sin orden.
 
 ## Relevo
 
-(pendiente: HEAD, revisión independiente obligatoria — zona datos —,
-siguiente paso)
+Rama `feat/disponibilidad-atomica-20261016`, HEAD de código `15aa66a`, base
+`main = 7d3f430` (PR #18). Revisión independiente: APPROVE (1 ronda, solo
+lectura) con 2 notas P3 no bloqueantes: (a) `saveWeekly` retrocede a legacy
+ante cualquier error — futuro: solo si falta la columna; (b) `maxResults: 50`
+y `NaN→false` en `google.ts` vs fail-closed en `create-pending` — futuro:
+paginar y unificar a ocupado. Siguiente paso del propietario: acceso
+Supabase para aplicar las 3 migraciones (limpiar solapes activos primero) y
+luego `feat/pagos-pedidos-idempotencia`. Sin merge/push sin orden.
