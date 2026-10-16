@@ -25,7 +25,9 @@ Nombres desde `.env.example`; valores remotos no inspeccionados.
 ## Reglas
 
 - Local/sandbox: credenciales de prueba; nunca pagos reales por defecto.
-- Producción: solo con aceptación explícita y `NEXT_PUBLIC_DEMO_MODE=false`.
+- Producción: solo con aceptación explícita. El modo demo falla cerrado
+  (`isDemoMode()` devuelve `false` con `NODE_ENV=production`), por lo que
+  `NEXT_PUBLIC_DEMO_MODE=true` se ignora aunque esté mal configurado.
 - Secretos (3 archivos en raíz + `.env*`) siempre locales e ignorados; nunca en
   Git. Su contenido no se lee ni se muestra; su presencia se registra redactada.
 - Un build sin credenciales rinde catálogos de ejemplo: no es evidencia de
