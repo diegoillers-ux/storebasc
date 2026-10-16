@@ -41,5 +41,9 @@ archivo histórico queda sin vigencia.
   (`d2714b0`). Rama borrada (local+remoto); quedan solo `main` y `V2`.
   `ESTADO.md` actualizado a `d2714b0` (PR de esta constancia). Pendientes de
   autorización: hallazgos #2/#3/#5/#6/#7 y RUTA P1.
+- **Sesión 2026-10-16 (dirección)**: rifas eliminadas totalmente del código
+  (borrado, sin rama parada; el historial git las conserva). Alcance: foco en
+  core servicios/productos; orden: disponibilidad → pagos/pedidos → auth/roles;
+  SEO cuando haya base operativa beta.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.

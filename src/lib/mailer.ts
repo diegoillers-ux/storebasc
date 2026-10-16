@@ -45,14 +45,6 @@ function getSender() {
 }
 
 function getPendingCopy(saleType: SaleType, itemName: string) {
-    if (saleType === 'raffle') {
-        return {
-            subject: `Numero reservado pendiente de pago - ${itemName}`,
-            body: `Hemos separado temporalmente tu numero para ${itemName}.`,
-            followUp: 'Adjunta tu comprobante desde la pagina para que podamos validar la compra manualmente.',
-        };
-    }
-
     if (saleType === 'product') {
         return {
             subject: `Pedido pendiente de pago - ${itemName}`,
@@ -69,14 +61,6 @@ function getPendingCopy(saleType: SaleType, itemName: string) {
 }
 
 function getApprovedCopy(saleType: SaleType, itemName: string, meetingLink = '') {
-    if (saleType === 'raffle') {
-        return {
-            subject: `Compra confirmada - ${itemName}`,
-            body: `Tu numero para ${itemName} ya fue confirmado.`,
-            extra: '<p>Guardaremos tu participacion y te avisaremos por los canales registrados cuando se realice el sorteo.</p>',
-        };
-    }
-
     if (saleType === 'product') {
         return {
             subject: `Pedido confirmado - ${itemName}`,

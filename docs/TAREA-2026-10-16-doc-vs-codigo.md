@@ -65,3 +65,10 @@ Rama `chore/doc-vs-codigo-20261016`, base `main = 0bf0798`. Revisión:
 autovalidación con checklist ciego (docs, sin zona de riesgo; prohibido
 autoaprobar riesgo). Sin merge/push sin orden. Siguiente paso: orden del
 propietario sobre H1–H5 o merge de esta rama.
+
+## Conciliación post-PR #18 (merge `origin/main = 7d3f430`)
+
+Conflictos en `ARQUITECTURA.md`/`ESTADO.md` resueltos a favor de la realidad
+post-borrado + precisión de esta rama (tablas/API/fallbacks/`501` por
+operación). H1 (backend rifas) y la parte de rifas de H4: obsoletos (rifas
+eliminadas, no hay nada que ocultar). H2/H3/H5 y ocultar Contenido IA: vigentes.

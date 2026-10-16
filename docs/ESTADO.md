@@ -20,12 +20,13 @@ ignorados por `.gitignore` (contenido nunca leído).
 ## Qué existe (código, no operación)
 
 Tienda/servicios públicos (intentan Supabase, fallback a ejemplos); checkout de
-servicio/producto/rifa; reservas y disponibilidad (Google Calendar + Supabase);
+servicio/producto; reservas y disponibilidad (Google Calendar + Supabase);
 Mercado Pago + pago manual con comprobante privado (`proof.ts`: 2 MB, JPG/PNG/PDF);
 admin (agenda, clientes, catálogo, pagos, pedidos, configuración) más
-**parciales**: `/admin/rifas` y `/admin/contenido` (UI existe, GET vacío, POST `501`)
+**parciales**: `/admin/contenido` (UI existe, GET vacío, POST `501`)
 y `/admin/reportes` + panel `/admin` (UI estática `—`/`Sin datos suficientes`);
-cron de limpieza (2 jobs); enlaces WhatsApp; correo SMTP. Rifas e IA: UI existe, pero POST sin backend (`501`; GET `[]`).
+cron de limpieza (2 jobs); enlaces WhatsApp; correo SMTP. IA contenido: UI
+existe, pero POST sin backend (`501`; GET `[]`).
 Dashboard y reportes muestran placeholders (`—`). Modo demo con bypass administrativo, **fail-closed en producción**
 (`isDemoMode()` falso con `NODE_ENV=production`, PR #16): solo aislado.
 

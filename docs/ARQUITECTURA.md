@@ -6,9 +6,9 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 | Capa | Ubicación |
 |---|---|
 | Público | `src/app/(public)/`: portada, tienda, servicios |
-| Checkout | `src/app/checkout/`: servicio (`[serviceId]` + `schedule` + `pay`), producto (`product` + `pay`), rifa (`raffle` + `pay`), `success` |
-| Admin | `src/app/(admin)/admin/`: `agenda`, `clientes`, `catalogo`, `pagos`, `pedidos`, `contenido`, `rifas`, `reportes`, `configuracion` (+ `page.tsx` panel) |
-| API | `src/app/api/`: `auth/[...nextauth]`, `settings`, `checkout`, `checkout/preference`, `orders/create`, `bookings/create`, `calendar/` (free-busy, create-pending, report-payment), `webhooks/mercadopago`, `cron/` (cleanup, orders-cleanup), `admin/` (services, products, orders, bookings, customers, payments, rifas, calendar, settings, reservas, approve-reserva, content/generate) |
+| Checkout | `src/app/checkout/`: servicio (`[serviceId]` + `schedule` + `pay`), producto (`product` + `pay`), `success` |
+| Admin | `src/app/(admin)/admin/`: `agenda`, `clientes`, `catalogo`, `pagos`, `pedidos`, `contenido`, `reportes`, `configuracion` (+ `page.tsx` panel) |
+| API | `src/app/api/`: `auth/[...nextauth]`, `settings`, `checkout`, `checkout/preference`, `orders/create`, `bookings/create`, `calendar/` (free-busy, create-pending, report-payment), `webhooks/mercadopago`, `cron/` (cleanup, orders-cleanup), `admin/` (services, products, orders, bookings, customers, payments, calendar, settings, reservas, approve-reserva, content/generate) |
 | Datos | `src/lib/supabase/`: `schema.sql`, `migrations/` (5), `repositories/` (9). `supabase/` en raíz solo guarda `.temp/` (metadata CLI), sin esquema |
 | Auth | Supabase Auth + NextAuth v5 beta (`src/lib/auth.ts`, `src/lib/auth.config.ts`, `src/lib/adminAuth.ts`, `src/middleware.ts`) |
 | Pagos | `src/lib/payments/`: Mercado Pago, manual, comprobantes (`@vercel/blob` privado, 2 MB, JPG/PNG/PDF) |
@@ -24,11 +24,9 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 - `requireAdminSession` exige admin, sin matriz de capacidades; demo omite todo.
 - Tienda/servicios intentan Supabase (`productRepository`/`services`) y caen a
   ejemplos (`MOCK_*` en página) si demo, vacío o error: ver tarjetas no demuestra conexión.
-- Rifas: UI checkout (`checkout/raffle`) y admin (`/admin/rifas`) existen; GET
-  `/api/admin/rifas` devuelve `rifas: []`, POST devuelve `501` (`route.ts:26`,
-  TODO Supabase). IA contenido: `/admin/contenido` existe; GET devuelve
-  `assets: []`, POST `501` (`content/generate/route.ts:24`, TODO Gemini), PUT `400`.
-  Rutas visibles en sidebar aunque sin backend (criterio RUTA P1: ocultarlas).
+- IA contenido: `/admin/contenido` existe; GET devuelve `assets: []`, POST
+  `501` (`content/generate/route.ts:24`, TODO Gemini), PUT `400`. Visible en
+  sidebar aunque sin backend (criterio RUTA P1: ocultarla).
 - Dashboard (`/admin`) y reportes (`/admin/reportes`): UI estática con `—` /
   "Sin datos suficientes", sin fetch a métricas. Branding y defaults acoplados a Ananda:
   todavía no hay núcleo configurable.
