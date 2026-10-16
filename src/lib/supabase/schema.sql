@@ -89,12 +89,15 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     notes TEXT,
     calendar_event_id TEXT,
     whatsapp_link TEXT,
+    ends_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- Guardia antisolape (migración add_booking_overlap_guard.sql, pendiente
-    -- de aplicar): dos reservas activas no pueden ocupar el mismo rango
+    -- de aplicar): dos reservas activas no pueden ocupar el mismo rango.
+    -- `ends_at` la mantiene el trigger `trg_bookings_ends_at` porque
+    -- `timestamptz + interval` no es IMMUTABLE para índices.
     EXCLUDE USING gist (
-      tstzrange(scheduled_at, scheduled_at + (duration_minutes || ' minutes')::interval) WITH &&
+      tstzrange(scheduled_at, ends_at) WITH &&
     )
     WHERE (status IN ('DRAFT', 'PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'CONFIRMED', 'RESCHEDULED'))
 );
