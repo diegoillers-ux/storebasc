@@ -30,5 +30,10 @@ archivo histórico queda sin vigencia.
 - **Sesión 2026-10-15**: ramas `chore/*` mergeadas y borradas (local+remoto);
   `V2` se conserva como respaldo. MCP mercadopago/mercadolibre configurado y
   claves locales disponibles: el agente las usa sin preguntar.
+- **Sesión 2026-10-16**: `ESTADO.md` revalidado sobre `26ca7f3` (PR #12);
+  `ARQUITECTURA.md` corregido (PR #13); auditoría de seguridad solo-lectura con
+  reviewer 1 ronda (PR #14, hallazgo alta: bypass demo sin fail-closed en prod).
+  PR #9–#14 integrados; ramas cortas borradas (local+remoto); solo quedan `main`
+  y `V2`. Próximo paso: validar core de negocio y alcance antes de abrir `feat/*`.
 - Heredadas y vigentes: `main` base; demo solo aislado; no inventar
   operación; no commitear secretos ni temporales.
