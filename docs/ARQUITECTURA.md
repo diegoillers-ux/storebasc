@@ -6,10 +6,10 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
 | Capa | Ubicación |
 |---|---|
 | Público | `src/app/(public)/`: portada, tienda, servicios |
-| Checkout | `src/app/checkout/`: servicio, producto, rifa, éxito |
-| Admin | `src/app/(admin)/admin/`: agenda, clientes, catálogo, pagos, pedidos, reportes, contenido, rifas, configuración |
-| API | `src/app/api/`: reservas, pedidos, calendario, pagos, webhooks MP, cron, admin |
-| Datos | `src/lib/supabase/`: `schema.sql`, `migrations/`, `repositories/` (+ `supabase/` vacía) |
+| Checkout | `src/app/checkout/`: servicio (`[serviceId]` + `schedule` + `pay`), producto (`product` + `pay`), rifa (`raffle` + `pay`), `success` |
+| Admin | `src/app/(admin)/admin/`: `agenda`, `clientes`, `catalogo`, `pagos`, `pedidos`, `contenido`, `rifas`, `reportes`, `configuracion` (+ `page.tsx` panel) |
+| API | `src/app/api/`: `auth/[...nextauth]`, `settings`, `checkout`, `checkout/preference`, `orders/create`, `bookings/create`, `calendar/` (free-busy, create-pending, report-payment), `webhooks/mercadopago`, `cron/` (cleanup, orders-cleanup), `admin/` (services, products, orders, bookings, customers, payments, rifas, calendar, settings, reservas, approve-reserva, content/generate) |
+| Datos | `src/lib/supabase/`: `schema.sql`, `migrations/` (5), `repositories/` (9). `supabase/` en raíz solo guarda `.temp/` (metadata CLI), sin esquema |
 | Auth | Supabase Auth + NextAuth v5 beta (`src/lib/auth.ts`, `src/lib/auth.config.ts`, `src/lib/adminAuth.ts`, `src/middleware.ts`) |
 | Pagos | `src/lib/payments/`: Mercado Pago, manual, comprobantes (`@vercel/blob` privado, 2 MB, JPG/PNG/PDF) |
 | Calendario | `src/lib/calendar/` + `src/lib/googleCalendar.ts` |
@@ -22,9 +22,19 @@ llamado `anandastore-v2` (renombre pendiente de decisión).
   puntuales no persistidos; `listActiveByDateRange` puede omitir solapes
   iniciados antes; creación sin transacción atómica; huso del proceso.
 - `requireAdminSession` exige admin, sin matriz de capacidades; demo omite todo.
-- Catálogos devuelven ejemplos sin Supabase. Rifas/IA: `501` sin backend.
-  Dashboard/reportes: placeholders. Branding y defaults acoplados a Ananda:
+- Tienda/servicios intentan Supabase (`productRepository`/`services`) y caen a
+  ejemplos (`MOCK_*` en página) si demo, vacío o error: ver tarjetas no demuestra conexión.
+- Rifas: UI checkout (`checkout/raffle`) y admin (`/admin/rifas`) existen; GET
+  `/api/admin/rifas` devuelve `rifas: []`, POST devuelve `501` (`route.ts:26`,
+  TODO Supabase). IA contenido: `/admin/contenido` existe; GET devuelve
+  `assets: []`, POST `501` (`content/generate/route.ts:24`, TODO Gemini), PUT `400`.
+  Rutas visibles en sidebar aunque sin backend (criterio RUTA P1: ocultarlas).
+- Dashboard (`/admin`) y reportes (`/admin/reportes`): UI estática con `—` /
+  "Sin datos suficientes", sin fetch a métricas. Branding y defaults acoplados a Ananda:
   todavía no hay núcleo configurable.
 - Nodemailer `^10.0.13` + NextAuth `^5.0.0-beta.32` (v5 beta): funciona hoy, resolver explícito.
-- `src/middleware.ts` (convención obsoleta según Next) + CSP en `next.config.ts`;
-  cron en `vercel.json` (`0 8 * * *`, `0 9 * * *`). No aplicar esquema/seed sin revisar destino.
+- `src/middleware.ts` (matcher solo `/admin/:path*`, bypass demo) + CSP y demás
+  headers en `next.config.ts`;
+  cron en `vercel.json` (`/api/cron/cleanup` `0 8 * * *`,
+  `/api/cron/orders-cleanup` `0 9 * * *`). Convención de ubicación del
+  middleware pendiente de confirmar contra la guía de Next 16. No aplicar esquema/seed sin revisar destino.
