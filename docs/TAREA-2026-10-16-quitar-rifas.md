@@ -39,4 +39,9 @@ disponibilidad/pagos/auth (siguientes tareas). Sin merge/push sin orden.
 
 ## Relevo
 
-(pendiente: HEAD, revisión, siguiente paso)
+Rama `chore/quitar-rifas-20261016`, HEAD `1f1e3fbbc82ffae98865366287e45a01e5467589`,
+base `main = 0bf0798` (HEAD de `main` al crear la rama; `ESTADO.md:3` en `main`
+aún cita `d2714b0`: deuda previa, fuera de alcance). Revisión: independiente
+obligatoria (roza pagos: `SaleType` en `sales.ts`/`mailer.ts`/`report-payment`).
+Sin merge/push sin orden. Siguiente paso: veredicto reviewer y luego
+`feat/disponibilidad-atomica`.
